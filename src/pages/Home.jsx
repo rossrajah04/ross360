@@ -3,10 +3,9 @@ import useReveal from '../lib/useReveal.js';
 import {
   Opening,
   StepInside,
-  WhatWeCreate,
-  HowItWorks,
-  Pricing,
-  About,
+  Why,
+  Uses,
+  Offer,
   Closing,
 } from '../components/home/HomeSections.jsx';
 import '../styles/home.css';
@@ -18,10 +17,9 @@ export default function Home() {
       <Seo page="home" />
       <Opening />
       <StepInside />
-      <WhatWeCreate />
-      <HowItWorks />
-      <Pricing />
-      <About />
+      <Why />
+      <Uses />
+      <Offer />
       <Closing />
     </div>
   );

@@ -170,8 +170,9 @@
 
 /* ---------- Step inside ---------- */
 
+/* No space of its own below: the point about the tour follows straight on, on the same ground. */
 .h-tour {
-  padding: clamp(64px, 8vw, 128px) 0 var(--h-space);
+  padding: clamp(64px, 8vw, 128px) 0 0;
   background: var(--deep);
   color: var(--on-dark);
 }
@@ -238,197 +239,153 @@
 }
 
 /* ---------- Below the tour ----------
-   Written mobile first. One light ground, one grid and one set of type sizes for every section:
-   a heading, an optional line of text, then the content. Sections are divided by a single rule.
-   The page then closes on the photograph. */
+   Mobile first. One grid, one heading size and one text size for everything below the tour. The
+   point about the tour stays on the tour's dark ground; the service details share one light band,
+   divided by rules; the enquiry closes on the photograph. */
 
-.h-sec {
-  padding: clamp(56px, 8vw, 112px) 0 0;
+.home {
+  --h-gap: clamp(56px, 7vw, 104px);
 }
 
-.h-sec--end {
-  padding-bottom: clamp(56px, 8vw, 112px);
-}
-
-.h-sec + .h-sec .h-sec__inner {
-  padding-top: clamp(56px, 8vw, 112px);
-  border-top: 1px solid var(--line);
-}
-
-
-.h-sec__head {
-  max-width: 40rem;
-  margin-bottom: clamp(32px, 4vw, 56px);
-}
-
-.h-sec__title {
+.h-h2 {
   margin: 0;
   color: var(--ink);
-  font-size: clamp(1.6rem, 3vw, 2.4rem);
+  font-size: clamp(1.5rem, 2.4vw, 2.1rem);
   font-weight: 400;
   line-height: 1.15;
   letter-spacing: -0.02em;
 }
 
-.h-sec__text {
-  margin: 16px 0 0;
+/* Why a 360° tour */
+
+.h-why {
+  padding: clamp(40px, 5vw, 72px) 0 var(--h-gap);
+  background: var(--deep);
+  color: var(--on-dark);
+}
+
+.h-why__inner {
+  display: grid;
+  gap: 16px;
+}
+
+.h-why__title {
+  color: #ffffff;
+}
+
+.h-why__text {
+  max-width: 46ch;
+  margin: 0;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: clamp(1.1rem, 1.4vw, 1.25rem);
+  line-height: 1.55;
+}
+
+@media (min-width: 900px) {
+  .h-why__inner {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: 0 32px;
+    align-items: baseline;
+  }
+  .h-why__title {
+    grid-column: 1 / 6;
+  }
+  .h-why__text {
+    grid-column: 6 / 13;
+  }
+}
+
+/* Business and property */
+
+.h-uses {
+  padding: var(--h-gap) 0 0;
+}
+
+.h-uses__grid {
+  display: grid;
+}
+
+.h-use {
+  padding: 28px 0 32px;
+  border-top: 1px solid var(--line);
+}
+
+.h-use:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.h-use__text {
+  max-width: 38ch;
+  margin: 12px 0 20px;
   color: var(--ink-soft);
   font-size: clamp(1.05rem, 1.3vw, 1.15rem);
-  line-height: 1.6;
-}
-
-/* What we create: the four deliverables as one list, each under a rule; in a row on wide screens. */
-
-.h-deliver {
-  display: grid;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.h-deliver__item {
-  padding: 16px 0;
-  border-top: 1px solid var(--line);
-  color: var(--ink);
-  font-size: 1.1rem;
-  font-weight: 500;
-}
-
-
-@media (min-width: 700px) {
-  .h-deliver {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    column-gap: 32px;
-  }
-}
-
-@media (min-width: 1000px) {
-  .h-deliver {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-  .h-deliver__item {
-    padding: 20px 0 0;
-  }
-}
-
-/* How it works and pricing share three columns: rows on a phone, columns from 760px. */
-
-.h-cols {
-  display: grid;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.h-cols__item {
-  padding: 20px 0 24px;
-  border-top: 1px solid var(--line);
-}
-
-.h-step__num {
-  display: block;
-  margin-bottom: 10px;
-  color: var(--muted);
-  font-size: 0.95rem;
-  font-variant-numeric: tabular-nums;
-}
-
-.h-cols__name {
-  margin: 0;
-  color: var(--ink);
-  font-size: 1.05rem;
-  font-weight: 500;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-.h-cols__text {
-  max-width: 34ch;
-  margin: 8px 0 0;
-  color: var(--ink-soft);
-  font-size: 1.05rem;
   line-height: 1.55;
 }
 
 @media (min-width: 760px) {
-  .h-cols {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    column-gap: 32px;
+  .h-uses__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-  .h-cols__item {
-    padding: 24px 0 0;
+  .h-use,
+  .h-use:first-child {
+    padding: 0 0 8px;
+    border-top: 0;
+  }
+  .h-use + .h-use {
+    padding-left: 32px;
+    border-left: 1px solid var(--line);
+  }
+  .h-use:first-child {
+    padding-right: 32px;
   }
 }
 
-/* Pricing: on a phone each package is one row, price on the right, so the three compare at a glance. */
+/* What you receive, and the starting price */
 
-.h-plan {
+.h-offer {
+  padding: var(--h-gap) 0;
+}
+
+.h-offer__grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  grid-template-areas:
-    'name price'
-    'text text';
-  column-gap: 16px;
-  align-items: baseline;
+  gap: 40px;
+  padding-top: var(--h-gap);
+  border-top: 1px solid var(--line);
 }
 
-.h-plan__name {
-  grid-area: name;
-}
-
-.h-plan__price {
-  grid-area: price;
-  margin: 0;
-  color: var(--ink);
-  font-size: 1.75rem;
-  font-weight: 400;
-  line-height: 1;
-  letter-spacing: -0.02em;
-  white-space: nowrap;
-}
-
-.h-plan__text {
-  grid-area: text;
-}
-
-@media (min-width: 760px) {
-  .h-plan {
-    display: block;
-  }
-  .h-plan__price {
-    margin-bottom: 14px;
-    font-size: clamp(2.2rem, 3.2vw, 2.8rem);
-  }
-}
-
-.h-cols--prices .h-cols__item:last-child {
-  border-bottom: 1px solid var(--line);
-}
-
-@media (min-width: 760px) {
-  .h-cols--prices .h-cols__item:last-child {
-    border-bottom: 0;
-  }
-}
-
-.h-pricing__foot {
-  display: grid;
-  gap: 24px;
-  margin-top: clamp(28px, 4vw, 48px);
-}
-
-.h-pricing__property {
-  max-width: 44ch;
-  margin: 0;
+.h-offer__text {
+  max-width: 40ch;
+  margin: 12px 0 0;
   color: var(--ink-soft);
+  font-size: clamp(1.05rem, 1.3vw, 1.15rem);
+  line-height: 1.55;
+}
+
+.h-receive__list {
+  display: grid;
+  margin: 24px 0 24px;
+  padding: 0;
+  list-style: none;
+}
+
+.h-receive__list li {
+  padding: 12px 0;
+  border-top: 1px solid var(--line);
+  color: var(--ink);
   font-size: 1.05rem;
 }
 
-.h-pricing__actions {
+.h-from {
+  padding-top: 32px;
+  border-top: 1px solid var(--line);
+}
+
+.h-from__actions {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
-  gap: 16px 32px;
+  gap: 12px;
+  margin-top: 24px;
 }
 
 .h-button {
@@ -436,59 +393,66 @@
   align-items: center;
   justify-content: center;
   min-height: 52px;
-  padding: 0 28px;
+  padding: 0 24px;
+  border: 1px solid var(--ink);
   background: var(--ink);
   color: #ffffff;
   font-size: 0.85rem;
   font-weight: 500;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   text-decoration: none;
-  transition: background-color 0.3s var(--ease);
+  transition: background-color 0.3s var(--ease), color 0.3s var(--ease);
 }
 
 .h-button:hover {
   background: #2c2b28;
 }
 
-@media (min-width: 1000px) {
-  .h-pricing__foot {
-    grid-template-columns: minmax(0, 1fr) auto;
-    align-items: center;
+.h-button--quiet {
+  background: transparent;
+  color: var(--ink);
+}
+
+.h-button--quiet:hover {
+  background: var(--ink);
+  color: #ffffff;
+}
+
+/* Links below the tour are set a little larger than the one beside it. */
+.h-uses .h-link,
+.h-offer .h-link {
+  font-size: 0.85rem;
+  letter-spacing: 0.12em;
+}
+
+@media (min-width: 600px) {
+  .h-receive__list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 32px;
   }
 }
 
-/* Text links below the tour are set a little larger than the one beside the tour. */
-.h-sec .h-link {
-  font-size: 0.85rem;
-  letter-spacing: 0.14em;
-}
-
-/* About ROSS 360 */
-
-.h-about {
-  max-width: 40rem;
-}
-
-.h-about__lead {
-  margin: 0;
-  color: var(--ink);
-  font-size: clamp(1.2rem, 1.8vw, 1.45rem);
-  line-height: 1.45;
-}
-
-.h-about__text {
-  margin: 16px 0 28px;
-  color: var(--ink-soft);
-  font-size: clamp(1.05rem, 1.3vw, 1.15rem);
-  line-height: 1.6;
+@media (min-width: 1000px) {
+  .h-offer__grid {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: 0 32px;
+  }
+  .h-receive {
+    grid-column: 1 / 8;
+  }
+  .h-from {
+    grid-column: 9 / 13;
+    padding-top: 0;
+    border-top: 0;
+  }
 }
 
 /* ---------- Closing ---------- */
 
 .h-close {
   position: relative;
-  padding: clamp(80px, 12vw, 168px) 0;
+  padding: clamp(72px, 10vw, 144px) 0;
   overflow: hidden;
   background: var(--deep);
   color: var(--on-dark);
@@ -514,7 +478,7 @@
   max-width: 22ch;
   margin: 0;
   color: #ffffff;
-  font-size: clamp(1.75rem, 3.6vw, 3rem);
+  font-size: clamp(1.75rem, 3.4vw, 2.8rem);
   font-weight: 400;
   line-height: 1.12;
   letter-spacing: -0.02em;
@@ -522,8 +486,8 @@
 
 .h-close__text {
   max-width: 40ch;
-  margin: 16px 0 32px;
-  color: rgba(255, 255, 255, 0.82);
+  margin: 14px 0 28px;
+  color: rgba(255, 255, 255, 0.84);
   font-size: clamp(1.05rem, 1.3vw, 1.15rem);
 }
 
@@ -532,12 +496,12 @@
   align-items: center;
   gap: 20px;
   min-height: 52px;
-  padding: 0 28px;
+  padding: 0 24px;
   background: #ffffff;
   color: var(--ink);
   font-size: 0.85rem;
   font-weight: 500;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   text-decoration: none;
   transition: background-color 0.3s var(--ease);

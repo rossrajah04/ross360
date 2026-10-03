@@ -4,14 +4,11 @@ import TourStage from './TourStage.jsx';
 import { home } from '../../content/home.js';
 import { media } from '../../content/media.js';
 import { site } from '../../content/site.js';
-import { plans } from '../../content/pricing.js';
 
-// Homepage: the opening photograph and one tour, then what we create, how it works, business pricing,
-// about ROSS 360, and the enquiry.
+// Homepage: the opening photograph and one tour, then why a tour matters, its two uses, what you
+// receive and what it costs, and the enquiry.
 // The Step inside tour is the only example of a space on the page.
 // Wording comes from src/content/home.js and photographs from src/content/media.js.
-
-const pad = (number) => String(number).padStart(2, '0');
 
 function Arrow() {
   return (
@@ -79,110 +76,82 @@ export function StepInside() {
   );
 }
 
-// Everything below the tour shares one form: a section heading, an optional line of text, then the
-// content, on the same grid and left edge. Sections are separated by a single rule.
-function Section({ id, title, text, end = false, children }) {
+// Below the tour. One grid and one type scale throughout; the ground changes only where it helps:
+// the point about the tour stays on the tour's dark ground, the service details sit on the light page,
+// and the enquiry closes on the photograph.
+
+// Why a 360° tour: set directly under the tour it describes.
+export function Why() {
+  const { why } = home;
   return (
-    <section className={`h-sec${end ? ' h-sec--end' : ''}`} aria-labelledby={id}>
-      <div className="h-wrap h-sec__inner">
-        <header className="h-sec__head" data-reveal>
-          <h2 id={id} className="h-sec__title">
-            {title}
-          </h2>
-          {text ? <p className="h-sec__text">{text}</p> : null}
-        </header>
-        {children}
+    <section className="h-why" aria-labelledby="h-why-title">
+      <div className="h-wrap h-why__inner" data-reveal>
+        <h2 id="h-why-title" className="h-h2 h-why__title">
+          {why.title}
+        </h2>
+        <p className="h-why__text">{why.text}</p>
       </div>
     </section>
   );
 }
 
-// What we create.
-export function WhatWeCreate() {
-  const { create } = home;
+// Business and property: two uses of one service, side by side.
+export function Uses() {
   return (
-    <Section id="h-create-title" title={create.title} text={create.text}>
-      <ul className="h-deliver" data-reveal>
-        {create.items.map((item) => (
-          <li key={item} className="h-deliver__item">
-            {item}
-          </li>
+    <section className="h-uses" aria-label="Business and property">
+      <div className="h-wrap h-uses__grid">
+        {home.uses.map((use) => (
+          <div key={use.title} className="h-use" data-reveal>
+            <h2 className="h-h2">{use.title}</h2>
+            <p className="h-use__text">{use.text}</p>
+            <Link className="h-link" to={use.to}>
+              {use.link}
+              <Arrow />
+            </Link>
+          </div>
         ))}
-      </ul>
-    </Section>
+      </div>
+    </section>
   );
 }
 
-// How it works.
-export function HowItWorks() {
-  const { process } = home;
+// What you receive, and what it costs, in one band.
+export function Offer() {
+  const { receive, pricing } = home;
   return (
-    <Section id="h-how-title" title={process.title}>
-      <ol className="h-cols">
-        {process.steps.map((step, index) => (
-          <li key={step.title} className="h-cols__item" data-reveal>
-            <span className="h-step__num" aria-hidden="true">
-              {pad(index + 1)}
+    <section className="h-offer" aria-labelledby="h-receive-title">
+      <div className="h-wrap h-offer__grid">
+        <div className="h-receive" data-reveal>
+          <h2 id="h-receive-title" className="h-h2">
+            {receive.title}
+          </h2>
+          <p className="h-offer__text">{receive.text}</p>
+          <ul className="h-receive__list">
+            {receive.items.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+          <a className="h-link" href="#step-inside">
+            {receive.example}
+            <span className="h-arrow" aria-hidden="true">
+              ↑
             </span>
-            <h3 className="h-cols__name">{step.title}</h3>
-            <p className="h-cols__text">{step.text}</p>
-          </li>
-        ))}
-      </ol>
-    </Section>
-  );
-}
-
-// Business tour pricing.
-export function Pricing() {
-  const { pricing } = home;
-  return (
-    <Section id="h-pricing-title" title={pricing.title}>
-      <ul className="h-cols h-cols--prices">
-        {plans.map((plan) => {
-          const copy = pricing.plans[plan.id] || {};
-          return (
-            <li key={plan.id} className="h-cols__item h-plan" data-reveal>
-              <p className="h-plan__price">
-                £{plan.price}
-                {copy.plus ? '+' : ''}
-              </p>
-              <h3 className="h-cols__name h-plan__name">{plan.name}</h3>
-              <p className="h-cols__text h-plan__text">{copy.text || plan.summary}</p>
-            </li>
-          );
-        })}
-      </ul>
-      <div className="h-pricing__foot" data-reveal>
-        <p className="h-pricing__property">{pricing.property}</p>
-        <div className="h-pricing__actions">
-          <Link className="h-button" to={site.quoteLink.to}>
-            {pricing.cta}
-          </Link>
-          <Link className="h-link" to="/pricing">
-            {pricing.link}
-            <Arrow />
-          </Link>
+          </a>
+        </div>
+        <div className="h-from" data-reveal>
+          <h2 className="h-h2">{pricing.title}</h2>
+          <p className="h-offer__text">{pricing.text}</p>
+          <div className="h-from__actions">
+            <Link className="h-button" to={site.quoteLink.to}>
+              {pricing.quote}
+            </Link>
+            <Link className="h-button h-button--quiet" to="/pricing">
+              {pricing.view}
+            </Link>
+          </div>
         </div>
       </div>
-    </Section>
-  );
-}
-
-// About ROSS 360.
-export function About() {
-  const { about } = home;
-  return (
-    <Section id="h-about-title" title={about.title} end>
-      <div className="h-about" data-reveal>
-        <p className="h-about__lead">{about.lead}</p>
-        <p className="h-about__text">{about.text}</p>
-        <Link className="h-link" to="/about">
-          {about.link}
-          <Arrow />
-        </Link>
-      </div>
-    </Section>
+    </section>
   );
 }
 

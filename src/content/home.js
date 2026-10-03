@@ -21,48 +21,49 @@ export const home = {
     demoNote: 'This is a demonstration tour.',
   },
 
-  // Below the tour.
-  create: {
-    title: '360° virtual tours, produced for your space.',
-    text: 'We photograph your premises in 360° and produce an interactive virtual tour that customers, clients, buyers and tenants can explore online.',
-    items: ['360° Photography', 'Interactive Virtual Tour', 'Website Integration', 'Google Street View'],
+  // Below the tour. Directly after it, on the same ground, so the tour is the visual for this point.
+  why: {
+    title: 'More than photographs.',
+    text: 'A 360° virtual tour lets people move through a space themselves — understanding the layout, proportions and details before they visit.',
   },
 
-  process: {
-    title: 'From photography to finished tour.',
-    steps: [
-      { title: 'Capture', text: 'We photograph the agreed areas of your space in 360°.' },
-      { title: 'Produce', text: 'Your imagery is processed and assembled into an interactive virtual tour.' },
-      {
-        title: 'Deliver',
-        text: 'You receive a finished tour ready to share, embed on your website and, where appropriate, publish to Google Street View.',
-      },
-    ],
-  },
-
-  // Package names and prices come from pricing.js; these short descriptions are for the homepage.
-  pricing: {
-    title: 'Business 360° tours',
-    plans: {
-      essential: { text: 'For smaller premises and straightforward tours.' },
-      professional: { text: 'For larger spaces requiring a more comprehensive tour.' },
-      bespoke: { text: 'For larger or more complex premises.', plus: true },
+  uses: [
+    {
+      title: 'Business',
+      text: 'Give customers a better sense of your premises before they visit.',
+      link: 'Business tours',
+      to: '/businesses',
     },
-    property: 'Property projects are individually quoted based on size, location and requirements.',
-    cta: 'Request a Quote',
-    link: 'Full pricing details',
+    {
+      title: 'Property',
+      text: 'Let buyers, tenants and clients explore a property remotely before arranging a viewing.',
+      link: 'Property tours',
+      to: '/property',
+    },
+  ],
+
+  receive: {
+    title: 'What you receive',
+    // Written for the homepage; replace with ROSS 360's own wording if preferred.
+    text: 'A finished tour, delivered ready to use online.',
+    items: [
+      '360° photography',
+      'Interactive virtual tour',
+      'Website-ready embed',
+      'Google Street View publication where appropriate',
+    ],
+    example: 'See the example tour',
   },
 
-  about: {
-    title: site.brand,
-    lead: 'Professional 360° photography and virtual tours for businesses and property.',
-    // Written for the homepage; replace with ROSS 360's own wording if preferred.
-    text: 'ROSS 360 photographs commercial premises and properties in 360° and produces interactive virtual tours that can be shared online, embedded on a website and, where appropriate, published to Google Street View.',
-    link: 'About ROSS 360',
+  pricing: {
+    title: 'Business tours from £249',
+    text: 'Straightforward pricing for professional 360° tours. Property projects are quoted individually.',
+    view: 'View pricing',
+    quote: 'Request a Quote',
   },
 
   closing: {
-    title: 'Give people a better way to understand your space.',
+    title: 'Have a space worth exploring?',
     text: 'Request a quote for a professional 360° virtual tour.',
     cta: 'Request a Quote',
   },
