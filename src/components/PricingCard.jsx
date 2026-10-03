@@ -12,11 +12,11 @@ export default function PricingCard({ plan, quoteTo = '/get-a-quote?type=busines
       <p className="plan__summary">{plan.summary}</p>
       {plan.scope ? <p className="plan__scope">{plan.scope}</p> : null}
 
-      {plan.suitableFor.length > 0 ? (
+      {plan.includes.length > 0 ? (
         <>
-          <p className="plan__label">Typically suits</p>
+          <p className="plan__label">Includes</p>
           <ul className="plan__list">
-            {plan.suitableFor.map((item) => (
+            {plan.includes.map((item) => (
               <li key={item}>{item}</li>
             ))}
           </ul>

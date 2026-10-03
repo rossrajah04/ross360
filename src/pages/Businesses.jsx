@@ -5,10 +5,11 @@ import SectionHeading from '../components/SectionHeading.jsx';
 import PricingCard from '../components/PricingCard.jsx';
 import Checklist from '../components/Checklist.jsx';
 import MediaFrame from '../components/MediaFrame.jsx';
+import ProcessSteps from '../components/ProcessSteps.jsx';
 import CtaBand from '../components/CtaBand.jsx';
 import Button from '../components/Button.jsx';
-import { businessSectors, businessChannels, coreDeliverable } from '../content/services.js';
-import { plans, pricingNote } from '../content/pricing.js';
+import { businessPremises, projectIncludes, outOfScopeNote } from '../content/services.js';
+import { plans, pricingHeading, pricingIntro } from '../content/pricing.js';
 import { site } from '../content/site.js';
 
 export default function Businesses() {
@@ -16,89 +17,55 @@ export default function Businesses() {
     <>
       <Seo page="businesses" />
       <PageHero
-        eyebrow="For businesses"
-        title="360° virtual tours for businesses"
-        lead="A professionally produced tour of your premises, so customers know what to expect before they book, join or visit."
+        title="360° Virtual Tours for Businesses"
+        lead="Professional 360° photography and interactive virtual tours for commercial premises."
       >
         <div className="btn-row">
           <Button to="/get-a-quote?type=business">{site.cta.primary}</Button>
-          <Button href="#business-pricing" variant="secondary">
-            {site.cta.pricing}
-          </Button>
         </div>
       </PageHero>
 
       <MediaFrame image={site.images.business} tone="light" className="page-media container" />
 
-      <section className="section" aria-labelledby="sectors-heading">
-        <div className="container">
-          <SectionHeading
-            id="sectors-heading"
-            title="How businesses use a tour"
-            lead="The value of a tour depends on the decision your customers are making. These are the most common uses."
-          />
-          <ul className="rule-grid">
-            {businessSectors.map((item) => (
-              <li key={item.title}>
-                <h3>{item.title}</h3>
-                <p>{item.text}</p>
-              </li>
-            ))}
-          </ul>
+      <section className="section" aria-labelledby="premises-heading">
+        <div className="container split">
+          <SectionHeading id="premises-heading" title="Premises we photograph" lead="360° virtual tours for premises including:" />
+          <Checklist items={businessPremises} />
         </div>
       </section>
 
-      <section className="section section--soft" aria-labelledby="channels-heading">
+      <section className="section section--soft" aria-labelledby="receive-heading">
         <div className="container split">
           <SectionHeading
-            id="channels-heading"
-            title="Where the finished tour goes"
-            lead="You receive a link and embed code, so the tour can sit wherever customers look for you."
+            id="receive-heading"
+            title="A complete virtual tour, ready to use"
+            lead="Your project includes:"
           />
-          <ul className="rule-list">
-            {businessChannels.map((item) => (
-              <li key={item.title}>
-                <strong>{item.title}</strong>
-                <span>{item.text}</span>
-              </li>
-            ))}
-          </ul>
+          <div>
+            <Checklist items={projectIncludes} />
+            <p className="small">{outOfScopeNote}</p>
+          </div>
         </div>
       </section>
 
-      <section className="section" aria-labelledby="included-heading">
-        <div className="container split">
-          <SectionHeading
-            id="included-heading"
-            title="Included in every package"
-            lead="Packages differ by the size and complexity of the premises, not by what you receive."
-          />
-          <Checklist items={coreDeliverable} />
-        </div>
-      </section>
-
-      <section id="business-pricing" className="section section--soft" aria-labelledby="business-pricing-heading">
+      <section id="business-pricing" className="section" aria-labelledby="business-pricing-heading">
         <div className="container">
-          <SectionHeading id="business-pricing-heading" title="Business packages" lead={pricingNote} />
+          <SectionHeading id="business-pricing-heading" title={pricingHeading} lead={pricingIntro} />
           <div className="plans">
             {plans.map((plan) => (
               <PricingCard key={plan.id} plan={plan} />
             ))}
           </div>
           <p className="small">
-            <Link to="/pricing">See what affects the final price</Link>
+            <Link to="/pricing">Pricing factors</Link>
           </p>
         </div>
       </section>
 
-      <section className="section" aria-labelledby="next-heading">
-        <div className="container split">
-          <SectionHeading id="next-heading" title="What happens after you enquire" />
-          <ol className="next-steps">
-            <li>We reply {site.responseTime} and review the location and what needs to be captured.</li>
-            <li>We send a quote with your exact price, including any travel.</li>
-            <li>If you go ahead, you pay and we agree an appointment. If not, there is nothing to cancel.</li>
-          </ol>
+      <section className="section section--soft" aria-labelledby="process-heading">
+        <div className="container">
+          <SectionHeading id="process-heading" title="A straightforward process from photography to delivery" />
+          <ProcessSteps />
         </div>
       </section>
 

@@ -13,8 +13,7 @@ import TurnstileWidget from './TurnstileWidget.jsx';
 import Button from './Button.jsx';
 
 const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY || '';
-const SUCCESS_MESSAGE = `Thanks — your enquiry has been received. We’ll review the details and get back to you ${site.responseTime}.`;
-const GENERIC_ERROR = `Sorry, something went wrong sending your enquiry. Please try again, or email ${site.email}.`;
+const GENERIC_ERROR = `Your enquiry could not be sent. Please try again, or email ${site.email}.`;
 
 // Field order, used to focus the first invalid field.
 const FIELD_ORDER = [
@@ -120,10 +119,11 @@ export default function QuoteForm() {
   if (status === 'success') {
     return (
       <div className="form-success" role="status" tabIndex={-1} ref={successRef}>
-        <h2>Enquiry received</h2>
-        <p>{SUCCESS_MESSAGE}</p>
+        <h2>Thank you.</h2>
+        <p>Your enquiry has been received.</p>
+        <p>We’ll review the details and respond with a quotation or any information we need to prepare one.</p>
         <Button to="/" variant="secondary">
-          Back to home
+          Return to the home page
         </Button>
       </div>
     );
@@ -269,12 +269,12 @@ export default function QuoteForm() {
       {TURNSTILE_SITE_KEY ? <TurnstileWidget siteKey={TURNSTILE_SITE_KEY} onToken={handleToken} /> : null}
 
       <p className="small">
-        Sending this form does not commit you to anything. Fields marked * are required. See our{' '}
+        There is no obligation to proceed. Fields marked * are required. See our{' '}
         <Link to="/privacy">Privacy Notice</Link>.
       </p>
 
       <button type="submit" className="btn btn--primary btn--block" disabled={status === 'submitting'}>
-        {status === 'submitting' ? 'Sending…' : 'Request a quote'}
+        {status === 'submitting' ? 'Sending…' : 'Request a Quote'}
       </button>
       <p className="visually-hidden" aria-live="polite">
         {status === 'submitting' ? 'Sending your enquiry' : ''}

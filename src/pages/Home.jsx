@@ -1,18 +1,15 @@
 import Seo from '../components/Seo.jsx';
 import CtaBand from '../components/CtaBand.jsx';
+import ExampleTourSection from '../components/ExampleTourSection.jsx';
 import {
   Hero,
-  TourExperience,
   WhatWeProvide,
   WhyUse,
-  WhoItsFor,
+  WhoWeWorkWith,
   WhatYouReceive,
   HowItWorks,
   PricingPreview,
-  PropertySection,
   PortfolioSection,
-  WebsiteAndGoogle,
-  FaqSection,
 } from '../components/home/HomeSections.jsx';
 
 export default function Home() {
@@ -20,17 +17,14 @@ export default function Home() {
     <>
       <Seo page="home" />
       <Hero />
-      <TourExperience />
+      <ExampleTourSection />
       <WhatWeProvide />
       <WhyUse />
-      <WhoItsFor />
+      <WhoWeWorkWith />
       <WhatYouReceive />
       <HowItWorks />
       <PricingPreview />
-      <PropertySection />
       <PortfolioSection />
-      <WebsiteAndGoogle />
-      <FaqSection />
       <CtaBand />
     </>
   );

@@ -17,13 +17,11 @@ export const site = {
   // Call-to-action wording
   cta: {
     primary: 'Get a Quote',
+    quote: 'Request a Quote',
     work: 'View Our Work',
-    example: 'View Example Tour',
-    pricing: 'View Pricing',
-    business: 'Explore Business Tours',
-    property: 'Explore Property Tours',
-    agency: 'Enquire about agency requirements',
-    finalHeading: 'Tell us about the space and we’ll send you a clear price',
+    example: 'Open Example Tour',
+    property: 'Request a Property Quote',
+    finalHeading: 'Tell us about the property or premises you would like photographed.',
   },
 
   // Main navigation (the quote link is rendered separately as the prominent button)
@@ -38,13 +36,14 @@ export const site = {
   ],
   quoteLink: { label: 'Get a Quote', to: '/get-a-quote' },
 
-  // Example tour. A demonstration only — never a client project.
-  // Paste a Panoee embed URL into `embedUrl` to show it on the homepage and Portfolio page.
-  // While it is empty, the homepage explains how a tour works instead, and nothing links to it.
+  // Example tour. While `isRealProject` is false it is labelled as a demonstration.
+  // Set `embedUrl` (Panoee embed) and/or `openUrl` (opens in a new tab) to show the
+  // "Explore a 360° Tour" section on the homepage and Portfolio page. While both are empty
+  // the section is not shown, so nothing links to a tour that does not exist.
   exampleTour: {
     isRealProject: false,
     embedUrl: '',
-    openUrl: '', // optional: link to open the tour in a new tab
+    openUrl: '',
     title: 'Example tour',
   },
 
@@ -66,15 +65,9 @@ export const site = {
 
   // Google wording
   google: {
-    summary:
-      'Where appropriate, and only with your separate authorisation, suitable imagery can also be published to Google Street View. Street View is a Google platform and is separate from your ROSS 360 tour.',
     disclaimer:
-      'Google decides whether imagery is accepted and controls processing time, placement and availability. None of these can be guaranteed, and publishing does not guarantee any change in search rankings.',
+      'Google decides whether imagery is accepted and controls processing time, placement and availability. Publication cannot be guaranteed and does not guarantee any change in search rankings.',
   },
-
-  // Property pricing wording (property prices are not final)
-  propertyPricingNote:
-    'Property tours are individually quoted based on the size, layout and requirements of each property.',
 
   // Working policy — reflected in the Terms & Conditions
   policy: {
@@ -87,4 +80,3 @@ export const site = {
   },
 };
 
-export const hostingIncludedLine = `${site.hosting.includedMonths} months of ROSS 360 interactive-tour hosting is included.`;

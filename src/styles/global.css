@@ -1421,6 +1421,49 @@ main:focus {
   color: var(--muted-on-dark);
 }
 
+/* Copy revision additions */
+.hero__support {
+  max-width: 58ch;
+  margin-bottom: 0;
+  color: var(--muted-on-dark);
+}
+
+.section-follow {
+  margin-top: 56px;
+}
+
+.section-note {
+  margin-top: 24px;
+  max-width: 70ch;
+}
+
+.example-note {
+  margin: 16px 0 0;
+}
+
+.plain-list {
+  margin: 0 0 24px;
+  padding: 0;
+  list-style: none;
+}
+
+.plain-list li {
+  padding: 6px 0;
+  border-top: 1px solid var(--line);
+}
+
+.plain-list li:last-child {
+  border-bottom: 1px solid var(--line);
+}
+
+.text-link {
+  font-weight: 600;
+}
+
+.quote-aside p:not(.quote-aside__note) {
+  margin-bottom: 14px;
+}
+
 /* ---------- Forms ---------- */
 
 .form {

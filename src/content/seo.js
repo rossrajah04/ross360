@@ -9,48 +9,46 @@ export const pages = {
   home: {
     path: '/',
     title: 'ROSS 360 | 360° Virtual Tours for Businesses & Property',
-    description:
-      'Professional 360° virtual tours and 360° photography for businesses, estate agents and commercial property. UK-wide. Business tours from £' + lowestPrice + '.',
+    description: `Professional 360° photography and interactive virtual tours for commercial premises and property. UK-wide service. Business tours from £${lowestPrice}.`,
   },
   virtualTours: {
     path: '/virtual-tours',
-    title: '360° Virtual Tour Services | ROSS 360',
+    title: '360° Virtual Tours | ROSS 360',
     description:
-      'What a ROSS 360 virtual tour includes: 360° photography, connected viewpoints, website integration, 12 months of hosting, and how it differs from Google Street View.',
+      'Interactive 360° photography that allows visitors to explore a space online, and how a ROSS 360 virtual tour differs from Google Street View.',
   },
   businesses: {
     path: '/businesses',
     title: '360° Virtual Tours for Businesses | ROSS 360',
-    description: `360° virtual tours for restaurants, cafés, gyms, hotels, venues, retail, clinics and offices, UK-wide. Business packages from £${lowestPrice}.`,
+    description: `360° virtual tours for restaurants, gyms, hotels, venues, retail premises, showrooms, clinics and offices. UK-wide. Business tours from £${lowestPrice}.`,
   },
   property: {
     path: '/property',
-    title: '360° Property Tours for Estate Agents & Developers | ROSS 360',
+    title: '360° Property Tours | ROSS 360',
     description:
-      '360° property tours for estate agents, developers and commercial property, UK-wide. Single properties or ongoing agency work, individually quoted.',
+      '360° photography and interactive virtual tours for residential and commercial property, estate agents and property professionals. Individually quoted.',
   },
   portfolio: {
     path: '/portfolio',
     title: 'Our Work | ROSS 360',
-    description:
-      'Completed ROSS 360 virtual tour projects for businesses and property, published with each client\'s permission.',
+    description: 'Selected 360° virtual tours produced by ROSS 360.',
   },
   pricing: {
     path: '/pricing',
     title: '360° Virtual Tour Pricing | ROSS 360',
-    description: `Business 360° virtual tour packages from £${lowestPrice}, what each package suits, what affects the final price, and how property tours are quoted.`,
+    description: `Business virtual tours from £${lowestPrice}. Starting prices for commercial premises, pricing factors, and individually quoted property tours.`,
   },
   about: {
     path: '/about',
-    title: 'About ROSS 360 | Founded by Ross Rajah',
+    title: 'About ROSS 360',
     description:
-      'ROSS 360 is a UK-wide 360° virtual tour service founded and run by Ross Rajah, who handles every project from enquiry to delivery.',
+      'Professional 360° photography and virtual tours for businesses and property. ROSS 360 was founded by Ross Rajah.',
   },
   quote: {
     path: '/get-a-quote',
-    title: 'Get a Quote | ROSS 360',
+    title: 'Request a Quote | ROSS 360',
     description:
-      'Request a quote for a 360° virtual tour of your business or property. No obligation. We reply within 1 business day.',
+      'Tell us about the property or premises you would like photographed. There is no obligation to proceed.',
   },
   privacy: {
     path: '/privacy',
@@ -86,7 +84,7 @@ const organization = {
   name: site.brand,
   url: site.url,
   email: site.email,
-  description: '360° virtual tours and 360° photography for businesses and property, UK-wide.',
+  description: 'Professional 360° photography and interactive virtual tours for commercial premises and property, UK-wide.',
   founder: { '@type': 'Person', name: site.founder },
   areaServed: { '@type': 'Country', name: 'United Kingdom' },
 };

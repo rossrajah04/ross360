@@ -130,7 +130,7 @@ export async function onRequestPost({ request, env }) {
   // Timing check
   const elapsed = Date.now() - Number(body.startedAt);
   if (!Number.isFinite(elapsed) || elapsed < MIN_FILL_MS) {
-    return json({ ok: false, message: 'That was very quick. Please check your details and send again.' }, 400);
+    return json({ ok: false, message: 'Please check your details and send the form again.' }, 400);
   }
 
   // Optional Turnstile
@@ -152,7 +152,7 @@ export async function onRequestPost({ request, env }) {
     return json(
       {
         ok: false,
-        message: `Sorry, enquiries can't be sent from this page right now. Please email ${DEFAULT_TO} directly.`,
+        message: `Enquiries cannot be sent from this page at present. Please email ${DEFAULT_TO}.`,
       },
       503,
     );
@@ -174,7 +174,7 @@ export async function onRequestPost({ request, env }) {
     return json(
       {
         ok: false,
-        message: `Sorry, something went wrong sending your enquiry. Please try again, or email ${DEFAULT_TO} directly.`,
+        message: `Your enquiry could not be sent. Please try again, or email ${DEFAULT_TO}.`,
       },
       502,
     );
@@ -186,11 +186,11 @@ export async function onRequestPost({ request, env }) {
       from: env.QUOTE_FROM_EMAIL,
       to: [values.email],
       reply_to: env.QUOTE_TO_EMAIL || DEFAULT_TO,
-      subject: 'We have received your enquiry — ROSS 360',
+      subject: 'Your enquiry to ROSS 360',
       text:
         `Hello ${oneLine(values.name)},\n\n` +
-        'Thanks — your enquiry has been received. We will review the details and get back to you ' +
-        `${site.responseTime}.\n\n` +
+        'Thank you. Your enquiry has been received.\n\n' +
+        'We will review the details and respond with a quotation or any information we need to prepare one.\n\n' +
         `${site.brand}\n${site.domain}`,
     }).catch(() => false);
   }
