@@ -1,19 +1,19 @@
-import { Link } from 'react-router-dom';
 import Seo from '../components/Seo.jsx';
 import TourStage from '../components/home/TourStage.jsx';
+import TourEmbed from '../components/TourEmbed.jsx';
 import { Closing } from '../components/home/HomeSections.jsx';
 import useReveal from '../lib/useReveal.js';
 import { virtualTours } from '../content/virtualTours.js';
-import { outOfScopeNote, reasons } from '../content/services.js';
 import { site } from '../content/site.js';
 import '../styles/home.css';
 import '../styles/virtual-tours.css';
 
-// Virtual Tours: what a tour is, shown with one live example, then the details set as plain rows
-// (heading on the left, content on the right) in the homepage's type and spacing: how it works, how it
-// compares, why ROSS 360, what is included, where it is used, the process and where to go next, then the
-// homepage's closing enquiry. The `home` class gives the page the homepage's tokens and shared styles.
-// The only tour shown is the external Avalon Hotel example, labelled and credited as someone else's work.
+// Virtual Tours: the product first, then a few short parts, each composed differently.
+//  - The live tour, then what a tour is beside the same tour on a phone, both on the dark ground.
+//  - Why ROSS 360, what you receive, how it works and how a tour differs, on the light page.
+//  - The homepage's closing enquiry.
+// The `home` class gives the page the homepage's tokens and shared styles. The only tour shown is the
+// external Avalon Hotel example, labelled and credited as someone else's work; no imagery is copied from it.
 
 function Arrow() {
   return (
@@ -23,26 +23,9 @@ function Arrow() {
   );
 }
 
-// `variants` adds modifiers: first, last, major (a new part of the page: more space and a darker rule)
-// and wide (heading above its content rather than beside it).
-function Row({ id, title, variants = [], children }) {
-  return (
-    <section className={['vt-row', ...variants.map((v) => `vt-row--${v}`)].join(' ')} aria-labelledby={id}>
-      <div className="h-wrap vt-row__inner">
-        <h2 id={id} className="h-h2 vt-row__title" data-reveal>
-          {title}
-        </h2>
-        <div className="vt-row__body" data-reveal>
-          {children}
-        </div>
-      </div>
-    </section>
-  );
-}
-
 export default function VirtualTours() {
   useReveal();
-  const { intro, how, compare, why, included, uses, process, next } = virtualTours;
+  const { intro, what, why, receive, how, differs } = virtualTours;
   const example = site.stepInsideTour;
 
   return (
@@ -78,85 +61,91 @@ export default function VirtualTours() {
         ) : null}
       </section>
 
-      <Row id="vt-how" title={how.title} variants={['first']}>
-        <p className="vt-text vt-text--lead">{how.text}</p>
-      </Row>
+      {/* What a tour is, beside the same tour on a phone. The phone is shown only where the two sit
+          side by side; on a phone the tour above is already the phone view. */}
+      <section className="vt-what" aria-labelledby="vt-what-title">
+        <div className="h-wrap vt-what__inner">
+          <div className="vt-what__copy" data-reveal>
+            <h2 id="vt-what-title" className="vt-what__title">
+              {what.title}
+            </h2>
+            <p className="vt-what__lead">{what.lead}</p>
+            <p className="vt-what__text">{what.text}</p>
+          </div>
+          {example.embedUrl ? (
+            <figure className="h-phone vt-what__phone" data-reveal>
+              <div className="h-phone__frame">
+                <TourEmbed tour={{ ...example, title: `${example.title} (phone view)` }} className="h-phone__screen" />
+              </div>
+              {example.external ? <figcaption className="h-phone__caption">{example.credit}</figcaption> : null}
+            </figure>
+          ) : null}
+        </div>
+      </section>
 
-      <Row id="vt-compare" title={compare.title}>
-        <p className="vt-text">{compare.text}</p>
-        <ul className="vt-list vt-pairs">
-          {compare.items.map((item) => (
-            <li key={item.title} className="vt-item vt-pair">
-              <h3 className="vt-item__title">{item.title}</h3>
-              <p className="vt-item__text">{item.text}</p>
-            </li>
-          ))}
-        </ul>
-        <p className="vt-small">
-          {compare.note} {site.google.disclaimer}
-        </p>
-      </Row>
+      <section className="vt-why" aria-labelledby="vt-why-title">
+        <div className="h-wrap">
+          <h2 id="vt-why-title" className="h-h2 vt-why__title" data-reveal>
+            {why.title}
+          </h2>
+          <ul className="vt-why__list">
+            {why.items.map((item) => (
+              <li key={item.title} className="vt-reason" data-reveal>
+                <h3 className="vt-reason__title">{item.title}</h3>
+                <p className="vt-reason__text">{item.text}</p>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
 
-      <Row id="vt-why" title={why.title} variants={['major', 'wide']}>
-        <ul className="vt-points">
-          {why.items.map((item) => (
-            <li key={item.title} className="vt-point">
-              <h3 className="vt-point__title">{item.title}</h3>
-              <p className="vt-point__text">{item.text}</p>
-            </li>
-          ))}
-        </ul>
-      </Row>
+      <section className="vt-receive" aria-labelledby="vt-receive-title">
+        <div className="h-wrap vt-receive__inner" data-reveal>
+          <h2 id="vt-receive-title" className="vt-receive__title">
+            {receive.title}
+          </h2>
+          <ul className="vt-receive__list">
+            {receive.items.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        </div>
+      </section>
 
-      <Row id="vt-included" title={included.title} variants={['major']}>
-        <ul className="vt-list vt-list--two">
-          {included.items.map((item) => (
-            <li key={item}>{item}</li>
-          ))}
-        </ul>
-        <p className="vt-small">{outOfScopeNote}</p>
-      </Row>
-
-      <Row id="vt-uses" title={uses.title}>
-        <ul className="vt-list vt-pairs">
-          {reasons.map((item) => (
-            <li key={item.title} className="vt-item vt-pair">
-              <h3 className="vt-item__title">{item.title}</h3>
-              <p className="vt-item__text">{item.text}</p>
-            </li>
-          ))}
-        </ul>
-      </Row>
-
-      <Row id="vt-process" title={process.title} variants={['major']}>
-        <ol className="vt-list vt-pairs vt-steps">
-          {process.steps.map((step, index) => (
-            <li key={step.title} className="vt-item vt-pair">
-              <h3 className="vt-item__title">
-                <span className="vt-steps__num">{String(index + 1).padStart(2, '0')}</span>
-                {step.title}
-              </h3>
-              <p className="vt-item__text">{step.text}</p>
-            </li>
-          ))}
-        </ol>
-      </Row>
-
-      <Row id="vt-next" title={next.title} variants={['last']}>
-        <ul className="vt-list vt-pairs">
-          {next.links.map((link) => (
-            <li key={link.to} className="vt-item">
-              <Link className="vt-next vt-pair" to={link.to}>
-                <span className="vt-next__title">
-                  {link.title}
-                  <Arrow />
+      <section className="vt-how" aria-labelledby="vt-how-title">
+        <div className="h-wrap">
+          <h2 id="vt-how-title" className="h-h2" data-reveal>
+            {how.title}
+          </h2>
+          <ol className="vt-how__steps">
+            {how.steps.map((step, index) => (
+              <li key={step.title} className="vt-step" data-reveal>
+                <span className="vt-step__num" aria-hidden="true">
+                  {String(index + 1).padStart(2, '0')}
                 </span>
-                <span className="vt-item__text">{link.text}</span>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      </Row>
+                <h3 className="vt-step__title">{step.title}</h3>
+                <p className="vt-step__text">{step.text}</p>
+              </li>
+            ))}
+          </ol>
+        </div>
+      </section>
+
+      <section className="vt-differs" aria-labelledby="vt-differs-title">
+        <div className="h-wrap vt-differs__inner">
+          <h2 id="vt-differs-title" className="h-h2 vt-differs__title" data-reveal>
+            {differs.title}
+          </h2>
+          <dl className="vt-differs__list" data-reveal>
+            {differs.items.map((item) => (
+              <div key={item.title} className={`vt-kind${item.ours ? ' vt-kind--ours' : ''}`}>
+                <dt className="vt-kind__title">{item.title}</dt>
+                <dd className="vt-kind__text">{item.text}</dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+      </section>
 
       <Closing />
     </div>

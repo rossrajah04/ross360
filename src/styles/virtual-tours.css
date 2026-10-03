@@ -1,6 +1,8 @@
-/* Virtual Tours page. Builds on the homepage styles (home.css): the same measure, heading size, text
-   size, links and closing band. One live tour on the dark ground at the top, then the details on the
-   light page as rows divided by rules, each with its heading on the left and content on the right. */
+/* Virtual Tours page. Builds on the homepage styles (home.css): the same measure, type, links, phone
+   frame and closing band. The product first on the dark ground (the live tour, then what a tour is
+   beside the same tour on a phone), then four short parts on the light page, each composed differently:
+   three reasons divided by rules, the deliverable as one panel, three stages on a line, and the
+   distinction between photographs, a tour and Street View. */
 
 /* This page keeps the site's standard measure, so it lines up with the header and footer. */
 .home.vt {
@@ -10,7 +12,7 @@
 /* ---------- Introduction and the example tour ---------- */
 
 .vt-intro {
-  padding: clamp(48px, 6vw, 96px) 0 var(--h-gap);
+  padding: clamp(48px, 6vw, 96px) 0 0;
   background: var(--deep);
   color: var(--on-dark);
 }
@@ -60,246 +62,305 @@
   }
 }
 
-/* ---------- Rows ---------- */
+/* ---------- What is a 360° virtual tour ---------- */
 
-.vt-row {
-  padding-top: clamp(40px, 5vw, 72px);
+.vt-what {
+  padding: clamp(56px, 7vw, 112px) 0 var(--h-gap);
+  background: var(--deep);
+  color: var(--on-dark);
 }
 
-.vt-row--first {
-  padding-top: var(--h-gap);
-}
-
-.vt-row__inner {
+.vt-what__inner {
   display: grid;
-  gap: 20px;
-  padding-top: clamp(28px, 3vw, 40px);
+  gap: 40px;
+}
+
+.vt-what__title {
+  max-width: 16ch;
+  margin: 0;
+  color: #ffffff;
+  font-size: clamp(1.75rem, 3.4vw, 2.9rem);
+  font-weight: 400;
+  line-height: 1.1;
+  letter-spacing: -0.025em;
+}
+
+.vt-what__lead {
+  max-width: 34ch;
+  margin: clamp(20px, 2.4vw, 32px) 0 0;
+  color: #ffffff;
+  font-size: clamp(1.2rem, 1.7vw, 1.45rem);
+  line-height: 1.45;
+}
+
+.vt-what__text {
+  max-width: 44ch;
+  margin: 16px 0 0;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: clamp(1.05rem, 1.3vw, 1.15rem);
+  line-height: 1.55;
+}
+
+@media (min-width: 900px) {
+  .vt-what__inner {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: 0 32px;
+    align-items: center;
+  }
+  .vt-what__copy {
+    grid-column: 1 / 7;
+  }
+}
+
+/* ---------- Why ROSS 360: three reasons, divided by rules ---------- */
+
+.vt-why {
+  padding: var(--h-gap) 0 0;
+}
+
+.vt-why__list {
+  display: grid;
+  margin: clamp(28px, 3vw, 44px) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.vt-reason {
+  padding: 24px 0;
   border-top: 1px solid var(--line);
 }
 
-.vt-row--first .vt-row__inner {
-  padding-top: 0;
-  border-top: 0;
+.vt-reason__title {
+  margin: 0;
+  color: var(--ink);
+  font-size: clamp(1.3rem, 1.9vw, 1.6rem);
+  font-weight: 400;
+  line-height: 1.2;
+  letter-spacing: -0.015em;
 }
 
-.vt-row--last {
-  padding-bottom: var(--h-gap);
-}
-
-/* The start of a new part of the page (why ROSS 360, what you receive, the process): more space above
-   and a darker rule. */
-.vt-row--major {
-  padding-top: clamp(56px, 6.5vw, 96px);
-}
-
-.vt-row--major .vt-row__inner {
-  border-top-color: var(--line-strong);
-}
-
-.vt-row__title {
-  max-width: 20ch;
-}
-
-.vt-row__body {
-  min-width: 0;
-}
-
-@media (min-width: 1000px) {
-  .vt-row__inner {
-    grid-template-columns: repeat(12, minmax(0, 1fr));
-    gap: 0 32px;
-  }
-  .vt-row--wide .vt-row__inner {
-    row-gap: 36px;
-  }
-  .vt-row--wide .vt-row__title,
-  .vt-row--wide .vt-row__body {
-    grid-column: 1 / -1;
-  }
-  .vt-row__title {
-    grid-column: 1 / 5;
-  }
-  .vt-row__body {
-    grid-column: 6 / 13;
-  }
-}
-
-/* ---------- Content ---------- */
-
-.vt-text {
-  max-width: 52ch;
-  margin: 0 0 16px;
+.vt-reason__text {
+  max-width: 34ch;
+  margin: 12px 0 0;
   color: var(--ink-soft);
   font-size: clamp(1.05rem, 1.3vw, 1.15rem);
   line-height: 1.55;
 }
 
-.vt-text--lead {
-  margin: 0;
-  color: var(--ink);
-  font-size: clamp(1.15rem, 1.5vw, 1.3rem);
+@media (min-width: 900px) {
+  .vt-why__list {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    border-top: 1px solid var(--line-strong);
+  }
+  .vt-reason {
+    padding: 32px 32px 8px;
+    border-top: 0;
+  }
+  .vt-reason:first-child {
+    padding-left: 0;
+  }
+  .vt-reason + .vt-reason {
+    border-left: 1px solid var(--line);
+  }
 }
 
-.vt-small {
-  max-width: 60ch;
-  margin: 16px 0 0;
+/* ---------- What you receive: one panel, one deliverable ---------- */
+
+.vt-receive {
+  padding: var(--h-gap) 0 0;
+}
+
+.vt-receive__inner {
+  padding: clamp(32px, 5vw, 72px) clamp(24px, 5vw, 72px);
+  background: var(--bg-tone);
+}
+
+.vt-receive__title {
+  margin: 0;
   color: var(--muted);
-  font-size: 0.92rem;
-  line-height: 1.55;
+  font-size: clamp(1.05rem, 1.3vw, 1.15rem);
+  font-weight: 400;
 }
 
-.vt-list {
-  display: grid;
-  margin: 0;
+.vt-receive__list {
+  margin: 16px 0 0;
   padding: 0;
   list-style: none;
 }
 
-.vt-list > li {
-  padding: 12px 0;
-  border-top: 1px solid var(--line);
+.vt-receive__list li {
+  padding: 6px 0;
   color: var(--ink);
-  font-size: 1.05rem;
-  line-height: 1.45;
+  font-size: clamp(1.3rem, 2.6vw, 2.2rem);
+  font-weight: 400;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
 }
 
-.vt-list > li:last-child {
+/* On wider screens the five items run on as one line of type, separated by thin slashes. */
+@media (min-width: 900px) {
+  .vt-receive__list li {
+    display: inline-block;
+    padding: 0;
+    line-height: 1.4;
+  }
+  .vt-receive__list li:not(:last-child)::after {
+    content: '/';
+    margin: 0 0.45em;
+    color: var(--muted);
+    font-weight: 300;
+  }
+}
+
+/* ---------- How it works: three stages on one line ---------- */
+
+.vt-how {
+  padding: var(--h-gap) 0 0;
+}
+
+.vt-how__steps {
+  display: grid;
+  margin: clamp(28px, 3vw, 44px) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Phones: the stages run down a fine line, each marked with a point. */
+.vt-step {
+  position: relative;
+  padding: 0 0 28px 28px;
+  border-left: 1px solid var(--line-strong);
+}
+
+.vt-step:last-child {
+  padding-bottom: 0;
+  border-left-color: transparent;
+}
+
+.vt-step::before {
+  content: '';
+  position: absolute;
+  top: 6px;
+  left: -5px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--ink);
+}
+
+.vt-step__num {
+  display: block;
+  color: var(--muted);
+  font-size: 0.95rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.vt-step__title {
+  margin: 6px 0 0;
+  color: var(--ink);
+  font-size: clamp(1.3rem, 1.9vw, 1.6rem);
+  font-weight: 400;
+  line-height: 1.2;
+  letter-spacing: -0.015em;
+}
+
+.vt-step__text {
+  max-width: 32ch;
+  margin: 10px 0 0;
+  color: var(--ink-soft);
+  font-size: clamp(1.05rem, 1.3vw, 1.15rem);
+  line-height: 1.55;
+}
+
+/* Wider screens: the line runs across, with the three stages along it. */
+@media (min-width: 760px) {
+  .vt-how__steps {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0 32px;
+    border-top: 1px solid var(--line-strong);
+  }
+  .vt-step,
+  .vt-step:last-child {
+    padding: 28px 0 0;
+    border-left: 0;
+  }
+  .vt-step::before {
+    top: -5px;
+    left: 0;
+  }
+}
+
+/* ---------- How a 360° tour differs ---------- */
+
+.vt-differs {
+  padding: var(--h-gap) 0;
+}
+
+.vt-differs__inner {
+  display: grid;
+  gap: 28px;
+}
+
+.vt-differs__list {
+  margin: 0;
+}
+
+.vt-kind {
+  padding: 18px 0;
+  border-top: 1px solid var(--line);
+}
+
+.vt-kind:last-child {
   border-bottom: 1px solid var(--line);
 }
 
-.vt-item.vt-item {
-  padding: 18px 0;
-}
-
-.vt-item__title {
-  margin: 0;
-  color: var(--ink);
-  font-size: 1.1rem;
+.vt-kind__title {
+  color: var(--muted);
+  font-size: 1rem;
   font-weight: 500;
-  line-height: 1.35;
 }
 
-.vt-item__text {
-  display: block;
-  max-width: 48ch;
+.vt-kind__text {
+  max-width: 46ch;
   margin: 6px 0 0;
   color: var(--ink-soft);
-  font-size: 1rem;
+  font-size: clamp(1.05rem, 1.3vw, 1.15rem);
   line-height: 1.55;
 }
 
-.vt-steps__num {
-  display: inline-block;
-  min-width: 2.2em;
-  color: var(--muted);
-  font-weight: 400;
+/* The ROSS 360 tour is set in full ink between the two it is compared with. */
+.vt-kind--ours {
+  border-top-color: var(--line-strong);
 }
 
-/* Title and text side by side once there is room, so each point reads as one line of a list. */
-@media (min-width: 760px) {
-  .vt-pair {
+.vt-kind--ours + .vt-kind {
+  border-top-color: var(--line-strong);
+}
+
+.vt-kind--ours .vt-kind__title,
+.vt-kind--ours .vt-kind__text {
+  color: var(--ink);
+}
+
+@media (min-width: 900px) {
+  .vt-differs__inner {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: 0 32px;
+  }
+  .vt-differs__title {
+    grid-column: 1 / 5;
+    max-width: 14ch;
+  }
+  .vt-differs__list {
+    grid-column: 6 / 13;
+  }
+  .vt-kind {
     display: grid;
-    grid-template-columns: minmax(0, 15rem) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 13rem) minmax(0, 1fr);
     gap: 0 32px;
     align-items: baseline;
   }
-  .vt-pair .vt-item__text {
+  .vt-kind__text {
     margin-top: 0;
-  }
-}
-
-.vt-text + .vt-list {
-  margin-top: 24px;
-}
-
-
-.vt-next {
-  display: block;
-  color: inherit;
-  text-decoration: none;
-}
-
-.vt-next__title {
-  display: inline-flex;
-  align-items: center;
-  gap: 12px;
-  color: var(--ink);
-  font-size: 1.1rem;
-  font-weight: 500;
-}
-
-.vt-next:hover .vt-next__title {
-  text-decoration: underline;
-  text-underline-offset: 4px;
-}
-
-.vt-next:hover .h-arrow {
-  transform: translateX(6px);
-}
-
-@media (min-width: 640px) {
-  .vt-list--two {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    column-gap: 32px;
-  }
-  /* In two columns, both items of the last row carry the closing rule. */
-  .vt-list--two > li:nth-last-child(2):nth-child(odd),
-  .vt-list--two > li:nth-last-child(2):nth-child(even) {
-    border-bottom: 1px solid var(--line);
-  }
-}
-
-/* ---------- Why ROSS 360 ----------
-   The four points side by side under the heading, each under a short dark rule, so the section reads
-   as ROSS 360's approach rather than another list. */
-
-.vt-points {
-  display: grid;
-  gap: 24px 32px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.vt-point {
-  padding-top: 16px;
-  border-top: 1px solid var(--line-strong);
-}
-
-/* Stacked on a phone, the first point sits straight under the heading and its rule. */
-@media (max-width: 639px) {
-  .vt-point:first-child {
-    padding-top: 0;
-    border-top: 0;
-  }
-}
-
-.vt-point__title {
-  margin: 0;
-  color: var(--ink);
-  font-size: clamp(1.15rem, 1.4vw, 1.3rem);
-  font-weight: 400;
-  line-height: 1.3;
-  letter-spacing: -0.01em;
-}
-
-.vt-point__text {
-  max-width: 40ch;
-  margin: 8px 0 0;
-  color: var(--ink-soft);
-  font-size: 1rem;
-  line-height: 1.55;
-}
-
-@media (min-width: 640px) {
-  .vt-points {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    row-gap: 32px;
-  }
-}
-
-@media (min-width: 1000px) {
-  .vt-points {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
