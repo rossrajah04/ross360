@@ -311,9 +311,11 @@
   line-height: 1.55;
 }
 
-/* A plain phone outline around the live tour: the product as people will see it on a phone. */
+/* A plain phone outline around the live tour: the product as people will see it on a phone. Shown
+   only where the text and phone sit side by side; on a phone or small tablet the visitor is already
+   looking at the site on a phone, so it is hidden (and, being hidden, the iframe is not loaded). */
 .h-phone {
-  width: min(72%, 260px);
+  display: none;
   margin: 0;
 }
 
@@ -346,6 +348,7 @@
     grid-column: 1 / 7;
   }
   .h-phone {
+    display: block;
     grid-column: 8 / 13;
     justify-self: center;
     width: min(100%, 300px);
