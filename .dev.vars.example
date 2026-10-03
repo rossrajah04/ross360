@@ -1,0 +1,17 @@
+# Copy to `.dev.vars` (git-ignored) for local testing of the Pages Function with `wrangler pages dev`.
+# In production, set these in Cloudflare Pages -> Settings -> Variables and Secrets.
+
+# Required for enquiry emails
+RESEND_API_KEY=
+# Must be an address on a domain verified in Resend, e.g. "ROSS 360 <enquiries@ross360.co.uk>"
+QUOTE_FROM_EMAIL=
+
+# Optional (defaults to ross@ross360.co.uk)
+QUOTE_TO_EMAIL=ross@ross360.co.uk
+# Optional: set to "true" to also send the customer an acknowledgement email
+SEND_ACKNOWLEDGEMENT=false
+# Optional: Cloudflare Turnstile *secret key* (pair with VITE_TURNSTILE_SITE_KEY)
+TURNSTILE_SECRET_KEY=
+
+# Reserved for later. Not used by any code yet (see README: Stripe).
+# STRIPE_SECRET_KEY=
