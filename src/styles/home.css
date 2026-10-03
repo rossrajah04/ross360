@@ -267,10 +267,10 @@
   }
 }
 
-/* ---------- Below the tour: one sequence ----------
-   Dark continues from the tour into why it matters; the page then turns light for the comparison,
-   the kinds of space, the process and the fees, and closes on the photograph. Sections are divided by
-   rules and space rather than boxes. */
+/* ---------- Below the tour ----------
+   Dark continues from the tour into why it matters. Every section after it shares one layout: the
+   heading on the left, the content on the right, divided by rules and space rather than boxes. The
+   ground turns dark once, for the process. */
 
 /* Why it matters */
 
@@ -280,10 +280,10 @@
   color: var(--on-dark);
 }
 
-.h-explore__head {
+.h-explore__inner {
   display: grid;
-  gap: 28px;
-  padding-top: clamp(56px, 7vw, 112px);
+  gap: clamp(28px, 3vw, 40px);
+  padding-top: clamp(64px, 9vw, 144px);
   border-top: 1px solid var(--line-on-dark);
 }
 
@@ -293,49 +293,17 @@
 }
 
 .h-explore__text {
-  max-width: 34ch;
+  max-width: 30ch;
   margin: 0;
   color: rgba(255, 255, 255, 0.82);
-  font-size: clamp(1.15rem, 1.6vw, 1.45rem);
+  font-size: clamp(1.25rem, 2vw, 1.75rem);
   font-weight: 300;
-  line-height: 1.4;
-}
-
-.h-explore__points {
-  display: grid;
-  gap: 40px;
-  margin: clamp(64px, 8vw, 128px) 0 0;
-  padding: 0;
-  list-style: none;
-}
-
-.h-explore__point {
-  padding-top: 20px;
-  border-top: 1px solid var(--line-on-dark);
-}
-
-.h-explore__point .h-label {
-  margin: 0 0 14px;
-  color: #ffffff;
-}
-
-.h-explore__point p {
-  max-width: 34ch;
-  margin: 0;
-  color: var(--muted-on-dark);
-  font-size: 1.05rem;
-  line-height: 1.6;
-}
-
-@media (min-width: 800px) {
-  .h-explore__points {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 0 32px;
-  }
+  line-height: 1.35;
+  letter-spacing: -0.01em;
 }
 
 @media (min-width: 1000px) {
-  .h-explore__head {
+  .h-explore__inner {
     grid-template-columns: repeat(12, minmax(0, 1fr));
     gap: 0 32px;
     align-items: end;
@@ -348,102 +316,96 @@
   }
 }
 
-/* A more complete view: two statements, the photograph held back, the tour in full. */
+/* The shared section layout */
 
-.h-compare {
+.h-block {
   padding: var(--h-space) 0;
 }
 
-.h-compare__title {
-  margin: 0 0 clamp(48px, 6vw, 96px);
-  color: var(--ink);
+.h-block--rule {
+  padding-top: 0;
 }
 
-.h-compare__rows {
-  margin: 0;
-}
-
-.h-compare__row {
-  display: grid;
-  gap: 16px;
-  padding: clamp(28px, 4vw, 56px) 0;
+.h-block--rule .h-block__grid {
+  padding-top: clamp(56px, 7vw, 112px);
   border-top: 1px solid var(--line);
 }
 
-.h-compare__row:last-child {
-  border-bottom: 1px solid var(--line);
+.h-block--dark {
+  background: var(--deep);
+  color: var(--on-dark);
 }
 
-.h-compare__row .h-label {
-  color: var(--muted);
-}
-
-.h-compare__row dd {
-  max-width: 20ch;
-  margin: 0;
-  color: var(--muted);
-  font-size: clamp(2rem, 5.4vw, 5rem);
-  font-weight: 300;
-  line-height: 1.02;
-  letter-spacing: -0.035em;
-}
-
-.h-compare__row--tour .h-label,
-.h-compare__row--tour dd {
-  color: var(--ink);
-}
-
-@media (min-width: 1000px) {
-  .h-compare__row {
-    grid-template-columns: repeat(12, minmax(0, 1fr));
-    gap: 0 32px;
-    align-items: baseline;
-  }
-  .h-compare__row .h-label {
-    grid-column: 1 / 4;
-  }
-  .h-compare__row dd {
-    grid-column: 4 / 13;
-  }
-}
-
-/* Who it is for: a catalogue, two columns of names. */
-
-.h-types {
-  padding: 0 0 var(--h-space);
-}
-
-.h-types__grid {
+.h-block__grid {
   display: grid;
   gap: clamp(32px, 4vw, 56px);
 }
 
-.h-types__title {
-  max-width: 16ch;
+.h-block__title {
+  max-width: 14ch;
   margin: 0;
   color: var(--ink);
-  font-size: clamp(1.9rem, 3.2vw, 3.2rem);
+  font-size: clamp(1.6rem, 2.6vw, 2.4rem);
   font-weight: 300;
-  line-height: 1.06;
-  letter-spacing: -0.03em;
+  line-height: 1.05;
+  letter-spacing: -0.025em;
+  text-transform: uppercase;
 }
 
-.h-types__list {
+.h-block--dark .h-block__title {
+  color: #ffffff;
+}
+
+@media (min-width: 1000px) {
+  .h-block__grid {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: 0 32px;
+    align-items: start;
+  }
+  .h-block__title {
+    grid-column: 1 / 5;
+  }
+  .h-block__body {
+    grid-column: 6 / 13;
+  }
+}
+
+/* What ROSS 360 delivers: four lines of large type. */
+
+.h-rows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.h-rows__item {
+  padding: clamp(18px, 2vw, 28px) 0;
+  border-top: 1px solid var(--line);
+  color: var(--ink);
+  font-size: clamp(1.5rem, 3vw, 2.75rem);
+  font-weight: 300;
+  line-height: 1.1;
+  letter-spacing: -0.025em;
+}
+
+.h-rows__item:last-child {
+  border-bottom: 1px solid var(--line);
+}
+
+/* Built for business & property: names in two columns. */
+
+.h-types {
   display: grid;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.h-types__item {
-  border-top: 1px solid var(--line);
-}
-
 .h-types__link {
   display: block;
-  padding: 16px 0;
+  padding: 10px 0;
   color: var(--ink);
-  font-size: clamp(1.25rem, 2vw, 1.8rem);
+  font-size: clamp(1.25rem, 2vw, 1.75rem);
   font-weight: 300;
   letter-spacing: -0.015em;
   text-decoration: none;
@@ -451,195 +413,119 @@
 }
 
 @media (hover: hover) {
-  .h-types__list:hover .h-types__link {
+  .h-types:hover .h-types__link {
     color: var(--muted);
   }
-  .h-types__list .h-types__link:hover {
+  .h-types .h-types__link:hover {
     color: var(--ink);
   }
 }
 
 @media (min-width: 700px) {
-  .h-types__list {
+  .h-types {
     grid-template-columns: 1fr 1fr;
     column-gap: 32px;
   }
 }
 
-@media (min-width: 1000px) {
-  .h-types__grid {
-    grid-template-columns: repeat(12, minmax(0, 1fr));
-    gap: 0 32px;
-    align-items: start;
-  }
-  .h-types__title {
-    grid-column: 1 / 5;
-  }
-  .h-types__list {
-    grid-column: 6 / 13;
-  }
-}
+/* From capture to tour: three stages on dark. */
 
-/* How it works: on dark, two rows of three. */
-
-.h-process {
-  padding: var(--h-space) 0;
-  background: var(--deep);
-  color: var(--on-dark);
-}
-
-.h-process__title {
-  margin: 0 0 clamp(48px, 6vw, 96px);
-  color: #ffffff;
-}
-
-.h-process__list {
+.h-steps {
   display: grid;
-  gap: 40px;
+  gap: 48px;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.h-process__step {
-  padding-top: 20px;
+.h-steps__item {
+  padding-top: 24px;
   border-top: 1px solid var(--line-on-dark);
 }
 
-.h-process__num {
+.h-steps__num {
   display: block;
-  margin-bottom: 20px;
+  margin-bottom: 28px;
   color: var(--muted-on-dark);
-  font-size: 0.78rem;
+  font-size: 0.85rem;
   letter-spacing: 0.14em;
   font-variant-numeric: tabular-nums;
 }
 
-.h-process__name {
-  margin: 0 0 10px;
+.h-steps__name {
+  margin: 0 0 16px;
   color: #ffffff;
-  font-size: 0.9rem;
-  font-weight: 500;
-  letter-spacing: 0.16em;
+  font-size: clamp(1.5rem, 2.4vw, 2.2rem);
+  font-weight: 300;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
   text-transform: uppercase;
 }
 
-.h-process__text {
-  max-width: 32ch;
+.h-steps__text {
+  max-width: 26ch;
   margin: 0;
-  color: rgba(255, 255, 255, 0.78);
-  font-size: 1.05rem;
-  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: clamp(1.08rem, 1.3vw, 1.2rem);
+  line-height: 1.55;
 }
 
-@media (min-width: 700px) {
-  .h-process__list {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 56px 32px;
-  }
-}
-
-@media (min-width: 1000px) {
-  .h-process__list {
+@media (min-width: 760px) {
+  .h-steps {
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 72px 48px;
+    gap: 0 32px;
   }
 }
 
-/* What it costs */
+/* Pricing: name and starting price on one line each. */
 
 .h-fees {
-  padding: var(--h-space) 0;
-}
-
-.h-fees__grid {
-  display: grid;
-  gap: 40px;
-}
-
-.h-fees__label {
-  margin: 0 0 16px;
-  color: var(--muted);
-}
-
-.h-fees__intro {
-  max-width: 30ch;
-  margin: 20px 0 0;
-  color: var(--ink-soft);
-  font-size: clamp(1.02rem, 1.2vw, 1.15rem);
-}
-
-.h-fees__list {
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.h-fee {
+.h-fees__row {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
   justify-content: space-between;
-  gap: 12px 32px;
-  padding: 24px 0;
+  gap: 8px 32px;
+  padding: clamp(20px, 2.4vw, 32px) 0;
   border-top: 1px solid var(--line);
 }
 
-.h-fee:last-child {
+.h-fees__row:last-child {
   border-bottom: 1px solid var(--line);
 }
 
-.h-fee__about {
-  max-width: 34ch;
-}
-
-.h-fee__name {
-  margin: 0 0 6px;
+.h-fees__name {
+  margin: 0;
   color: var(--ink);
-  font-size: 0.82rem;
+  font-size: 0.9rem;
   font-weight: 500;
   letter-spacing: 0.18em;
   text-transform: uppercase;
 }
 
-.h-fee__summary {
-  margin: 0;
-  color: var(--muted);
-  font-size: 0.98rem;
-}
-
-.h-fee__price {
+.h-fees__price {
   margin: 0;
   color: var(--ink);
-  font-size: clamp(1.8rem, 2.8vw, 2.5rem);
+  font-size: clamp(2.2rem, 4.4vw, 4rem);
   font-weight: 300;
   line-height: 1;
-  letter-spacing: -0.03em;
+  letter-spacing: -0.035em;
   white-space: nowrap;
 }
 
-.h-fee__from {
+.h-fees__from {
   margin-right: 0.5em;
   color: var(--muted);
-  font-size: 0.7rem;
+  font-size: 0.72rem;
   font-weight: 500;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  vertical-align: 0.5em;
-}
-
-/* Professional: the main package, carried by scale rather than a badge. */
-.h-fee--main {
-  padding: 32px 0;
-  border-top-color: var(--ink);
-}
-
-.h-fee--main + .h-fee {
-  border-top-color: var(--ink);
-}
-
-.h-fee--main .h-fee__price {
-  font-size: clamp(2.6rem, 5vw, 4.4rem);
+  vertical-align: 0.6em;
 }
 
 .h-fees__foot {
@@ -652,38 +538,14 @@
 }
 
 .h-fees__property {
-  max-width: 40ch;
   margin: 0;
   color: var(--ink-soft);
+  font-size: clamp(1.05rem, 1.3vw, 1.2rem);
 }
 
-@media (min-width: 1000px) {
-  .h-fees__grid {
-    grid-template-columns: repeat(12, minmax(0, 1fr));
-    gap: 0 32px;
-  }
-  .h-fees__head {
-    grid-column: 1 / 5;
-  }
-  .h-fees__body {
-    grid-column: 6 / 13;
-  }
-}
+/* ROSS 360 */
 
-/* Who is behind it */
-
-.h-about {
-  padding: 0 0 var(--h-space);
-}
-
-.h-about__grid {
-  display: grid;
-  gap: 24px;
-  padding-top: clamp(48px, 6vw, 96px);
-  border-top: 1px solid var(--line);
-}
-
-.h-about__body .h-statement {
+.h-about__lead {
   max-width: 22ch;
 }
 
@@ -691,20 +553,7 @@
   max-width: 44ch;
   margin: 28px 0 32px;
   color: var(--ink-soft);
-  font-size: clamp(1.02rem, 1.2vw, 1.15rem);
-}
-
-@media (min-width: 1000px) {
-  .h-about__grid {
-    grid-template-columns: repeat(12, minmax(0, 1fr));
-    gap: 0 32px;
-  }
-  .h-about__title {
-    grid-column: 1 / 5;
-  }
-  .h-about__body {
-    grid-column: 6 / 13;
-  }
+  font-size: clamp(1.05rem, 1.3vw, 1.2rem);
 }
 
 /* ---------- Closing ---------- */
@@ -776,21 +625,7 @@
   background: var(--bg-tone);
 }
 
-.h-close__mail {
-  color: #ffffff;
-  font-size: 0.95rem;
-  text-decoration: underline;
-  text-decoration-thickness: 1px;
-  text-underline-offset: 6px;
-}
 
-.h-close__note {
-  margin: clamp(32px, 4vw, 48px) 0 0;
-  color: rgba(255, 255, 255, 0.78);
-  font-size: 0.72rem;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-}
 
 .h-close :focus-visible {
   outline-color: #ffffff;

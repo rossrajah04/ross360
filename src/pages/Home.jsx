@@ -4,7 +4,7 @@ import {
   Opening,
   StepInside,
   Explore,
-  Compare,
+  Delivers,
   SpaceTypes,
   Process,
   Fees,
@@ -21,7 +21,7 @@ export default function Home() {
       <Opening />
       <StepInside />
       <Explore />
-      <Compare />
+      <Delivers />
       <SpaceTypes />
       <Process />
       <Fees />

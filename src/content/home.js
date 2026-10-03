@@ -24,31 +24,21 @@ export const home = {
   // Directly after the tour: why it matters.
   explore: {
     title: 'Let people explore before they arrive.',
-    text: 'A 360° tour gives customers, clients, buyers and tenants a clearer understanding of a space before they make the journey.',
-    points: [
-      {
-        title: 'Understand the space',
-        text: 'See the layout, scale and details that conventional photography can’t fully communicate.',
-      },
-      {
-        title: 'Build confidence',
-        text: 'Give people a more realistic sense of the environment before they visit.',
-      },
-      {
-        title: 'Keep it working online',
-        text: 'Use the tour on your website, in enquiries and, where appropriate, on Google Street View.',
-      },
+    text: 'A 360° tour gives customers, clients, buyers and tenants a clearer sense of a space before they visit.',
+  },
+
+  delivers: {
+    title: 'What ROSS 360 delivers',
+    items: [
+      '360° photography',
+      'Interactive virtual tour',
+      'Website integration',
+      'Google Street View where appropriate',
     ],
   },
 
-  compare: {
-    title: 'A more complete view',
-    photo: { label: 'Traditional photography', text: 'Shows selected views.' },
-    tour: { label: '360° tour', text: 'Lets visitors explore the space themselves.' },
-  },
-
   spaces: {
-    title: 'Built for spaces that need to be experienced.',
+    title: 'Built for business & property',
     items: [
       { label: 'Restaurants', to: '/businesses' },
       { label: 'Gyms & Studios', to: '/businesses' },
@@ -62,26 +52,17 @@ export const home = {
   },
 
   process: {
-    title: 'From space to online',
+    title: 'From capture to tour',
     steps: [
-      {
-        title: 'Discovery',
-        text: 'We understand the space, what needs to be captured and how the tour will be used.',
-      },
-      { title: 'Photography', text: '360° imagery is captured throughout the agreed areas.' },
-      { title: 'Production', text: 'The imagery is processed and assembled into an interactive tour.' },
-      { title: 'Review', text: 'The completed tour is checked across desktop and mobile.' },
-      { title: 'Publish', text: 'Where required, the tour can be prepared for Google Street View publication.' },
-      { title: 'Delivery', text: 'You receive the finished tour URL and website embed information.' },
+      { title: 'Capture', text: 'We photograph the agreed space in 360°.' },
+      { title: 'Build', text: 'The imagery is processed and assembled into an interactive tour.' },
+      { title: 'Deliver', text: 'Your finished tour is ready to share, embed and use online.' },
     ],
   },
 
   pricing: {
-    label: 'Pricing',
-    title: 'Business tours',
-    // From the Pricing page; each package's summary also comes from pricing.js.
-    intro: 'Straightforward starting prices for commercial premises.',
-    property: 'Property projects are individually quoted based on size, location and requirements.',
+    title: 'Pricing',
+    // Package names, starting prices and the property line come from pricing.js.
     link: 'View pricing',
   },
 
@@ -95,6 +76,5 @@ export const home = {
   closing: {
     title: 'Ready to show people your space?',
     cta: 'Request a Quote',
-    note: 'Business & property projects · UK-wide',
   },
 };
