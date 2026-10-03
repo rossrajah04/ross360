@@ -6,8 +6,9 @@ import { media } from '../../content/media.js';
 import { site } from '../../content/site.js';
 import { plans } from '../../content/pricing.js';
 
-// Homepage: the space, one tour, what ROSS 360 provides, why 360°, who it is for, how it works, fees,
-// about, enquiry. The Step inside tour is the only example of a space on the page.
+// Homepage: the space and one tour, then a single story below it: why it matters, a more complete view,
+// who it is for, how it works, what it costs, who is behind it, and the enquiry.
+// The Step inside tour is the only example of a space on the page.
 // Wording comes from src/content/home.js and photographs from src/content/media.js.
 
 const pad = (number) => String(number).padStart(2, '0');
@@ -70,22 +71,25 @@ export function StepInside() {
   );
 }
 
-// What ROSS 360 does and provides.
-export function Understanding() {
-  const { understanding } = home;
+// Why it matters. Set on the same dark ground as the tour, so it reads as a continuation of it.
+export function Explore() {
+  const { explore } = home;
   return (
-    <section className="h-understand" aria-labelledby="h-understand-title">
-      <div className="h-wrap h-understand__grid">
-        <div className="h-understand__text" data-reveal>
-          <h2 id="h-understand-title" className="h-statement">
-            {understanding.title}
+    <section className="h-explore" aria-labelledby="h-explore-title">
+      <div className="h-wrap">
+        <div className="h-explore__head">
+          <h2 id="h-explore-title" className="h-title" data-reveal>
+            {explore.title}
           </h2>
-          <p className="h-understand__body">{understanding.text}</p>
+          <p className="h-explore__text" data-reveal>
+            {explore.text}
+          </p>
         </div>
-        <ul className="h-understand__list">
-          {understanding.provides.map((item) => (
-            <li key={item} data-reveal>
-              {item}
+        <ul className="h-explore__points">
+          {explore.points.map((point) => (
+            <li key={point.title} className="h-explore__point" data-reveal>
+              <h3 className="h-label">{point.title}</h3>
+              <p>{point.text}</p>
             </li>
           ))}
         </ul>
@@ -94,20 +98,20 @@ export function Understanding() {
   );
 }
 
-// Why 360°: a photograph shows selected views; a tour lets visitors explore. Set as text, side by side.
+// A photograph against a tour, set as two large statements: the first held back, the second in full.
 export function Compare() {
   const { compare } = home;
   return (
     <section className="h-compare" aria-labelledby="h-compare-title">
-      <div className="h-wrap h-compare__grid">
-        <h2 id="h-compare-title" className="h-title" data-reveal>
+      <div className="h-wrap">
+        <h2 id="h-compare-title" className="h-title h-compare__title" data-reveal>
           {compare.title}
         </h2>
-        <dl className="h-compare__pair">
-          {[compare.photo, compare.tour].map((side) => (
-            <div key={side.label} className="h-compare__side" data-reveal>
+        <dl className="h-compare__rows">
+          {[compare.photo, compare.tour].map((side, index) => (
+            <div key={side.label} className={`h-compare__row${index ? ' h-compare__row--tour' : ''}`} data-reveal>
               <dt className="h-label">{side.label}</dt>
-              <dd className="h-compare__text">{side.text}</dd>
+              <dd>{side.text}</dd>
             </div>
           ))}
         </dl>
@@ -116,7 +120,7 @@ export function Compare() {
   );
 }
 
-// Who ROSS 360 works with, set as type.
+// Who it is for: a catalogue of the kinds of space, set as type.
 export function SpaceTypes() {
   const { spaces } = home;
   return (
@@ -129,8 +133,7 @@ export function SpaceTypes() {
           {spaces.items.map((item) => (
             <li key={item.label} className="h-types__item" data-reveal>
               <Link className="h-types__link" to={item.to}>
-                <span className="h-types__name">{item.label}</span>
-                <Arrow />
+                {item.label}
               </Link>
             </li>
           ))}
@@ -140,13 +143,13 @@ export function SpaceTypes() {
   );
 }
 
-// Five steps, kept small.
+// How it works: six stages in two rows of three, each with room to read.
 export function Process() {
   const { process } = home;
   return (
     <section className="h-process" aria-labelledby="h-process-title">
-      <div className="h-wrap h-process__grid">
-        <h2 id="h-process-title" className="h-subtitle" data-reveal>
+      <div className="h-wrap">
+        <h2 id="h-process-title" className="h-title h-process__title" data-reveal>
           {process.title}
         </h2>
         <ol className="h-process__list">
@@ -155,7 +158,7 @@ export function Process() {
               <span className="h-process__num" aria-hidden="true">
                 {pad(index + 1)}
               </span>
-              <h3 className="h-process__title">{step.title}</h3>
+              <h3 className="h-process__name">{step.title}</h3>
               <p className="h-process__text">{step.text}</p>
             </li>
           ))}
@@ -165,7 +168,7 @@ export function Process() {
   );
 }
 
-// Fee schedule. Professional is set larger rather than badged.
+// What it costs: starting prices, each with what it is for. Professional is set larger, not badged.
 export function Fees() {
   const { pricing } = home;
   return (
@@ -176,37 +179,46 @@ export function Fees() {
           <h2 id="h-fees-title" className="h-subtitle">
             {pricing.title}
           </h2>
-          <p className="h-fees__property">{pricing.property}</p>
-          <Link className="h-link" to="/pricing">
-            {pricing.link}
-            <Arrow />
-          </Link>
+          <p className="h-fees__intro">{pricing.intro}</p>
         </div>
-        <ol className="h-fees__list">
-          {plans.map((plan) => (
-            <li key={plan.id} className={`h-fee${plan.featured ? ' h-fee--main' : ''}`} data-reveal>
-              <h3 className="h-fee__name">{plan.name}</h3>
-              <p className="h-fee__price">
-                <span className="h-fee__from">From</span> £{plan.price}
-              </p>
-            </li>
-          ))}
-        </ol>
+        <div className="h-fees__body">
+          <ol className="h-fees__list">
+            {plans.map((plan) => (
+              <li key={plan.id} className={`h-fee${plan.featured ? ' h-fee--main' : ''}`} data-reveal>
+                <div className="h-fee__about">
+                  <h3 className="h-fee__name">{plan.name}</h3>
+                  <p className="h-fee__summary">{plan.summary}</p>
+                </div>
+                <p className="h-fee__price">
+                  <span className="h-fee__from">From</span> £{plan.price}
+                </p>
+              </li>
+            ))}
+          </ol>
+          <div className="h-fees__foot" data-reveal>
+            <p className="h-fees__property">{pricing.property}</p>
+            <Link className="h-link" to="/pricing">
+              {pricing.link}
+              <Arrow />
+            </Link>
+          </div>
+        </div>
       </div>
     </section>
   );
 }
 
-// About, briefly.
+// Who is behind it.
 export function About() {
   const { about } = home;
   return (
     <section className="h-about" aria-labelledby="h-about-title">
-      <div className="h-wrap h-about__grid" data-reveal>
-        <h2 id="h-about-title" className="h-subtitle">
+      <div className="h-wrap h-about__grid">
+        <h2 id="h-about-title" className="h-subtitle h-about__title" data-reveal>
           {about.title}
         </h2>
-        <div className="h-about__body">
+        <div className="h-about__body" data-reveal>
+          <p className="h-statement">{about.lead}</p>
           <p className="h-about__text">{about.text}</p>
           <Link className="h-link" to="/about">
             {about.link}
@@ -218,7 +230,7 @@ export function About() {
   );
 }
 
-// Closing screen, over a photograph.
+// The conclusion: the enquiry, over the closing photograph.
 export function Closing() {
   const { closing } = home;
   return (
@@ -234,8 +246,13 @@ export function Closing() {
             {closing.cta}
             <Arrow />
           </Link>
-          <p className="h-close__note">{closing.note}</p>
+          <a className="h-close__mail" href={`mailto:${site.email}`}>
+            {site.email}
+          </a>
         </div>
+        <p className="h-close__note" data-reveal>
+          {closing.note}
+        </p>
       </div>
     </section>
   );

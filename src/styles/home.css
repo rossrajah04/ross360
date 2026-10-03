@@ -267,279 +267,294 @@
   }
 }
 
-/* ---------- Understanding ---------- */
+/* ---------- Below the tour: one sequence ----------
+   Dark continues from the tour into why it matters; the page then turns light for the comparison,
+   the kinds of space, the process and the fees, and closes on the photograph. Sections are divided by
+   rules and space rather than boxes. */
 
-.h-understand {
-  padding: var(--h-space) 0;
-}
+/* Why it matters */
 
-.h-understand__grid {
-  display: grid;
-  gap: 48px;
-}
-
-.h-understand__body {
-  max-width: 40ch;
-  margin: 28px 0 0;
-  color: var(--ink-soft);
-  font-size: clamp(1.02rem, 1.2vw, 1.15rem);
-}
-
-.h-understand__list {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  border-top: 1px solid var(--line);
-}
-
-.h-understand__list li {
-  padding: 18px 0;
-  border-bottom: 1px solid var(--line);
-  color: var(--ink);
-  font-size: clamp(1.05rem, 1.4vw, 1.3rem);
-  font-weight: 300;
-  letter-spacing: -0.01em;
-}
-
-@media (min-width: 1000px) {
-  .h-understand__grid {
-    grid-template-columns: repeat(12, minmax(0, 1fr));
-    gap: 0 32px;
-    align-items: start;
-  }
-  .h-understand__text {
-    grid-column: 1 / 7;
-  }
-  .h-understand__list {
-    grid-column: 8 / 13;
-    margin-top: 12px;
-  }
-}
-
-/* ---------- Compare ---------- */
-
-.h-compare {
+.h-explore {
   padding: 0 0 var(--h-space);
-}
-
-.h-compare .h-title {
-  color: var(--ink);
-}
-
-.h-compare__grid {
-  display: grid;
-  gap: clamp(40px, 5vw, 72px);
-  padding-top: var(--h-space);
-  border-top: 1px solid var(--line);
-}
-
-.h-compare__pair {
-  display: grid;
-  gap: 40px;
-  margin: 0;
-}
-
-.h-compare__side {
-  padding-top: 20px;
-  border-top: 1px solid var(--ink);
-}
-
-.h-compare__side .h-label {
-  color: var(--muted);
-}
-
-.h-compare__text {
-  max-width: 22ch;
-  margin: 14px 0 0;
-  color: var(--ink);
-  font-size: clamp(1.5rem, 2.8vw, 2.6rem);
-  font-weight: 300;
-  line-height: 1.12;
-  letter-spacing: -0.02em;
-}
-
-@media (min-width: 700px) {
-  .h-compare__pair {
-    grid-template-columns: 1fr 1fr;
-    gap: 0 32px;
-  }
-}
-
-/* ---------- Space types ---------- */
-
-.h-types {
-  padding: var(--h-space) 0;
   background: var(--deep);
   color: var(--on-dark);
 }
 
+.h-explore__head {
+  display: grid;
+  gap: 28px;
+  padding-top: clamp(56px, 7vw, 112px);
+  border-top: 1px solid var(--line-on-dark);
+}
+
+.h-explore .h-title {
+  max-width: 14ch;
+  color: #ffffff;
+}
+
+.h-explore__text {
+  max-width: 34ch;
+  margin: 0;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: clamp(1.15rem, 1.6vw, 1.45rem);
+  font-weight: 300;
+  line-height: 1.4;
+}
+
+.h-explore__points {
+  display: grid;
+  gap: 40px;
+  margin: clamp(64px, 8vw, 128px) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.h-explore__point {
+  padding-top: 20px;
+  border-top: 1px solid var(--line-on-dark);
+}
+
+.h-explore__point .h-label {
+  margin: 0 0 14px;
+  color: #ffffff;
+}
+
+.h-explore__point p {
+  max-width: 34ch;
+  margin: 0;
+  color: var(--muted-on-dark);
+  font-size: 1.05rem;
+  line-height: 1.6;
+}
+
+@media (min-width: 800px) {
+  .h-explore__points {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0 32px;
+  }
+}
+
+@media (min-width: 1000px) {
+  .h-explore__head {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: 0 32px;
+    align-items: end;
+  }
+  .h-explore .h-title {
+    grid-column: 1 / 8;
+  }
+  .h-explore__text {
+    grid-column: 8 / 13;
+  }
+}
+
+/* A more complete view: two statements, the photograph held back, the tour in full. */
+
+.h-compare {
+  padding: var(--h-space) 0;
+}
+
+.h-compare__title {
+  margin: 0 0 clamp(48px, 6vw, 96px);
+  color: var(--ink);
+}
+
+.h-compare__rows {
+  margin: 0;
+}
+
+.h-compare__row {
+  display: grid;
+  gap: 16px;
+  padding: clamp(28px, 4vw, 56px) 0;
+  border-top: 1px solid var(--line);
+}
+
+.h-compare__row:last-child {
+  border-bottom: 1px solid var(--line);
+}
+
+.h-compare__row .h-label {
+  color: var(--muted);
+}
+
+.h-compare__row dd {
+  max-width: 20ch;
+  margin: 0;
+  color: var(--muted);
+  font-size: clamp(2rem, 5.4vw, 5rem);
+  font-weight: 300;
+  line-height: 1.02;
+  letter-spacing: -0.035em;
+}
+
+.h-compare__row--tour .h-label,
+.h-compare__row--tour dd {
+  color: var(--ink);
+}
+
+@media (min-width: 1000px) {
+  .h-compare__row {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: 0 32px;
+    align-items: baseline;
+  }
+  .h-compare__row .h-label {
+    grid-column: 1 / 4;
+  }
+  .h-compare__row dd {
+    grid-column: 4 / 13;
+  }
+}
+
+/* Who it is for: a catalogue, two columns of names. */
+
+.h-types {
+  padding: 0 0 var(--h-space);
+}
+
+.h-types__grid {
+  display: grid;
+  gap: clamp(32px, 4vw, 56px);
+}
+
 .h-types__title {
   max-width: 16ch;
-  margin: 0 0 clamp(32px, 4vw, 56px);
-  color: #ffffff;
-  font-size: clamp(1.8rem, 3vw, 3rem);
+  margin: 0;
+  color: var(--ink);
+  font-size: clamp(1.9rem, 3.2vw, 3.2rem);
   font-weight: 300;
-  line-height: 1.08;
+  line-height: 1.06;
   letter-spacing: -0.03em;
 }
 
 .h-types__list {
+  display: grid;
   margin: 0;
   padding: 0;
   list-style: none;
-  border-top: 1px solid var(--line-on-dark);
 }
 
 .h-types__item {
-  border-bottom: 1px solid var(--line-on-dark);
+  border-top: 1px solid var(--line);
 }
 
 .h-types__link {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 18px 0;
-  color: #ffffff;
-  text-decoration: none;
-}
-
-.h-types__name {
-  font-size: clamp(1.35rem, 3.2vw, 3rem);
+  display: block;
+  padding: 16px 0;
+  color: var(--ink);
+  font-size: clamp(1.25rem, 2vw, 1.8rem);
   font-weight: 300;
-  line-height: 1.05;
-  letter-spacing: -0.025em;
-  text-transform: uppercase;
-  transition: transform 0.5s var(--ease), color 0.4s var(--ease);
-}
-
-.h-types__link .h-arrow {
-  color: var(--muted-on-dark);
-}
-
-.h-types :focus-visible {
-  outline-color: #ffffff;
+  letter-spacing: -0.015em;
+  text-decoration: none;
+  transition: color 0.3s var(--ease);
 }
 
 @media (hover: hover) {
-  .h-types__list:hover .h-types__name {
-    color: rgba(255, 255, 255, 0.45);
+  .h-types__list:hover .h-types__link {
+    color: var(--muted);
   }
-  .h-types__list .h-types__link:hover .h-types__name {
-    color: #ffffff;
-    transform: translateX(10px);
+  .h-types__list .h-types__link:hover {
+    color: var(--ink);
   }
-  .h-types__link:hover .h-arrow {
-    color: #ffffff;
+}
+
+@media (min-width: 700px) {
+  .h-types__list {
+    grid-template-columns: 1fr 1fr;
+    column-gap: 32px;
   }
 }
 
 @media (min-width: 1000px) {
   .h-types__grid {
-    display: grid;
     grid-template-columns: repeat(12, minmax(0, 1fr));
     gap: 0 32px;
     align-items: start;
   }
   .h-types__title {
     grid-column: 1 / 5;
-    position: sticky;
-    top: 120px;
   }
   .h-types__list {
-    grid-column: 5 / 13;
-  }
-  .h-types__link {
-    padding: 22px 0;
+    grid-column: 6 / 13;
   }
 }
 
-/* ---------- Process ---------- */
+/* How it works: on dark, two rows of three. */
 
 .h-process {
-  padding: var(--h-space) 0 clamp(56px, 6vw, 96px);
+  padding: var(--h-space) 0;
+  background: var(--deep);
+  color: var(--on-dark);
 }
 
-.h-process__grid {
-  display: grid;
-  gap: 32px;
+.h-process__title {
+  margin: 0 0 clamp(48px, 6vw, 96px);
+  color: #ffffff;
 }
 
 .h-process__list {
+  display: grid;
+  gap: 40px;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
 .h-process__step {
-  display: grid;
-  grid-template-columns: 2.5rem minmax(0, 1fr);
-  gap: 0 12px;
-  padding: 18px 0;
-  border-top: 1px solid var(--line);
+  padding-top: 20px;
+  border-top: 1px solid var(--line-on-dark);
 }
 
 .h-process__num {
-  grid-row: span 2;
-  padding-top: 0.35em;
-  color: var(--muted);
-  font-size: 0.7rem;
+  display: block;
+  margin-bottom: 20px;
+  color: var(--muted-on-dark);
+  font-size: 0.78rem;
   letter-spacing: 0.14em;
   font-variant-numeric: tabular-nums;
 }
 
-.h-process__title {
-  margin: 0 0 6px;
-  color: var(--ink);
-  font-size: 0.82rem;
+.h-process__name {
+  margin: 0 0 10px;
+  color: #ffffff;
+  font-size: 0.9rem;
   font-weight: 500;
   letter-spacing: 0.16em;
   text-transform: uppercase;
 }
 
 .h-process__text {
-  max-width: 34ch;
+  max-width: 32ch;
   margin: 0;
-  color: var(--muted);
-  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 1.05rem;
+  line-height: 1.6;
+}
+
+@media (min-width: 700px) {
+  .h-process__list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 56px 32px;
+  }
 }
 
 @media (min-width: 1000px) {
-  .h-process__grid {
-    grid-template-columns: repeat(12, minmax(0, 1fr));
-    gap: 0 32px;
-  }
-  .h-process__grid .h-subtitle {
-    grid-column: 1 / 4;
-  }
   .h-process__list {
-    grid-column: 4 / 13;
-    display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-    gap: 0 24px;
-  }
-  .h-process__step {
-    display: block;
-    padding: 18px 0 0;
-  }
-  .h-process__num {
-    display: block;
-    margin-bottom: 28px;
-    padding: 0;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 72px 48px;
   }
 }
 
-/* ---------- Fees ---------- */
+/* What it costs */
 
 .h-fees {
-  padding: clamp(56px, 6vw, 96px) 0 var(--h-space);
+  padding: var(--h-space) 0;
 }
 
 .h-fees__grid {
   display: grid;
   gap: 40px;
-  padding-top: clamp(40px, 5vw, 72px);
-  border-top: 1px solid var(--line);
 }
 
 .h-fees__label {
@@ -547,10 +562,11 @@
   color: var(--muted);
 }
 
-.h-fees__property {
-  max-width: 34ch;
-  margin: 20px 0 24px;
+.h-fees__intro {
+  max-width: 30ch;
+  margin: 20px 0 0;
   color: var(--ink-soft);
+  font-size: clamp(1.02rem, 1.2vw, 1.15rem);
 }
 
 .h-fees__list {
@@ -564,8 +580,8 @@
   flex-wrap: wrap;
   align-items: baseline;
   justify-content: space-between;
-  gap: 4px 24px;
-  padding: 20px 0;
+  gap: 12px 32px;
+  padding: 24px 0;
   border-top: 1px solid var(--line);
 }
 
@@ -573,22 +589,33 @@
   border-bottom: 1px solid var(--line);
 }
 
+.h-fee__about {
+  max-width: 34ch;
+}
+
 .h-fee__name {
-  margin: 0;
-  color: var(--muted);
-  font-size: 0.76rem;
+  margin: 0 0 6px;
+  color: var(--ink);
+  font-size: 0.82rem;
   font-weight: 500;
   letter-spacing: 0.18em;
   text-transform: uppercase;
 }
 
+.h-fee__summary {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.98rem;
+}
+
 .h-fee__price {
   margin: 0;
-  color: var(--ink-soft);
-  font-size: clamp(1.6rem, 2.6vw, 2.3rem);
+  color: var(--ink);
+  font-size: clamp(1.8rem, 2.8vw, 2.5rem);
   font-weight: 300;
   line-height: 1;
   letter-spacing: -0.03em;
+  white-space: nowrap;
 }
 
 .h-fee__from {
@@ -603,7 +630,7 @@
 
 /* Professional: the main package, carried by scale rather than a badge. */
 .h-fee--main {
-  padding: 30px 0 28px;
+  padding: 32px 0;
   border-top-color: var(--ink);
 }
 
@@ -611,13 +638,23 @@
   border-top-color: var(--ink);
 }
 
-.h-fee--main .h-fee__name,
 .h-fee--main .h-fee__price {
-  color: var(--ink);
+  font-size: clamp(2.6rem, 5vw, 4.4rem);
 }
 
-.h-fee--main .h-fee__price {
-  font-size: clamp(2.6rem, 5vw, 4.6rem);
+.h-fees__foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px 32px;
+  margin-top: 28px;
+}
+
+.h-fees__property {
+  max-width: 40ch;
+  margin: 0;
+  color: var(--ink-soft);
 }
 
 @media (min-width: 1000px) {
@@ -628,12 +665,12 @@
   .h-fees__head {
     grid-column: 1 / 5;
   }
-  .h-fees__list {
+  .h-fees__body {
     grid-column: 6 / 13;
   }
 }
 
-/* ---------- About ---------- */
+/* Who is behind it */
 
 .h-about {
   padding: 0 0 var(--h-space);
@@ -641,14 +678,18 @@
 
 .h-about__grid {
   display: grid;
-  gap: 20px;
-  padding-top: clamp(40px, 5vw, 72px);
+  gap: 24px;
+  padding-top: clamp(48px, 6vw, 96px);
   border-top: 1px solid var(--line);
 }
 
+.h-about__body .h-statement {
+  max-width: 22ch;
+}
+
 .h-about__text {
-  max-width: 40ch;
-  margin: 0 0 24px;
+  max-width: 44ch;
+  margin: 28px 0 32px;
   color: var(--ink-soft);
   font-size: clamp(1.02rem, 1.2vw, 1.15rem);
 }
@@ -658,7 +699,7 @@
     grid-template-columns: repeat(12, minmax(0, 1fr));
     gap: 0 32px;
   }
-  .h-about__grid .h-subtitle {
+  .h-about__title {
     grid-column: 1 / 5;
   }
   .h-about__body {
@@ -735,8 +776,16 @@
   background: var(--bg-tone);
 }
 
+.h-close__mail {
+  color: #ffffff;
+  font-size: 0.95rem;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 6px;
+}
+
 .h-close__note {
-  margin: 0;
+  margin: clamp(32px, 4vw, 48px) 0 0;
   color: rgba(255, 255, 255, 0.78);
   font-size: 0.72rem;
   letter-spacing: 0.18em;

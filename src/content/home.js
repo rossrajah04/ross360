@@ -21,22 +21,30 @@ export const home = {
     demoNote: 'This is a demonstration tour.',
   },
 
-  understanding: {
-    title: 'We turn physical spaces into interactive digital experiences.',
-    text: 'ROSS 360 creates professional 360° photography and interactive virtual tours for commercial premises and property.',
-    // From "What you receive" (services.js), as written.
-    provides: [
-      'Professional 360° photography',
-      'Interactive tour production',
-      'Website embed capability',
-      'Google Street View publishing where appropriate and separately authorised',
+  // Directly after the tour: why it matters.
+  explore: {
+    title: 'Let people explore before they arrive.',
+    text: 'A 360° tour gives customers, clients, buyers and tenants a clearer understanding of a space before they make the journey.',
+    points: [
+      {
+        title: 'Understand the space',
+        text: 'See the layout, scale and details that conventional photography can’t fully communicate.',
+      },
+      {
+        title: 'Build confidence',
+        text: 'Give people a more realistic sense of the environment before they visit.',
+      },
+      {
+        title: 'Keep it working online',
+        text: 'Use the tour on your website, in enquiries and, where appropriate, on Google Street View.',
+      },
     ],
   },
 
   compare: {
     title: 'A more complete view',
-    photo: { label: 'Traditional photography', text: 'Photography shows selected views.' },
-    tour: { label: '360° tour', text: 'A 360° tour allows visitors to explore the space themselves.' },
+    photo: { label: 'Traditional photography', text: 'Shows selected views.' },
+    tour: { label: '360° tour', text: 'Lets visitors explore the space themselves.' },
   },
 
   spaces: {
@@ -56,27 +64,31 @@ export const home = {
   process: {
     title: 'From space to online',
     steps: [
-      { title: 'Discover', text: 'We understand the space and what needs to be captured.' },
-      { title: 'Photograph', text: '360° photography is captured throughout the agreed areas.' },
-      { title: 'Produce', text: 'The imagery is processed and assembled into an interactive tour.' },
-      { title: 'Publish', text: 'Where required, the tour can be prepared for Google Street View.' },
       {
-        title: 'Deliver',
-        text: 'You receive the finished tour, shareable URL and website integration information.',
+        title: 'Discovery',
+        text: 'We understand the space, what needs to be captured and how the tour will be used.',
       },
+      { title: 'Photography', text: '360° imagery is captured throughout the agreed areas.' },
+      { title: 'Production', text: 'The imagery is processed and assembled into an interactive tour.' },
+      { title: 'Review', text: 'The completed tour is checked across desktop and mobile.' },
+      { title: 'Publish', text: 'Where required, the tour can be prepared for Google Street View publication.' },
+      { title: 'Delivery', text: 'You receive the finished tour URL and website embed information.' },
     ],
   },
 
   pricing: {
     label: 'Pricing',
     title: 'Business tours',
+    // From the Pricing page; each package's summary also comes from pricing.js.
+    intro: 'Straightforward starting prices for commercial premises.',
     property: 'Property projects are individually quoted based on size, location and requirements.',
     link: 'View pricing',
   },
 
   about: {
     title: site.brand,
-    text: 'Professional 360° photography and virtual tours for businesses and property.',
+    lead: 'Professional 360° photography and virtual tours for businesses and property.',
+    text: 'ROSS 360 creates interactive virtual tours that allow people to explore physical spaces online before they visit.',
     link: 'About ROSS 360',
   },
 

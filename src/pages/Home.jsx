@@ -3,7 +3,7 @@ import useReveal from '../lib/useReveal.js';
 import {
   Opening,
   StepInside,
-  Understanding,
+  Explore,
   Compare,
   SpaceTypes,
   Process,
@@ -20,7 +20,7 @@ export default function Home() {
       <Seo page="home" />
       <Opening />
       <StepInside />
-      <Understanding />
+      <Explore />
       <Compare />
       <SpaceTypes />
       <Process />
