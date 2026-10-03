@@ -1,8 +1,7 @@
-/* Virtual Tours page. Builds on the homepage styles (home.css): the same measure, type, links, phone
-   frame and closing band. The product first on the dark ground (the live tour, then what a tour is
-   beside the same tour on a phone), then four short parts on the light page, each composed differently:
-   three reasons divided by rules, the deliverable as one panel, three stages on a line, and the
-   distinction between photographs, a tour and Street View. */
+/* Virtual Tours page. Builds on the homepage styles (home.css): the same measure, type, links and
+   closing band. The live tour first on the dark ground, then four short parts on the light page, each
+   composed differently: the service standards two by two, the deliverables side by side, the four
+   stages along a line, and the distinction between photographs, a tour and Street View. */
 
 /* This page keeps the site's standard measure, so it lines up with the header and footer. */
 .home.vt {
@@ -12,7 +11,7 @@
 /* ---------- Introduction and the example tour ---------- */
 
 .vt-intro {
-  padding: clamp(48px, 6vw, 96px) 0 0;
+  padding: clamp(48px, 6vw, 96px) 0;
   background: var(--deep);
   color: var(--on-dark);
 }
@@ -59,56 +58,6 @@
   }
   .vt-intro__aside p {
     margin-bottom: 16px;
-  }
-}
-
-/* ---------- What is a 360° virtual tour ---------- */
-
-.vt-what {
-  padding: clamp(56px, 7vw, 112px) 0 var(--h-gap);
-  background: var(--deep);
-  color: var(--on-dark);
-}
-
-.vt-what__inner {
-  display: grid;
-  gap: 40px;
-}
-
-.vt-what__title {
-  max-width: 16ch;
-  margin: 0;
-  color: #ffffff;
-  font-size: clamp(1.75rem, 3.4vw, 2.9rem);
-  font-weight: 400;
-  line-height: 1.1;
-  letter-spacing: -0.025em;
-}
-
-.vt-what__lead {
-  max-width: 34ch;
-  margin: clamp(20px, 2.4vw, 32px) 0 0;
-  color: #ffffff;
-  font-size: clamp(1.2rem, 1.7vw, 1.45rem);
-  line-height: 1.45;
-}
-
-.vt-what__text {
-  max-width: 44ch;
-  margin: 16px 0 0;
-  color: rgba(255, 255, 255, 0.72);
-  font-size: clamp(1.05rem, 1.3vw, 1.15rem);
-  line-height: 1.55;
-}
-
-@media (min-width: 900px) {
-  .vt-what__inner {
-    grid-template-columns: repeat(12, minmax(0, 1fr));
-    gap: 0 32px;
-    align-items: center;
-  }
-  .vt-what__copy {
-    grid-column: 1 / 7;
   }
 }
 

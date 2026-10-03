@@ -9,12 +9,6 @@ export const virtualTours = {
     open: 'Open full tour',
   },
 
-  what: {
-    title: 'What is a 360° virtual tour?',
-    lead: 'A 360° virtual tour lets visitors explore a space for themselves, moving between connected viewpoints and looking around in every direction.',
-    text: 'Unlike a collection of photographs, a virtual tour gives people a sense of how the different areas of a space connect and allows them to explore at their own pace.',
-  },
-
   // ROSS 360's service standards (supplied 3 October 2026). They describe how every project is run:
   // plan, capture, produce, check, deliver. Don't add turnaround times or other unagreed service levels.
   why: {

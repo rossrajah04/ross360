@@ -1,6 +1,5 @@
 import Seo from '../components/Seo.jsx';
 import TourStage from '../components/home/TourStage.jsx';
-import TourEmbed from '../components/TourEmbed.jsx';
 import { Closing } from '../components/home/HomeSections.jsx';
 import useReveal from '../lib/useReveal.js';
 import { virtualTours } from '../content/virtualTours.js';
@@ -9,7 +8,7 @@ import '../styles/home.css';
 import '../styles/virtual-tours.css';
 
 // Virtual Tours: the product first, then a few short parts, each composed differently.
-//  - The live tour, then what a tour is beside the same tour on a phone, both on the dark ground.
+//  - The live tour on the dark ground.
 //  - Why ROSS 360, what you receive, how it works (from the enquiry to delivery) and how a tour differs,
 //    on the light page.
 //  - The homepage's closing enquiry.
@@ -26,7 +25,7 @@ function Arrow() {
 
 export default function VirtualTours() {
   useReveal();
-  const { intro, what, why, receive, how, differs } = virtualTours;
+  const { intro, why, receive, how, differs } = virtualTours;
   const example = site.stepInsideTour;
 
   return (
@@ -60,28 +59,6 @@ export default function VirtualTours() {
             ) : null}
           </div>
         ) : null}
-      </section>
-
-      {/* What a tour is, beside the same tour on a phone. The phone is shown only where the two sit
-          side by side; on a phone the tour above is already the phone view. */}
-      <section className="vt-what" aria-labelledby="vt-what-title">
-        <div className="h-wrap vt-what__inner">
-          <div className="vt-what__copy" data-reveal>
-            <h2 id="vt-what-title" className="vt-what__title">
-              {what.title}
-            </h2>
-            <p className="vt-what__lead">{what.lead}</p>
-            <p className="vt-what__text">{what.text}</p>
-          </div>
-          {example.embedUrl ? (
-            <figure className="h-phone vt-what__phone" data-reveal>
-              <div className="h-phone__frame">
-                <TourEmbed tour={{ ...example, title: `${example.title} (phone view)` }} className="h-phone__screen" />
-              </div>
-              {example.external ? <figcaption className="h-phone__caption">{example.credit}</figcaption> : null}
-            </figure>
-          ) : null}
-        </div>
       </section>
 
       <section className="vt-why" aria-labelledby="vt-why-title">
