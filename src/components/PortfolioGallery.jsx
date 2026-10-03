@@ -5,15 +5,16 @@ import PortfolioCard from './PortfolioCard.jsx';
 // All | Business | Property gallery of genuine projects.
 // Filters only appear when there are projects in more than one category, so they always do something.
 // Renders nothing when there are no projects; the page decides what to show instead.
-export default function PortfolioGallery({ headingLevel = 'h2' }) {
+export default function PortfolioGallery({ headingLevel = 'h2', limit }) {
   const [filter, setFilter] = useState('all');
   const select = useCallback((id) => setFilter(id), []);
 
   if (projects.length === 0) return null;
 
   const categories = new Set(projects.map((p) => p.category));
-  const showFilters = categories.size > 1;
-  const visible = filter === 'all' ? projects : projects.filter((p) => p.category === filter);
+  const showFilters = !limit && categories.size > 1;
+  const filtered = filter === 'all' ? projects : projects.filter((p) => p.category === filter);
+  const visible = limit ? filtered.slice(0, limit) : filtered;
 
   return (
     <div className="gallery">

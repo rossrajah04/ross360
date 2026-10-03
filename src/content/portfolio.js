@@ -16,9 +16,8 @@
 //   tourUrl: 'https://…',              // public link to the tour (opens in a new tab)
 //   embedUrl: 'https://…',             // optional Panoee embed URL (shown in place of the image)
 //   description: 'One or two sentences about the project',
-//   captured: 'What was captured',
-//   usage: 'How the client uses the tour',
 // }
+// The first project is shown full width; the rest in two columns. Images are cropped to 3:2 (16:9 for the first).
 
 export const projects = [];
 

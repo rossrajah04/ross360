@@ -2,7 +2,7 @@ import Seo from '../components/Seo.jsx';
 import PageHero from '../components/PageHero.jsx';
 import SectionHeading from '../components/SectionHeading.jsx';
 import Checklist from '../components/Checklist.jsx';
-import MediaFrame from '../components/MediaFrame.jsx';
+import Frame from '../components/Frame.jsx';
 import CtaBand from '../components/CtaBand.jsx';
 import Button from '../components/Button.jsx';
 import { propertyTourTypes } from '../content/services.js';
@@ -22,15 +22,16 @@ export default function Property() {
         </div>
       </PageHero>
 
-      <MediaFrame image={site.images.property} tone="light" className="page-media container" />
+      <div className="container container--wide page-media">
+        <Frame image={site.images.property} ratio="wide" caption="Property" />
+      </div>
 
       <section className="section" aria-label="Property tours">
-        <div className="container container--narrow">
-          <div className="prose-block">
-            <p className="lead lead--ink">
-              ROSS 360 provides 360° photography and interactive virtual tours for residential and commercial
-              property.
-            </p>
+        <div className="container statement">
+          <p className="statement__text">
+            ROSS 360 provides 360° photography and interactive virtual tours for residential and commercial property.
+          </p>
+          <div className="statement__aside">
             <p>
               A property tour can give prospective buyers or tenants a clearer understanding of the layout and space
               before arranging a physical viewing.
@@ -42,16 +43,15 @@ export default function Property() {
       </section>
 
       <section id="agencies" className="section section--soft" aria-labelledby="agencies-heading">
-        <div className="container split">
-          <SectionHeading id="agencies-heading" title="For Estate Agents & Property Professionals" />
-          <div>
-            <p>We can provide tours for:</p>
-            <Checklist items={propertyTourTypes} />
+        <div className="container">
+          <SectionHeading id="agencies-heading" title="For Estate Agents & Property Professionals">
+            <p className="lead lead--ink">We can provide tours for:</p>
+            <Checklist items={propertyTourTypes} columns />
             <p>If you regularly require property tours, tell us about your requirements when requesting a quotation.</p>
-            <div className="btn-row btn-row--tight">
+            <div className="btn-row">
               <Button to="/get-a-quote?type=agency">{site.cta.property}</Button>
             </div>
-          </div>
+          </SectionHeading>
         </div>
       </section>
 

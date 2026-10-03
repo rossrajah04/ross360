@@ -17,19 +17,21 @@ export default function Portfolio() {
 
       {hasProjects ? (
         <section className="section" aria-label="Projects">
-          <div className="container">
+          <div className="container container--wide">
             <PortfolioGallery headingLevel="h2" />
           </div>
         </section>
       ) : (
-        <section className="section" aria-label="Portfolio">
-          <div className="container container--narrow">
-            <p className="lead lead--ink">
+        <section className="section section--dark portfolio-empty" aria-label="Portfolio">
+          <div className="container statement">
+            <p className="statement__text">
               Our portfolio is currently being developed. New business and property projects will be added here as
               they are completed.
             </p>
-            <div className="btn-row btn-row--tight">
-              <Button to="/get-a-quote">{site.cta.quote}</Button>
+            <div className="statement__aside">
+              <Button to="/get-a-quote" variant="inverse">
+                {site.cta.quote}
+              </Button>
             </div>
           </div>
         </section>

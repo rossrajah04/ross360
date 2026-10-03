@@ -23,7 +23,7 @@ export default function ExampleTourSection({ className = 'section section--soft'
           </p>
         )}
         {tour.openUrl ? (
-          <div className="btn-row btn-row--tight">
+          <div className="btn-row">
             <a className="btn btn--secondary" href={tour.openUrl} target="_blank" rel="noopener noreferrer">
               {site.cta.example}
               <span className="visually-hidden"> (opens in a new tab)</span>

@@ -2,14 +2,14 @@ import { Link } from 'react-router-dom';
 import Seo from '../components/Seo.jsx';
 import PageHero from '../components/PageHero.jsx';
 import SectionHeading from '../components/SectionHeading.jsx';
-import PricingCard from '../components/PricingCard.jsx';
+import FeeSchedule from '../components/FeeSchedule.jsx';
 import Checklist from '../components/Checklist.jsx';
-import MediaFrame from '../components/MediaFrame.jsx';
+import Frame from '../components/Frame.jsx';
 import ProcessSteps from '../components/ProcessSteps.jsx';
 import CtaBand from '../components/CtaBand.jsx';
 import Button from '../components/Button.jsx';
 import { businessPremises, projectIncludes, outOfScopeNote } from '../content/services.js';
-import { plans, pricingHeading, pricingIntro } from '../content/pricing.js';
+import { pricingHeading, pricingIntro } from '../content/pricing.js';
 import { site } from '../content/site.js';
 
 export default function Businesses() {
@@ -25,38 +25,34 @@ export default function Businesses() {
         </div>
       </PageHero>
 
-      <MediaFrame image={site.images.business} tone="light" className="page-media container" />
+      <div className="container container--wide page-media">
+        <Frame image={site.images.business} ratio="wide" caption="Business premises" />
+      </div>
 
       <section className="section" aria-labelledby="premises-heading">
-        <div className="container split">
-          <SectionHeading id="premises-heading" title="Premises we photograph" lead="360° virtual tours for premises including:" />
-          <Checklist items={businessPremises} />
+        <div className="container">
+          <SectionHeading id="premises-heading" title="Premises we photograph">
+            <p className="lead lead--ink">360° virtual tours for premises including:</p>
+            <Checklist items={businessPremises} columns />
+          </SectionHeading>
         </div>
       </section>
 
       <section className="section section--soft" aria-labelledby="receive-heading">
-        <div className="container split">
-          <SectionHeading
-            id="receive-heading"
-            title="A complete virtual tour, ready to use"
-            lead="Your project includes:"
-          />
-          <div>
+        <div className="container">
+          <SectionHeading id="receive-heading" title="A complete virtual tour, ready to use">
+            <p className="lead lead--ink">Your project includes:</p>
             <Checklist items={projectIncludes} />
             <p className="small">{outOfScopeNote}</p>
-          </div>
+          </SectionHeading>
         </div>
       </section>
 
       <section id="business-pricing" className="section" aria-labelledby="business-pricing-heading">
         <div className="container">
           <SectionHeading id="business-pricing-heading" title={pricingHeading} lead={pricingIntro} />
-          <div className="plans">
-            {plans.map((plan) => (
-              <PricingCard key={plan.id} plan={plan} />
-            ))}
-          </div>
-          <p className="small">
+          <FeeSchedule />
+          <p className="section-note">
             <Link to="/pricing">Pricing factors</Link>
           </p>
         </div>

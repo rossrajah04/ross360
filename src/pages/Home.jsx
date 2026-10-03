@@ -4,12 +4,11 @@ import ExampleTourSection from '../components/ExampleTourSection.jsx';
 import {
   Hero,
   WhatWeProvide,
-  WhyUse,
-  WhoWeWorkWith,
-  WhatYouReceive,
+  Applications,
+  SelectedWork,
   HowItWorks,
   PricingPreview,
-  PortfolioSection,
+  AboutPreview,
 } from '../components/home/HomeSections.jsx';
 
 export default function Home() {
@@ -19,12 +18,11 @@ export default function Home() {
       <Hero />
       <ExampleTourSection />
       <WhatWeProvide />
-      <WhyUse />
-      <WhoWeWorkWith />
-      <WhatYouReceive />
+      <Applications />
+      <SelectedWork />
       <HowItWorks />
       <PricingPreview />
-      <PortfolioSection />
+      <AboutPreview />
       <CtaBand />
     </>
   );

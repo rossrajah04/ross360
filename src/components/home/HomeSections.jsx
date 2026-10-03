@@ -1,48 +1,41 @@
 import { Link } from 'react-router-dom';
 import Button from '../Button.jsx';
 import SectionHeading from '../SectionHeading.jsx';
-import MediaFrame from '../MediaFrame.jsx';
-import PricingCard from '../PricingCard.jsx';
+import Frame from '../Frame.jsx';
+import FeeSchedule from '../FeeSchedule.jsx';
 import PortfolioGallery from '../PortfolioGallery.jsx';
 import ProcessSteps from '../ProcessSteps.jsx';
-import Checklist from '../Checklist.jsx';
 import { site } from '../../content/site.js';
-import { plans, lowestPrice, pricingHeading, pricingIntro, propertyPricingLine } from '../../content/pricing.js';
-import {
-  provides,
-  reasons,
-  businessPremises,
-  propertyClients,
-  agencyNote,
-  projectIncludes,
-  outOfScopeNote,
-} from '../../content/services.js';
+import { lowestPrice, pricingHeading, pricingIntro, propertyPricingLine } from '../../content/pricing.js';
+import { provides, businessPremises, propertyClients, agencyNote } from '../../content/services.js';
 import { projects } from '../../content/portfolio.js';
 
-// Hero
+// 1. Hero: typography, then a large image area reserved for real 360° photography, then the facts.
 export function Hero() {
   return (
     <section className="hero" aria-labelledby="hero-heading">
-      <div className="container hero__grid">
-        <div className="hero__text">
-          <h1 id="hero-heading">{site.descriptor}</h1>
-          <p className="lead">
+      <div className="container hero__top">
+        <h1 id="hero-heading" className="hero__title">
+          {site.descriptor}
+        </h1>
+        <div className="hero__body">
+          <p className="lead lead--ink">
             Professional 360° photography and interactive virtual tours for commercial premises and property.
           </p>
-          <p className="hero__support">
+          <p>
             ROSS 360 creates detailed virtual tours that allow customers, clients, buyers and tenants to explore a
             space online before visiting.
           </p>
           <div className="btn-row">
-            <Button to="/get-a-quote" variant="inverse">
-              {site.cta.primary}
-            </Button>
-            <Button to="/portfolio" variant="outline-inverse">
+            <Button to="/get-a-quote">{site.cta.primary}</Button>
+            <Button to="/portfolio" variant="secondary">
               {site.cta.work}
             </Button>
           </div>
         </div>
-        <MediaFrame image={site.images.hero} fallback className="hero__media" />
+      </div>
+      <div className="container container--wide">
+        <Frame image={site.images.hero} ratio="wide" caption="360° photography" className="hero__media" />
       </div>
       <div className="container">
         <ul className="hero__facts">
@@ -56,79 +49,49 @@ export function Hero() {
   );
 }
 
-// What ROSS 360 provides
+// 3. What ROSS 360 provides: an indexed list rather than feature cards.
 export function WhatWeProvide() {
   return (
     <section className="section" aria-labelledby="provide-heading">
       <div className="container">
-        <div className="split">
-          <SectionHeading
-            id="provide-heading"
-            title="Professional 360° photography and virtual tour production"
-          />
-          <div className="prose-block">
-            <p className="lead lead--ink">
-              We photograph your premises in 360° and produce an interactive virtual tour that can be shared online
-              and embedded into your website.
-            </p>
-            <p>Depending on the project, tours can also be prepared for publication on Google Street View.</p>
-          </div>
-        </div>
-        <ul className="rule-grid rule-grid--four section-follow">
-          {provides.map((item) => (
-            <li key={item.title}>
-              <h3>{item.title}</h3>
-              <p>{item.text}</p>
+        <SectionHeading id="provide-heading" title="Professional 360° photography and virtual tour production">
+          <p className="lead lead--ink">
+            We photograph your premises in 360° and produce an interactive virtual tour that can be shared online
+            and embedded into your website.
+          </p>
+          <p>Depending on the project, tours can also be prepared for publication on Google Street View.</p>
+        </SectionHeading>
+        <ol className="index-list">
+          {provides.map((item, index) => (
+            <li key={item.title} className="index-list__item">
+              <span className="index-list__num" aria-hidden="true">
+                {String(index + 1).padStart(2, '0')}
+              </span>
+              <h3 className="index-list__title">{item.title}</h3>
+              <p className="index-list__text">{item.text}</p>
             </li>
           ))}
-        </ul>
+        </ol>
       </div>
     </section>
   );
 }
 
-// Why use a 360° tour?
-export function WhyUse() {
+// 4. Business and property: two applications, each led by a large image area.
+export function Applications() {
   return (
-    <section className="section section--soft" aria-labelledby="why-heading">
-      <div className="container">
-        <div className="split">
-          <SectionHeading id="why-heading" title="Give people a more complete view of your space" />
-          <div className="prose-block">
-            <p className="lead lead--ink">
-              Traditional photographs show selected views. A 360° tour allows a visitor to look around the space
-              themselves.
-            </p>
-            <p>
-              This can be particularly useful for businesses and property where the layout, size and condition of
-              the premises are important to the decision being made.
-            </p>
-          </div>
-        </div>
-        <ul className="rule-grid section-follow">
-          {reasons.map((item) => (
-            <li key={item.title}>
-              <h3>{item.title}</h3>
-              <p>{item.text}</p>
-            </li>
-          ))}
-        </ul>
-      </div>
-    </section>
-  );
-}
-
-// Who we work with
-export function WhoWeWorkWith() {
-  return (
-    <section className="section" aria-labelledby="who-heading">
+    <section className="section section--soft" aria-labelledby="who-heading">
       <div className="container">
         <SectionHeading id="who-heading" title="Who we work with" />
-        <div className="audience">
-          <article className="audience__panel">
-            <h3>Businesses</h3>
+
+        <article className="application" aria-labelledby="app-business">
+          <Frame image={site.images.business} ratio="landscape" caption="Business premises" className="application__media" />
+          <div className="application__body">
+            <h3 id="app-business" className="application__title">
+              Businesses
+            </h3>
             <p>360° virtual tours for premises including:</p>
-            <ul className="plain-list">
+            <ul className="columns-list">
               {businessPremises.map((item) => (
                 <li key={item}>{item}</li>
               ))}
@@ -136,11 +99,17 @@ export function WhoWeWorkWith() {
             <Link className="text-link" to="/businesses">
               Business virtual tours
             </Link>
-          </article>
-          <article className="audience__panel">
-            <h3>Property</h3>
+          </div>
+        </article>
+
+        <article className="application application--reverse" aria-labelledby="app-property">
+          <Frame image={site.images.property} ratio="landscape" caption="Property" className="application__media" />
+          <div className="application__body">
+            <h3 id="app-property" className="application__title">
+              Property
+            </h3>
             <p>360° tours for:</p>
-            <ul className="plain-list">
+            <ul className="columns-list">
               {propertyClients.map((item) => (
                 <li key={item}>{item}</li>
               ))}
@@ -148,34 +117,40 @@ export function WhoWeWorkWith() {
             <Link className="text-link" to="/property">
               Property tours
             </Link>
-          </article>
-        </div>
-        <p className="small section-note">{agencyNote}</p>
+          </div>
+        </article>
+
+        <p className="section-note">{agencyNote}</p>
       </div>
     </section>
   );
 }
 
-// What you receive
-export function WhatYouReceive() {
+// 5. Selected work. Image-led once projects exist; a composed statement until then.
+export function SelectedWork() {
+  const hasProjects = projects.length > 0;
   return (
-    <section className="section section--soft" aria-labelledby="receive-heading">
-      <div className="container split">
-        <SectionHeading
-          id="receive-heading"
-          title="A complete virtual tour, ready to use"
-          lead="Your project includes:"
-        />
-        <div>
-          <Checklist items={projectIncludes} />
-          <p className="small">{outOfScopeNote}</p>
-        </div>
+    <section className="section section--dark" aria-labelledby="work-heading">
+      <div className="container">
+        <SectionHeading id="work-heading" title="Our Work">
+          <p className="lead">Selected 360° virtual tours produced by ROSS 360.</p>
+          {hasProjects ? null : (
+            <p>
+              Our portfolio is currently being developed. New business and property projects will be added here as
+              they are completed.
+            </p>
+          )}
+          <Link className="text-link" to="/portfolio">
+            {site.cta.work}
+          </Link>
+        </SectionHeading>
+        {hasProjects ? <PortfolioGallery headingLevel="h3" limit={3} /> : null}
       </div>
     </section>
   );
 }
 
-// How it works
+// 6. Process
 export function HowItWorks() {
   return (
     <section id="how-it-works" className="section" aria-labelledby="how-heading">
@@ -187,18 +162,14 @@ export function HowItWorks() {
   );
 }
 
-// Business pricing
+// 7. Pricing
 export function PricingPreview() {
   return (
     <section className="section section--soft" aria-labelledby="pricing-heading">
       <div className="container">
         <SectionHeading id="pricing-heading" title={pricingHeading} lead={pricingIntro} />
-        <div className="plans">
-          {plans.map((plan) => (
-            <PricingCard key={plan.id} plan={plan} />
-          ))}
-        </div>
-        <p className="small">
+        <FeeSchedule />
+        <p className="section-note">
           {propertyPricingLine} <Link to="/pricing">Pricing factors</Link>
         </p>
       </div>
@@ -206,17 +177,26 @@ export function PricingPreview() {
   );
 }
 
-// Portfolio (only once there is genuine work to show)
-export function PortfolioSection() {
-  if (projects.length === 0) return null;
+// 8. About / founder
+export function AboutPreview() {
+  const photo = site.images.founder;
   return (
-    <section className="section" aria-labelledby="work-heading">
-      <div className="container">
-        <SectionHeading id="work-heading" title="Our Work" lead="Selected 360° virtual tours produced by ROSS 360." />
-        <PortfolioGallery headingLevel="h3" />
-        <p className="small">
-          <Link to="/portfolio">{site.cta.work}</Link>
-        </p>
+    <section className="section" aria-labelledby="about-heading">
+      <div className={`container${photo ? ' founder' : ''}`}>
+        {photo ? <Frame image={photo} ratio="portrait" className="founder__photo" /> : null}
+        <SectionHeading id="about-heading" title="About ROSS 360">
+          <p className="lead lead--ink">
+            ROSS 360 was founded by {site.founder} to provide businesses and property professionals with a
+            straightforward way to present their premises online.
+          </p>
+          <p>
+            Each project is handled directly from initial enquiry through photography, tour production and delivery.
+          </p>
+          <p>
+            The focus is simple: accurate photography, professionally produced tours and a clear service from start
+            to finish.
+          </p>
+        </SectionHeading>
       </div>
     </section>
   );

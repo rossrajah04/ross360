@@ -18,9 +18,7 @@ export default function Quote() {
             <p>
               Provide a few details below and we’ll review the requirements before preparing a quotation.
             </p>
-            <p>
-              <strong>There is no obligation to proceed.</strong>
-            </p>
+            <p className="quote-aside__strong">There is no obligation to proceed.</p>
             <p className="quote-aside__note">
               Your details are used to prepare your quotation. See the <Link to="/privacy">Privacy Notice</Link>.
             </p>
