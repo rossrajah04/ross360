@@ -38,7 +38,10 @@ export const property = {
         text: 'Give prospective occupiers a clearer view of commercial premises.',
       },
       { title: 'Property managers', text: 'Provide an accessible way to showcase spaces where appropriate.' },
-      { title: 'Property sellers', text: 'For selected private property projects, subject to quotation and requirements.' },
+      {
+        title: 'Property owners',
+        text: 'Selected private property projects may also be considered, subject to requirements.',
+      },
     ],
   },
 
