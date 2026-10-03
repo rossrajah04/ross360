@@ -36,20 +36,24 @@ export const virtualTours = {
   receive: {
     title: 'What you receive',
     items: [
-      '360° photography',
-      'Interactive virtual tour',
-      'Website-ready embed',
-      'Shareable tour URL',
-      'Google Street View publication where appropriate',
+      { title: '360° photography', text: 'Professional 360° imagery of the agreed areas.' },
+      { title: 'Interactive virtual tour', text: 'A connected tour visitors can navigate themselves.' },
+      { title: 'Website-ready embed', text: 'Your tour can be embedded directly into your website.' },
+      { title: 'Shareable tour URL', text: 'A direct link you can send to customers, clients, buyers or tenants.' },
+      { title: 'Google Street View', text: 'Publication to Google Street View where appropriate and authorised.' },
     ],
   },
 
   how: {
     title: 'How it works',
     steps: [
-      { title: 'Capture', text: 'We photograph the agreed areas of your space in 360°.' },
-      { title: 'Produce', text: 'We process the imagery and build the interactive tour.' },
-      { title: 'Deliver', text: 'You receive the finished tour ready to share and embed online.' },
+      { title: 'Enquire', text: 'Tell us about your space, what you need and the areas you’d like photographed.' },
+      { title: 'Plan', text: 'We review the project requirements, confirm the scope and provide a quotation.' },
+      { title: 'Capture', text: 'Once booked, we photograph the agreed areas of your space in 360°.' },
+      {
+        title: 'Produce & deliver',
+        text: 'We process the imagery, build the interactive tour and provide it ready to share and embed online.',
+      },
     ],
   },
 

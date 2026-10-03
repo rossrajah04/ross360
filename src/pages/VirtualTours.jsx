@@ -10,7 +10,8 @@ import '../styles/virtual-tours.css';
 
 // Virtual Tours: the product first, then a few short parts, each composed differently.
 //  - The live tour, then what a tour is beside the same tour on a phone, both on the dark ground.
-//  - Why ROSS 360, what you receive, how it works and how a tour differs, on the light page.
+//  - Why ROSS 360, what you receive, how it works (from the enquiry to delivery) and how a tour differs,
+//    on the light page.
 //  - The homepage's closing enquiry.
 // The `home` class gives the page the homepage's tokens and shared styles. The only tour shown is the
 // external Avalon Hotel example, labelled and credited as someone else's work; no imagery is copied from it.
@@ -100,13 +101,16 @@ export default function VirtualTours() {
       </section>
 
       <section className="vt-receive" aria-labelledby="vt-receive-title">
-        <div className="h-wrap vt-receive__inner" data-reveal>
-          <h2 id="vt-receive-title" className="vt-receive__title">
+        <div className="h-wrap">
+          <h2 id="vt-receive-title" className="h-h2" data-reveal>
             {receive.title}
           </h2>
           <ul className="vt-receive__list">
             {receive.items.map((item) => (
-              <li key={item}>{item}</li>
+              <li key={item.title} className="vt-deliverable" data-reveal>
+                <h3 className="vt-deliverable__title">{item.title}</h3>
+                <p className="vt-deliverable__text">{item.text}</p>
+              </li>
             ))}
           </ul>
         </div>
