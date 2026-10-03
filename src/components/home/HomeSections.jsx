@@ -4,10 +4,10 @@ import TourStage from './TourStage.jsx';
 import { home } from '../../content/home.js';
 import { media } from '../../content/media.js';
 import { site } from '../../content/site.js';
-import { plans, propertyPricingLine } from '../../content/pricing.js';
+import { plans } from '../../content/pricing.js';
 
-// Homepage: the space and one tour, then the story below it: why it matters, what you get, a statement,
-// who it is for, how it works, what it costs, who is behind it, and the enquiry.
+// Homepage: the opening photograph and one tour, then what we create, how it works, business pricing,
+// about ROSS 360, and the enquiry.
 // The Step inside tour is the only example of a space on the page.
 // Wording comes from src/content/home.js and photographs from src/content/media.js.
 
@@ -79,168 +79,129 @@ export function StepInside() {
   );
 }
 
-// Why it matters. It continues on the tour's dark ground: the heading, then the reason set as a
-// large statement, offset to the right.
-export function Explore() {
-  const { explore } = home;
+// Everything below the tour shares one form: a section heading, an optional line of text, then the
+// content, on the same grid and left edge. Sections are separated by a single rule.
+function Section({ id, title, text, end = false, children }) {
   return (
-    <section className="h-explore" aria-labelledby="h-explore-title">
-      <div className="h-wrap">
-        <h2 id="h-explore-title" className="h-explore__title" data-reveal>
-          {explore.title}
-        </h2>
-        <p className="h-explore__statement" data-reveal>
-          {explore.text}
-        </p>
-      </div>
-    </section>
-  );
-}
-
-// Every section below shares one form: a heading, then its content on the same left edge.
-function Part({ id, title, end = false, children }) {
-  return (
-    <section className={`h-part${end ? ' h-part--end' : ''}`} aria-labelledby={id}>
-      <div className="h-wrap">
-        <h2 id={id} className="h-part__title" data-reveal>
-          {title}
-        </h2>
+    <section className={`h-sec${end ? ' h-sec--end' : ''}`} aria-labelledby={id}>
+      <div className="h-wrap h-sec__inner">
+        <header className="h-sec__head" data-reveal>
+          <h2 id={id} className="h-sec__title">
+            {title}
+          </h2>
+          {text ? <p className="h-sec__text">{text}</p> : null}
+        </header>
         {children}
       </div>
     </section>
   );
 }
 
-// What you get.
-export function Included() {
-  const { included } = home;
+// What we create.
+export function WhatWeCreate() {
+  const { create } = home;
   return (
-    <Part id="h-included-title" title={included.title}>
-      <ul className="h-list" data-reveal>
-        {included.items.map((item) => (
-          <li key={item} className="h-list__item">
+    <Section id="h-create-title" title={create.title} text={create.text}>
+      <ul className="h-deliver" data-reveal>
+        {create.items.map((item) => (
+          <li key={item} className="h-deliver__item">
             {item}
           </li>
         ))}
       </ul>
-    </Part>
+    </Section>
   );
 }
 
-// One statement, set by type and space alone.
-export function Statement() {
-  const { statement } = home;
-  return (
-    <section className="h-statement-band" aria-labelledby="h-statement-title">
-      <div className="h-wrap">
-        <h2 id="h-statement-title" className="h-statement-band__title" data-reveal>
-          {statement.title}
-        </h2>
-        <p className="h-statement-band__text" data-reveal>
-          {statement.text}
-        </p>
-      </div>
-    </section>
-  );
-}
-
-// Who it is for.
-export function SpaceTypes() {
-  const { spaces } = home;
-  return (
-    <Part id="h-for-title" title={spaces.title}>
-      <ul className="h-names" data-reveal>
-        {spaces.items.map((item) => (
-          <li key={item.label}>
-            <Link className="h-names__link" to={item.to}>
-              {item.label}
-            </Link>
-          </li>
-        ))}
-      </ul>
-    </Part>
-  );
-}
-
-// How it works: three stages on the same three columns as the prices.
-export function Process() {
+// How it works.
+export function HowItWorks() {
   const { process } = home;
   return (
-    <Part id="h-process-title" title={process.title}>
-      <ol className="h-three">
+    <Section id="h-how-title" title={process.title}>
+      <ol className="h-cols">
         {process.steps.map((step, index) => (
-          <li key={step.title} className="h-three__item" data-reveal>
-            <span className="h-three__num" aria-hidden="true">
+          <li key={step.title} className="h-cols__item" data-reveal>
+            <span className="h-step__num" aria-hidden="true">
               {pad(index + 1)}
             </span>
-            <h3 className="h-three__name">{step.title}</h3>
-            <p className="h-three__text">{step.text}</p>
+            <h3 className="h-cols__name">{step.title}</h3>
+            <p className="h-cols__text">{step.text}</p>
           </li>
         ))}
       </ol>
-    </Part>
+    </Section>
   );
 }
 
-// What it costs.
-export function Fees() {
+// Business tour pricing.
+export function Pricing() {
   const { pricing } = home;
   return (
-    <Part id="h-price-title" title={pricing.title}>
-      <ul className="h-three">
-        {plans.map((plan) => (
-          <li key={plan.id} className="h-three__item" data-reveal>
-            <p className="h-three__price">
-              <span className="visually-hidden">From </span>£{plan.price}
-            </p>
-            <h3 className="h-three__name">{plan.name}</h3>
-          </li>
-        ))}
+    <Section id="h-pricing-title" title={pricing.title}>
+      <ul className="h-cols h-cols--prices">
+        {plans.map((plan) => {
+          const copy = pricing.plans[plan.id] || {};
+          return (
+            <li key={plan.id} className="h-cols__item h-plan" data-reveal>
+              <p className="h-plan__price">
+                £{plan.price}
+                {copy.plus ? '+' : ''}
+              </p>
+              <h3 className="h-cols__name h-plan__name">{plan.name}</h3>
+              <p className="h-cols__text h-plan__text">{copy.text || plan.summary}</p>
+            </li>
+          );
+        })}
       </ul>
-      <div className="h-part__foot" data-reveal>
-        <p>{propertyPricingLine}</p>
-        <Link className="h-link" to="/pricing">
-          {pricing.link}
-          <Arrow />
-        </Link>
+      <div className="h-pricing__foot" data-reveal>
+        <p className="h-pricing__property">{pricing.property}</p>
+        <div className="h-pricing__actions">
+          <Link className="h-button" to={site.quoteLink.to}>
+            {pricing.cta}
+          </Link>
+          <Link className="h-link" to="/pricing">
+            {pricing.link}
+            <Arrow />
+          </Link>
+        </div>
       </div>
-    </Part>
+    </Section>
   );
 }
 
-// Who is behind it.
+// About ROSS 360.
 export function About() {
   const { about } = home;
   return (
-    <Part id="h-about-title" title={about.title} end>
-      <div data-reveal>
-        <p className="h-part__lead">{about.text}</p>
+    <Section id="h-about-title" title={about.title} end>
+      <div className="h-about" data-reveal>
+        <p className="h-about__lead">{about.lead}</p>
+        <p className="h-about__text">{about.text}</p>
         <Link className="h-link" to="/about">
           {about.link}
           <Arrow />
         </Link>
       </div>
-    </Part>
+    </Section>
   );
 }
 
-// The conclusion: the enquiry, over the closing photograph.
+// The enquiry, over the closing photograph.
 export function Closing() {
   const { closing } = home;
   return (
     <section className="h-close" aria-labelledby="h-close-title">
       <Photo image={media.closing} className="h-close__photo" decorative />
       <div className="h-close__shade" aria-hidden="true" />
-      <div className="h-wrap h-close__inner">
-        <h2 id="h-close-title" className="h-close__title" data-reveal>
+      <div className="h-wrap h-close__inner" data-reveal>
+        <h2 id="h-close-title" className="h-close__title">
           {closing.title}
         </h2>
-        <div className="h-close__action" data-reveal>
-          <Link className="h-close__cta" to={site.quoteLink.to}>
-            {closing.cta}
-            <Arrow />
-          </Link>
-        </div>
+        <p className="h-close__text">{closing.text}</p>
+        <Link className="h-close__cta" to={site.quoteLink.to}>
+          {closing.cta}
+          <Arrow />
+        </Link>
       </div>
     </section>
   );

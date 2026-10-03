@@ -21,65 +21,49 @@ export const home = {
     demoNote: 'This is a demonstration tour.',
   },
 
-  // Directly after the tour: why it matters. The text is set as a large statement.
-  explore: {
-    title: 'Let people explore before they arrive.',
-    text: 'A 360° tour lets people understand a space before they visit — from the layout and atmosphere to the details that photographs alone can miss.',
-  },
-
-  included: {
-    title: 'What’s included',
-    items: [
-      '360° photography',
-      'Interactive virtual tour',
-      'Website embed',
-      'Google Street View publication where appropriate',
-    ],
-  },
-
-  statement: {
-    title: 'Your space, online. As it actually is.',
-    // Supporting line written for this section; replace with ROSS 360's own wording if preferred.
-    text: 'One tour of the whole space, not a selection of views. Visitors move through it at their own pace, on any device.',
-  },
-
-  spaces: {
-    title: 'For business & property',
-    items: [
-      { label: 'Restaurants', to: '/businesses' },
-      { label: 'Hotels & Venues', to: '/businesses' },
-      { label: 'Gyms & Studios', to: '/businesses' },
-      { label: 'Retail & Showrooms', to: '/businesses' },
-      { label: 'Clinics', to: '/businesses' },
-      { label: 'Estate Agents', to: '/property' },
-      { label: 'Property Professionals', to: '/property' },
-      { label: 'Developers', to: '/property' },
-    ],
+  // Below the tour.
+  create: {
+    title: '360° virtual tours, produced for your space.',
+    text: 'We photograph your premises in 360° and produce an interactive virtual tour that customers, clients, buyers and tenants can explore online.',
+    items: ['360° Photography', 'Interactive Virtual Tour', 'Website Integration', 'Google Street View'],
   },
 
   process: {
-    title: 'From space to online',
+    title: 'From photography to finished tour.',
     steps: [
-      { title: 'Capture', text: '360° photography of the agreed areas.' },
-      { title: 'Build', text: 'Your imagery becomes an interactive virtual tour.' },
-      { title: 'Deliver', text: 'A finished tour ready to share and embed.' },
+      { title: 'Capture', text: 'We photograph the agreed areas of your space in 360°.' },
+      { title: 'Produce', text: 'Your imagery is processed and assembled into an interactive virtual tour.' },
+      {
+        title: 'Deliver',
+        text: 'You receive a finished tour ready to share, embed on your website and, where appropriate, publish to Google Street View.',
+      },
     ],
   },
 
+  // Package names and prices come from pricing.js; these short descriptions are for the homepage.
   pricing: {
-    title: 'Business tours',
-    // Package names, starting prices and the property line come from pricing.js.
-    link: 'View pricing',
+    title: 'Business 360° tours',
+    plans: {
+      essential: { text: 'For smaller premises and straightforward tours.' },
+      professional: { text: 'For larger spaces requiring a more comprehensive tour.' },
+      bespoke: { text: 'For larger or more complex premises.', plus: true },
+    },
+    property: 'Property projects are individually quoted based on size, location and requirements.',
+    cta: 'Request a Quote',
+    link: 'Full pricing details',
   },
 
   about: {
     title: site.brand,
-    text: 'Professional 360° photography and virtual tours for businesses and property.',
+    lead: 'Professional 360° photography and virtual tours for businesses and property.',
+    // Written for the homepage; replace with ROSS 360's own wording if preferred.
+    text: 'ROSS 360 photographs commercial premises and properties in 360° and produces interactive virtual tours that can be shared online, embedded on a website and, where appropriate, published to Google Street View.',
     link: 'About ROSS 360',
   },
 
   closing: {
-    title: 'Ready to show people your space?',
+    title: 'Give people a better way to understand your space.',
+    text: 'Request a quote for a professional 360° virtual tour.',
     cta: 'Request a Quote',
   },
 };

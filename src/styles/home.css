@@ -30,47 +30,6 @@
   text-transform: uppercase;
 }
 
-.h-subtitle {
-  margin: 0;
-  color: var(--ink);
-  font-size: clamp(1.6rem, 2.6vw, 2.4rem);
-  font-weight: 300;
-  line-height: 1.05;
-  letter-spacing: -0.025em;
-  text-transform: uppercase;
-}
-
-.h-statement {
-  margin: 0;
-  color: var(--ink);
-  font-size: clamp(1.9rem, 3.4vw, 3.4rem);
-  font-weight: 300;
-  line-height: 1.08;
-  letter-spacing: -0.03em;
-}
-
-.h-label,
-.h-tag {
-  display: block;
-  font-size: 0.7rem;
-  font-weight: 500;
-  letter-spacing: 0.18em;
-  line-height: 1.4;
-  text-transform: uppercase;
-}
-
-/* Small marker on temporary imagery. */
-.h-tag {
-  position: absolute;
-  z-index: 2;
-  padding: 6px 10px;
-  background: rgba(15, 15, 14, 0.62);
-  color: #ffffff;
-  font-size: 0.64rem;
-  letter-spacing: 0.16em;
-  pointer-events: none;
-}
-
 .h-link {
   display: inline-flex;
   align-items: center;
@@ -279,236 +238,257 @@
 }
 
 /* ---------- Below the tour ----------
-   One system for the whole lower page: every part is a heading and its content on the same left
-   edge, in the same three type sizes (heading, lead, body), separated by space rather than rules or
-   boxes. The process and the prices share one three-column measure. Dark carries on from the tour into
-   why it matters, returns once for the statement, and the page closes on the photograph. */
+   Written mobile first. One light ground, one grid and one set of type sizes for every section:
+   a heading, an optional line of text, then the content. Sections are divided by a single rule.
+   The page then closes on the photograph. */
 
-/* Why it matters */
-
-.h-explore {
-  padding: 0 0 var(--h-space);
-  background: var(--deep);
-  color: var(--on-dark);
+.h-sec {
+  padding: clamp(56px, 8vw, 112px) 0 0;
 }
 
-.h-explore__title {
-  max-width: 14ch;
+.h-sec--end {
+  padding-bottom: clamp(56px, 8vw, 112px);
+}
+
+.h-sec + .h-sec .h-sec__inner {
+  padding-top: clamp(56px, 8vw, 112px);
+  border-top: 1px solid var(--line);
+}
+
+
+.h-sec__head {
+  max-width: 40rem;
+  margin-bottom: clamp(32px, 4vw, 56px);
+}
+
+.h-sec__title {
   margin: 0;
-  color: #ffffff;
-  font-size: clamp(2.2rem, 5vw, 4.6rem);
-  font-weight: 300;
-  line-height: 0.98;
-  letter-spacing: -0.035em;
-  text-transform: uppercase;
-}
-
-.h-explore__statement {
-  max-width: 26ch;
-  margin: clamp(56px, 8vw, 128px) 0 0;
-  color: rgba(255, 255, 255, 0.86);
-  font-size: clamp(1.6rem, 3vw, 3rem);
-  font-weight: 300;
-  line-height: 1.16;
-  letter-spacing: -0.025em;
-}
-
-@media (min-width: 1000px) {
-  .h-explore__statement {
-    margin-left: 41.66%;
-  }
-}
-
-/* The shared part */
-
-.h-part {
-  padding: var(--h-space) 0 0;
-}
-
-/* The last part before the closing photograph keeps space beneath it. */
-.h-part--end {
-  padding-bottom: var(--h-space);
-}
-
-.h-part__title {
-  margin: 0 0 clamp(36px, 4.5vw, 64px);
   color: var(--ink);
-  font-size: clamp(1.5rem, 2.4vw, 2.2rem);
-  font-weight: 300;
-  line-height: 1.1;
-  letter-spacing: -0.015em;
-  text-transform: uppercase;
+  font-size: clamp(1.6rem, 3vw, 2.4rem);
+  font-weight: 400;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
 }
 
-.h-part__lead {
-  max-width: 30ch;
-  margin: 0 0 32px;
-  color: var(--ink);
-  font-size: clamp(1.4rem, 2.2vw, 2rem);
-  font-weight: 300;
-  line-height: 1.25;
-  letter-spacing: -0.015em;
-}
-
-.h-part__foot {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 16px 32px;
-  margin-top: clamp(48px, 6vw, 80px);
-}
-
-.h-part__foot p {
-  margin: 0;
+.h-sec__text {
+  margin: 16px 0 0;
   color: var(--ink-soft);
-  font-size: 1.15rem;
+  font-size: clamp(1.05rem, 1.3vw, 1.15rem);
+  line-height: 1.6;
 }
 
-/* What's included: one list in the lead size. */
+/* What we create: the four deliverables as one list, each under a rule; in a row on wide screens. */
 
-.h-list {
+.h-deliver {
+  display: grid;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.h-list__item {
-  padding: 0.28em 0;
+.h-deliver__item {
+  padding: 16px 0;
+  border-top: 1px solid var(--line);
   color: var(--ink);
-  font-size: clamp(1.4rem, 2.2vw, 2rem);
-  font-weight: 300;
-  line-height: 1.25;
-  letter-spacing: -0.015em;
+  font-size: 1.1rem;
+  font-weight: 500;
 }
 
-/* The statement */
-
-.h-statement-band {
-  margin-top: var(--h-space);
-  padding: calc(var(--h-space) * 1.2) 0;
-  background: var(--deep);
-  color: var(--on-dark);
-}
-
-.h-statement-band__title {
-  max-width: 16ch;
-  margin: 0;
-  color: #ffffff;
-  font-size: clamp(2.4rem, 6vw, 6rem);
-  font-weight: 300;
-  line-height: 0.98;
-  letter-spacing: -0.035em;
-  text-transform: uppercase;
-}
-
-.h-statement-band__text {
-  max-width: 40ch;
-  margin: clamp(32px, 4vw, 56px) 0 0;
-  color: rgba(255, 255, 255, 0.78);
-  font-size: clamp(1.15rem, 1.5vw, 1.35rem);
-  line-height: 1.5;
-}
-
-/* For business & property: names in the lead size, in two columns on wider screens. */
-
-.h-names {
-  max-width: 900px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  columns: 1;
-}
-
-.h-names__link {
-  display: inline-block;
-  padding: 0.28em 0;
-  color: var(--ink);
-  font-size: clamp(1.4rem, 2.2vw, 2rem);
-  font-weight: 300;
-  line-height: 1.25;
-  letter-spacing: -0.015em;
-  text-decoration: none;
-  transition: color 0.3s var(--ease);
-}
-
-@media (hover: hover) {
-  .h-names:hover .h-names__link {
-    color: var(--muted);
-  }
-  .h-names .h-names__link:hover {
-    color: var(--ink);
-  }
-}
 
 @media (min-width: 700px) {
-  .h-names {
-    columns: 2;
+  .h-deliver {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     column-gap: 32px;
   }
 }
 
-/* Three columns: the process and the prices. */
+@media (min-width: 1000px) {
+  .h-deliver {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .h-deliver__item {
+    padding: 20px 0 0;
+  }
+}
 
-.h-three {
+/* How it works and pricing share three columns: rows on a phone, columns from 760px. */
+
+.h-cols {
   display: grid;
-  gap: 48px;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.h-three__num {
+.h-cols__item {
+  padding: 20px 0 24px;
+  border-top: 1px solid var(--line);
+}
+
+.h-step__num {
   display: block;
-  margin-bottom: 16px;
+  margin-bottom: 10px;
   color: var(--muted);
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-variant-numeric: tabular-nums;
 }
 
-.h-three__name {
+.h-cols__name {
   margin: 0;
   color: var(--ink);
-  font-size: clamp(1.4rem, 2.2vw, 2rem);
-  font-weight: 300;
-  line-height: 1.2;
-  letter-spacing: -0.01em;
+  font-size: 1.05rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 
-.h-three__text {
-  max-width: 26ch;
-  margin: 12px 0 0;
+.h-cols__text {
+  max-width: 34ch;
+  margin: 8px 0 0;
   color: var(--ink-soft);
-  font-size: 1.15rem;
-  line-height: 1.5;
-}
-
-.h-three__price {
-  margin: 0 0 12px;
-  color: var(--ink);
-  font-size: clamp(3rem, 6vw, 5.6rem);
-  font-weight: 300;
-  line-height: 0.95;
-  letter-spacing: -0.045em;
+  font-size: 1.05rem;
+  line-height: 1.55;
 }
 
 @media (min-width: 760px) {
-  .h-three {
+  .h-cols {
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 0 32px;
+    column-gap: 32px;
   }
+  .h-cols__item {
+    padding: 24px 0 0;
+  }
+}
+
+/* Pricing: on a phone each package is one row, price on the right, so the three compare at a glance. */
+
+.h-plan {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    'name price'
+    'text text';
+  column-gap: 16px;
+  align-items: baseline;
+}
+
+.h-plan__name {
+  grid-area: name;
+}
+
+.h-plan__price {
+  grid-area: price;
+  margin: 0;
+  color: var(--ink);
+  font-size: 1.75rem;
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+}
+
+.h-plan__text {
+  grid-area: text;
+}
+
+@media (min-width: 760px) {
+  .h-plan {
+    display: block;
+  }
+  .h-plan__price {
+    margin-bottom: 14px;
+    font-size: clamp(2.2rem, 3.2vw, 2.8rem);
+  }
+}
+
+.h-cols--prices .h-cols__item:last-child {
+  border-bottom: 1px solid var(--line);
+}
+
+@media (min-width: 760px) {
+  .h-cols--prices .h-cols__item:last-child {
+    border-bottom: 0;
+  }
+}
+
+.h-pricing__foot {
+  display: grid;
+  gap: 24px;
+  margin-top: clamp(28px, 4vw, 48px);
+}
+
+.h-pricing__property {
+  max-width: 44ch;
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 1.05rem;
+}
+
+.h-pricing__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px 32px;
+}
+
+.h-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 52px;
+  padding: 0 28px;
+  background: var(--ink);
+  color: #ffffff;
+  font-size: 0.85rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition: background-color 0.3s var(--ease);
+}
+
+.h-button:hover {
+  background: #2c2b28;
+}
+
+@media (min-width: 1000px) {
+  .h-pricing__foot {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+  }
+}
+
+/* Text links below the tour are set a little larger than the one beside the tour. */
+.h-sec .h-link {
+  font-size: 0.85rem;
+  letter-spacing: 0.14em;
+}
+
+/* About ROSS 360 */
+
+.h-about {
+  max-width: 40rem;
+}
+
+.h-about__lead {
+  margin: 0;
+  color: var(--ink);
+  font-size: clamp(1.2rem, 1.8vw, 1.45rem);
+  line-height: 1.45;
+}
+
+.h-about__text {
+  margin: 16px 0 28px;
+  color: var(--ink-soft);
+  font-size: clamp(1.05rem, 1.3vw, 1.15rem);
+  line-height: 1.6;
 }
 
 /* ---------- Closing ---------- */
 
 .h-close {
   position: relative;
-  display: flex;
-  align-items: flex-end;
-  min-height: 92vh;
-  min-height: 92svh;
-  padding: var(--h-space) 0 clamp(56px, 8vw, 120px);
+  padding: clamp(80px, 12vw, 168px) 0;
   overflow: hidden;
   background: var(--deep);
   color: var(--on-dark);
@@ -522,7 +502,7 @@
 .h-close__shade {
   position: absolute;
   inset: 0;
-  background: rgba(10, 10, 9, 0.58);
+  background: rgba(10, 10, 9, 0.66);
 }
 
 .h-close__inner {
@@ -531,35 +511,33 @@
 }
 
 .h-close__title {
-  max-width: 15ch;
+  max-width: 22ch;
   margin: 0;
   color: #ffffff;
-  font-size: clamp(2.3rem, 6vw, 6.4rem);
-  font-weight: 300;
-  line-height: 0.98;
-  letter-spacing: -0.035em;
+  font-size: clamp(1.75rem, 3.6vw, 3rem);
+  font-weight: 400;
+  line-height: 1.12;
+  letter-spacing: -0.02em;
 }
 
-.h-close__action {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 24px 40px;
-  margin-top: clamp(36px, 5vw, 72px);
+.h-close__text {
+  max-width: 40ch;
+  margin: 16px 0 32px;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: clamp(1.05rem, 1.3vw, 1.15rem);
 }
 
 .h-close__cta {
   display: inline-flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 24px;
-  min-height: 64px;
+  gap: 20px;
+  min-height: 52px;
   padding: 0 28px;
   background: #ffffff;
   color: var(--ink);
-  font-size: 0.82rem;
+  font-size: 0.85rem;
   font-weight: 500;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   text-decoration: none;
   transition: background-color 0.3s var(--ease);
@@ -568,8 +546,6 @@
 .h-close__cta:hover {
   background: var(--bg-tone);
 }
-
-
 
 .h-close :focus-visible {
   outline-color: #ffffff;
