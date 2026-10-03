@@ -4,10 +4,10 @@ import TourStage from './TourStage.jsx';
 import { home } from '../../content/home.js';
 import { media } from '../../content/media.js';
 import { site } from '../../content/site.js';
-import { plans, pricingIntro, propertyPricingLine } from '../../content/pricing.js';
+import { plans, propertyPricingLine } from '../../content/pricing.js';
 
-// Homepage: the space and one tour, then one continuous story below it: why it matters, what we create
-// and for whom, how it works, what it costs, who is behind it, and the enquiry.
+// Homepage: the space and one tour, then the story below it: why it matters, what you get, a statement,
+// who it is for, how it works, what it costs, who is behind it, and the enquiry.
 // The Step inside tour is the only example of a space on the page.
 // Wording comes from src/content/home.js and photographs from src/content/media.js.
 
@@ -97,120 +97,130 @@ export function Explore() {
   );
 }
 
-// A quiet heading that anchors each part of the story below.
-function Kicker({ id, children }) {
+// Every section below shares one form: a heading, then its content on the same left edge.
+function Part({ id, title, end = false, children }) {
   return (
-    <h2 id={id} className="h-kicker" data-reveal>
-      {children}
-    </h2>
-  );
-}
-
-// What we create, then who it is for: one light passage of large type.
-export function Create() {
-  const { create, spaces } = home;
-  return (
-    <section className="h-create" aria-labelledby="h-create-title">
+    <section className={`h-part${end ? ' h-part--end' : ''}`} aria-labelledby={id}>
       <div className="h-wrap">
-        <Kicker id="h-create-title">{create.title}</Kicker>
-        <ul className="h-create__list">
-          {create.items.map((item) => (
-            <li key={item.title} className="h-create__item" data-reveal>
-              {item.title}
-              {item.note ? <span className="h-create__note"> {item.note}</span> : null}
-            </li>
-          ))}
-        </ul>
-
-        <div className="h-for">
-          <Kicker id="h-for-title">{spaces.title}</Kicker>
-          <ul className="h-for__list" aria-labelledby="h-for-title" data-reveal>
-            {spaces.items.map((item) => (
-              <li key={item.label} className="h-for__item">
-                <Link className="h-for__link" to={item.to}>
-                  {item.label}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </div>
+        <h2 id={id} className="h-part__title" data-reveal>
+          {title}
+        </h2>
+        {children}
       </div>
     </section>
   );
 }
 
-// How it works: three stages, each given the width of the page.
+// What you get.
+export function Included() {
+  const { included } = home;
+  return (
+    <Part id="h-included-title" title={included.title}>
+      <ul className="h-list" data-reveal>
+        {included.items.map((item) => (
+          <li key={item} className="h-list__item">
+            {item}
+          </li>
+        ))}
+      </ul>
+    </Part>
+  );
+}
+
+// One statement, set by type and space alone.
+export function Statement() {
+  const { statement } = home;
+  return (
+    <section className="h-statement-band" aria-labelledby="h-statement-title">
+      <div className="h-wrap">
+        <h2 id="h-statement-title" className="h-statement-band__title" data-reveal>
+          {statement.title}
+        </h2>
+        <p className="h-statement-band__text" data-reveal>
+          {statement.text}
+        </p>
+      </div>
+    </section>
+  );
+}
+
+// Who it is for.
+export function SpaceTypes() {
+  const { spaces } = home;
+  return (
+    <Part id="h-for-title" title={spaces.title}>
+      <ul className="h-names" data-reveal>
+        {spaces.items.map((item) => (
+          <li key={item.label}>
+            <Link className="h-names__link" to={item.to}>
+              {item.label}
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </Part>
+  );
+}
+
+// How it works: three stages on the same three columns as the prices.
 export function Process() {
   const { process } = home;
   return (
-    <section className="h-stages" aria-labelledby="h-stages-title">
-      <div className="h-wrap">
-        <Kicker id="h-stages-title">{process.title}</Kicker>
-        <ol className="h-stages__list">
-          {process.steps.map((step, index) => (
-            <li key={step.title} className="h-stage" data-reveal>
-              <span className="h-stage__num" aria-hidden="true">
-                {pad(index + 1)}
-              </span>
-              <h3 className="h-stage__name">{step.title}</h3>
-              <p className="h-stage__text">{step.text}</p>
-            </li>
-          ))}
-        </ol>
-      </div>
-    </section>
+    <Part id="h-process-title" title={process.title}>
+      <ol className="h-three">
+        {process.steps.map((step, index) => (
+          <li key={step.title} className="h-three__item" data-reveal>
+            <span className="h-three__num" aria-hidden="true">
+              {pad(index + 1)}
+            </span>
+            <h3 className="h-three__name">{step.title}</h3>
+            <p className="h-three__text">{step.text}</p>
+          </li>
+        ))}
+      </ol>
+    </Part>
   );
 }
 
-// What it costs: three starting prices set as large numerals, then property.
+// What it costs.
 export function Fees() {
   const { pricing } = home;
   return (
-    <section className="h-price" aria-labelledby="h-price-title">
-      <div className="h-wrap">
-        <div className="h-price__head" data-reveal>
-          <Kicker id="h-price-title">{pricing.title}</Kicker>
-          <p className="h-price__intro">{pricingIntro}</p>
-        </div>
-        <ul className="h-price__list">
-          {plans.map((plan) => (
-            <li key={plan.id} className="h-price__item" data-reveal>
-              <p className="h-price__amount">
-                <span className="visually-hidden">From </span>£{plan.price}
-              </p>
-              <h3 className="h-price__name">{plan.name}</h3>
-            </li>
-          ))}
-        </ul>
-        <div className="h-price__foot" data-reveal>
-          <p>{propertyPricingLine}</p>
-          <Link className="h-link" to="/pricing">
-            {pricing.link}
-            <Arrow />
-          </Link>
-        </div>
+    <Part id="h-price-title" title={pricing.title}>
+      <ul className="h-three">
+        {plans.map((plan) => (
+          <li key={plan.id} className="h-three__item" data-reveal>
+            <p className="h-three__price">
+              <span className="visually-hidden">From </span>£{plan.price}
+            </p>
+            <h3 className="h-three__name">{plan.name}</h3>
+          </li>
+        ))}
+      </ul>
+      <div className="h-part__foot" data-reveal>
+        <p>{propertyPricingLine}</p>
+        <Link className="h-link" to="/pricing">
+          {pricing.link}
+          <Arrow />
+        </Link>
       </div>
-    </section>
+    </Part>
   );
 }
 
-// Who is behind it, in a few lines.
+// Who is behind it.
 export function About() {
   const { about } = home;
   return (
-    <section className="h-intro" aria-labelledby="h-intro-title">
-      <div className="h-wrap h-intro__inner">
-        <Kicker id="h-intro-title">{about.title}</Kicker>
-        <div className="h-intro__body" data-reveal>
-          <p className="h-intro__lead">{about.lead}</p>
-          <p className="h-intro__text">{about.text}</p>
-          <Link className="h-link" to="/about">
-            {about.link}
-            <Arrow />
-          </Link>
-        </div>
+    <Part id="h-about-title" title={about.title} end>
+      <div data-reveal>
+        <p className="h-part__lead">{about.text}</p>
+        <Link className="h-link" to="/about">
+          {about.link}
+          <Arrow />
+        </Link>
       </div>
-    </section>
+    </Part>
   );
 }
 
