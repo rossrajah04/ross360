@@ -86,6 +86,16 @@
   padding-bottom: var(--h-gap);
 }
 
+/* The start of a new part of the page (why ROSS 360, what you receive, the process): more space above
+   and a darker rule. */
+.vt-row--major {
+  padding-top: clamp(56px, 6.5vw, 96px);
+}
+
+.vt-row--major .vt-row__inner {
+  border-top-color: var(--line-strong);
+}
+
 .vt-row__title {
   max-width: 20ch;
 }
@@ -98,6 +108,13 @@
   .vt-row__inner {
     grid-template-columns: repeat(12, minmax(0, 1fr));
     gap: 0 32px;
+  }
+  .vt-row--wide .vt-row__inner {
+    row-gap: 36px;
+  }
+  .vt-row--wide .vt-row__title,
+  .vt-row--wide .vt-row__body {
+    grid-column: 1 / -1;
   }
   .vt-row__title {
     grid-column: 1 / 5;
@@ -226,7 +243,63 @@
     column-gap: 32px;
   }
   /* In two columns, both items of the last row carry the closing rule. */
-  .vt-list--two > li:nth-last-child(2):nth-child(odd) {
+  .vt-list--two > li:nth-last-child(2):nth-child(odd),
+  .vt-list--two > li:nth-last-child(2):nth-child(even) {
     border-bottom: 1px solid var(--line);
+  }
+}
+
+/* ---------- Why ROSS 360 ----------
+   The four points side by side under the heading, each under a short dark rule, so the section reads
+   as ROSS 360's approach rather than another list. */
+
+.vt-points {
+  display: grid;
+  gap: 24px 32px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.vt-point {
+  padding-top: 16px;
+  border-top: 1px solid var(--line-strong);
+}
+
+/* Stacked on a phone, the first point sits straight under the heading and its rule. */
+@media (max-width: 639px) {
+  .vt-point:first-child {
+    padding-top: 0;
+    border-top: 0;
+  }
+}
+
+.vt-point__title {
+  margin: 0;
+  color: var(--ink);
+  font-size: clamp(1.15rem, 1.4vw, 1.3rem);
+  font-weight: 400;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+}
+
+.vt-point__text {
+  max-width: 40ch;
+  margin: 8px 0 0;
+  color: var(--ink-soft);
+  font-size: 1rem;
+  line-height: 1.55;
+}
+
+@media (min-width: 640px) {
+  .vt-points {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    row-gap: 32px;
+  }
+}
+
+@media (min-width: 1000px) {
+  .vt-points {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }

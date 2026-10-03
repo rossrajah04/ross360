@@ -23,9 +23,11 @@ function Arrow() {
   );
 }
 
-function Row({ id, title, position = '', children }) {
+// `variants` adds modifiers: first, last, major (a new part of the page: more space and a darker rule)
+// and wide (heading above its content rather than beside it).
+function Row({ id, title, variants = [], children }) {
   return (
-    <section className={`vt-row${position ? ` vt-row--${position}` : ''}`} aria-labelledby={id}>
+    <section className={['vt-row', ...variants.map((v) => `vt-row--${v}`)].join(' ')} aria-labelledby={id}>
       <div className="h-wrap vt-row__inner">
         <h2 id={id} className="h-h2 vt-row__title" data-reveal>
           {title}
@@ -76,7 +78,7 @@ export default function VirtualTours() {
         ) : null}
       </section>
 
-      <Row id="vt-how" title={how.title} position="first">
+      <Row id="vt-how" title={how.title} variants={['first']}>
         <p className="vt-text vt-text--lead">{how.text}</p>
       </Row>
 
@@ -95,18 +97,18 @@ export default function VirtualTours() {
         </p>
       </Row>
 
-      <Row id="vt-why" title={why.title}>
-        <ul className="vt-list vt-pairs">
+      <Row id="vt-why" title={why.title} variants={['major', 'wide']}>
+        <ul className="vt-points">
           {why.items.map((item) => (
-            <li key={item.title} className="vt-item vt-pair">
-              <h3 className="vt-item__title">{item.title}</h3>
-              <p className="vt-item__text">{item.text}</p>
+            <li key={item.title} className="vt-point">
+              <h3 className="vt-point__title">{item.title}</h3>
+              <p className="vt-point__text">{item.text}</p>
             </li>
           ))}
         </ul>
       </Row>
 
-      <Row id="vt-included" title={included.title}>
+      <Row id="vt-included" title={included.title} variants={['major']}>
         <ul className="vt-list vt-list--two">
           {included.items.map((item) => (
             <li key={item}>{item}</li>
@@ -126,7 +128,7 @@ export default function VirtualTours() {
         </ul>
       </Row>
 
-      <Row id="vt-process" title={process.title}>
+      <Row id="vt-process" title={process.title} variants={['major']}>
         <ol className="vt-list vt-pairs vt-steps">
           {process.steps.map((step, index) => (
             <li key={step.title} className="vt-item vt-pair">
@@ -140,7 +142,7 @@ export default function VirtualTours() {
         </ol>
       </Row>
 
-      <Row id="vt-next" title={next.title} position="last">
+      <Row id="vt-next" title={next.title} variants={['last']}>
         <ul className="vt-list vt-pairs">
           {next.links.map((link) => (
             <li key={link.to} className="vt-item">

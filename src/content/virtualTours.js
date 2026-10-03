@@ -75,8 +75,7 @@ export const virtualTours = {
     ],
   },
 
-  // Heading written for this page.
-  uses: { title: 'Where it can be used' },
+  uses: { title: 'Where your tour can be used' },
 
   // Heading written for this page.
   process: {
