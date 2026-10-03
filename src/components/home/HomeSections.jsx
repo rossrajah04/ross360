@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import Photo from './Photo.jsx';
 import TourStage from './TourStage.jsx';
+import TourEmbed from '../TourEmbed.jsx';
 import { home } from '../../content/home.js';
 import { media } from '../../content/media.js';
 import { site } from '../../content/site.js';
@@ -80,29 +81,44 @@ export function StepInside() {
 // the point about the tour stays on the tour's dark ground, the service details sit on the light page,
 // and the enquiry closes on the photograph.
 
-// Why a 360° tour: set directly under the tour it describes.
+// Why a 360° tour: set directly under the tour it describes, beside the same tour running live in a
+// phone-sized frame, so the product stays in view. The phone frame loads only as it nears the screen.
 export function Why() {
   const { why } = home;
+  const tour = site.stepInsideTour;
   return (
     <section className="h-why" aria-labelledby="h-why-title">
-      <div className="h-wrap h-why__inner" data-reveal>
-        <h2 id="h-why-title" className="h-h2 h-why__title">
-          {why.title}
-        </h2>
-        <p className="h-why__text">{why.text}</p>
+      <div className="h-wrap h-why__inner">
+        <div className="h-why__copy" data-reveal>
+          <h2 id="h-why-title" className="h-h2 h-why__title">
+            {why.title}
+          </h2>
+          <p className="h-why__text">{why.text}</p>
+        </div>
+        {tour.embedUrl ? (
+          <figure className="h-phone" data-reveal>
+            <div className="h-phone__frame">
+              <TourEmbed tour={{ ...tour, title: `${tour.title} (phone view)` }} className="h-phone__screen" />
+            </div>
+            <figcaption className="h-phone__caption">
+              {why.phoneCaption} {tour.credit}
+            </figcaption>
+          </figure>
+        ) : null}
       </div>
     </section>
   );
 }
 
-// Business and property: two uses of one service, side by side.
+// Business and property: two pathways through the service, side by side.
 export function Uses() {
   return (
     <section className="h-uses" aria-label="Business and property">
       <div className="h-wrap h-uses__grid">
         {home.uses.map((use) => (
-          <div key={use.title} className="h-use" data-reveal>
-            <h2 className="h-h2">{use.title}</h2>
+          <div key={use.label} className="h-use" data-reveal>
+            <p className="h-use__label">{use.label}</p>
+            <h2 className="h-h2 h-use__title">{use.title}</h2>
             <p className="h-use__text">{use.text}</p>
             <Link className="h-link" to={use.to}>
               {use.link}

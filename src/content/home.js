@@ -23,21 +23,25 @@ export const home = {
 
   // Below the tour. Directly after it, on the same ground, so the tour is the visual for this point.
   why: {
-    title: 'More than photographs.',
-    text: 'A 360° virtual tour lets people move through a space themselves — understanding the layout, proportions and details before they visit.',
+    title: 'See the space before you arrive.',
+    text: 'A 360° virtual tour lets people explore a space for themselves, giving them a clearer sense of the layout, atmosphere and details before they visit.',
+    // The same Avalon tour, shown live in a phone-sized frame. Caption written for the homepage.
+    phoneCaption: 'The same tour on a phone.',
   },
 
   uses: [
     {
-      title: 'Business',
-      text: 'Give customers a better sense of your premises before they visit.',
-      link: 'Business tours',
+      label: 'Business',
+      title: 'Show people what your premises are actually like before they visit.',
+      text: 'Business 360° tours for restaurants, hotels, gyms, venues, retail spaces and more.',
+      link: 'Explore business tours',
       to: '/businesses',
     },
     {
-      title: 'Property',
-      text: 'Let buyers, tenants and clients explore a property remotely before arranging a viewing.',
-      link: 'Property tours',
+      label: 'Property',
+      title: 'Give buyers and tenants more to explore before a viewing.',
+      text: '360° property tours for estate agents, property professionals, commercial spaces and developments.',
+      link: 'Explore property tours',
       to: '/property',
     },
   ],
