@@ -1,8 +1,9 @@
 // Homepage wording. Supplied by ROSS 360 for the homepage redesign (3 October 2026); use it as written.
 // Headings are stored in sentence case; the homepage styles set some of them in capitals.
-// Images are assigned in src/content/media.js. The example tour is configured in src/content/site.js.
+// Images are assigned in src/content/media.js. The Step inside tour is configured in src/content/site.js.
 
 import { site } from './site.js';
+
 
 export const home = {
   hero: {
@@ -14,30 +15,21 @@ export const home = {
     title: 'Step inside',
     text: 'Explore an interactive 360° tour and experience how customers, clients, buyers and tenants can view a space online before visiting.',
     open: 'Open full tour',
-    hint: 'Drag to look around',
-    // Shown over the still image until the Panoee tour (site.exampleTour) or a 360° image is added.
-    illustrative: 'Illustrative image',
-    placeholder: 'The interactive 360° tour will be shown here.',
+    // Shown in the tour frame until the Panoee tour is set in site.exampleTour.
+    placeholderLabel: '360° virtual tour',
+    placeholder: 'The interactive tour will be embedded here.',
     demoNote: 'This is a demonstration tour.',
   },
 
   understanding: {
     title: 'We turn physical spaces into interactive digital experiences.',
     text: 'ROSS 360 creates professional 360° photography and interactive virtual tours for commercial premises and property.',
-  },
-
-  // Spaces. Before launch this describes the kinds of space ROSS 360 photographs; it is not a portfolio.
-  // No project or client is named or implied, and the note says the imagery is illustrative.
-  // Genuine projects belong in the portfolio, each with its own tour; tourUrl links one from here.
-  work: {
-    title: 'Spaces',
-    note: 'Illustrative imagery. Client projects will be added to the portfolio as they are completed.',
-    imageLabel: 'Illustrative image',
-    link: 'Explore space',
-    items: [
-      { sector: 'Hospitality', type: 'Restaurant / Café', media: 'spaceHospitality', tourUrl: '' },
-      { sector: 'Fitness', type: 'Gym / Studio', media: 'spaceFitness', tourUrl: '' },
-      { sector: 'Property', type: 'Residential / Commercial', media: 'spaceProperty', tourUrl: '' },
+    // From "What you receive" (services.js), as written.
+    provides: [
+      'Professional 360° photography',
+      'Interactive tour production',
+      'Website embed capability',
+      'Google Street View publishing where appropriate and separately authorised',
     ],
   },
 
@@ -45,7 +37,6 @@ export const home = {
     title: 'A more complete view',
     photo: { label: 'Traditional photography', text: 'Photography shows selected views.' },
     tour: { label: '360° tour', text: 'A 360° tour allows visitors to explore the space themselves.' },
-    note: 'Illustrative images.',
   },
 
   spaces: {
@@ -81,6 +72,12 @@ export const home = {
     title: 'Business tours',
     property: 'Property projects are individually quoted based on size, location and requirements.',
     link: 'View pricing',
+  },
+
+  about: {
+    title: site.brand,
+    text: 'Professional 360° photography and virtual tours for businesses and property.',
+    link: 'About ROSS 360',
   },
 
   closing: {

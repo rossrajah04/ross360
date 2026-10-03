@@ -1,13 +1,13 @@
 import { Link } from 'react-router-dom';
 import Photo from './Photo.jsx';
-import PanoViewer from './PanoViewer.jsx';
-import TourEmbed from '../TourEmbed.jsx';
+import TourStage from './TourStage.jsx';
 import { home } from '../../content/home.js';
 import { media } from '../../content/media.js';
 import { site } from '../../content/site.js';
 import { plans } from '../../content/pricing.js';
 
-// Homepage: space, 360° experience, understanding, spaces and services, enquiry.
+// Homepage: the space, one tour, what ROSS 360 provides, why 360°, who it is for, how it works, fees,
+// about, enquiry. The Step inside tour is the only example of a space on the page.
 // Wording comes from src/content/home.js and photographs from src/content/media.js.
 
 const pad = (number) => String(number).padStart(2, '0');
@@ -40,34 +40,11 @@ export function Opening() {
   );
 }
 
-// Step inside: the 360° experience, edge to edge and the largest element after the opening photograph.
-// Order of preference: the Panoee tour (site.exampleTour.embedUrl), a 360° image (pano-tour), then a
-// still photograph that says plainly it is illustrative and where the tour will go.
+// Step inside: the one tour on the homepage. The frame holds the Panoee tour set in
+// site.exampleTour.embedUrl, and a placeholder until then.
 export function StepInside() {
   const { tour } = home;
   const example = site.exampleTour;
-  let stage;
-  if (example.embedUrl) {
-    stage = <TourEmbed className="tour-stage--home" />;
-  } else if (media.pano) {
-    stage = (
-      <>
-        <PanoViewer image={media.pano} label={tour.hint} className="h-tour__pano" />
-        {media.pano.temporary ? <span className="h-tag h-tour__tag">{tour.illustrative}</span> : null}
-      </>
-    );
-  } else {
-    stage = (
-      <>
-        <Photo image={media.tourStill} className="h-tour__still" sizes="100vw" reveal />
-        <div className="h-tour__veil" aria-hidden="true" />
-        <div className="h-wrap h-tour__placeholder">
-          <span className="h-label">{tour.illustrative}</span>
-          <p>{tour.placeholder}</p>
-        </div>
-      </>
-    );
-  }
   return (
     <section id="step-inside" className="h-tour" aria-labelledby="h-tour-title">
       <div className="h-wrap h-tour__head">
@@ -85,15 +62,15 @@ export function StepInside() {
           ) : null}
         </div>
       </div>
-      <div className="h-tour__stage">{stage}</div>
-      {example.embedUrl && !example.isRealProject ? (
-        <p className="h-wrap h-tour__note">{tour.demoNote}</p>
-      ) : null}
+      <div className="h-wrap">
+        <TourStage tour={example} label={tour.placeholderLabel} placeholder={tour.placeholder} />
+        {example.embedUrl && !example.isRealProject ? <p className="h-tour__note">{tour.demoNote}</p> : null}
+      </div>
     </section>
   );
 }
 
-// What ROSS 360 does, in two sentences beside one photograph.
+// What ROSS 360 does and provides.
 export function Understanding() {
   const { understanding } = home;
   return (
@@ -105,105 +82,41 @@ export function Understanding() {
           </h2>
           <p className="h-understand__body">{understanding.text}</p>
         </div>
-        <Photo
-          image={media.understanding}
-          className="h-understand__photo"
-          sizes="(min-width: 1000px) 52vw, 100vw"
-          reveal
-        />
+        <ul className="h-understand__list">
+          {understanding.provides.map((item) => (
+            <li key={item} data-reveal>
+              {item}
+            </li>
+          ))}
+        </ul>
       </div>
     </section>
   );
 }
 
-// The spaces ROSS 360 photographs: three sectors, one image each. A service section, not a portfolio.
-export function Work() {
-  const { work } = home;
-  const temporary = work.items.some((item) => media[item.media]?.temporary);
-  return (
-    <section className="h-work" aria-labelledby="h-work-title">
-      <div className="h-wrap h-work__head">
-        <h2 id="h-work-title" className="h-title" data-reveal>
-          {work.title}
-        </h2>
-        {temporary ? (
-          <p className="h-work__note" data-reveal>
-            {work.note}
-          </p>
-        ) : null}
-      </div>
-      <ul className="h-wrap h-work__list">
-        {work.items.map((item) => (
-          <li key={item.type} className="h-space">
-            <div className="h-space__frame">
-              <Photo
-                image={media[item.media]}
-                className="h-space__photo"
-                sizes="(min-width: 1000px) 32vw, 100vw"
-                reveal
-              />
-              {media[item.media]?.temporary ? (
-                <span className="h-tag h-space__tag" aria-hidden="true">
-                  {work.imageLabel}
-                </span>
-              ) : null}
-            </div>
-            <div className="h-space__caption" data-reveal>
-              <p className="h-space__sector">{item.sector}</p>
-              <h3 className="h-space__title">{item.type}</h3>
-              {item.tourUrl ? (
-                <a className="h-link" href={item.tourUrl} target="_blank" rel="noopener noreferrer">
-                  {work.link}
-                  <Arrow />
-                  <span className="visually-hidden"> (opens in a new tab)</span>
-                </a>
-              ) : null}
-            </div>
-          </li>
-        ))}
-      </ul>
-    </section>
-  );
-}
-
-// One photograph of a space against the whole space. With a 360° image the right-hand side becomes the
-// interactive view; with genuine photography both sides show the same real premises.
+// Why 360°: a photograph shows selected views; a tour lets visitors explore. Set as text, side by side.
 export function Compare() {
-  const { compare, tour } = home;
-  const temporary = media.comparePhoto?.temporary || media.compareSpace?.temporary;
+  const { compare } = home;
   return (
     <section className="h-compare" aria-labelledby="h-compare-title">
-      <div className="h-wrap h-compare__head">
+      <div className="h-wrap h-compare__grid">
         <h2 id="h-compare-title" className="h-title" data-reveal>
           {compare.title}
         </h2>
+        <dl className="h-compare__pair">
+          {[compare.photo, compare.tour].map((side) => (
+            <div key={side.label} className="h-compare__side" data-reveal>
+              <dt className="h-label">{side.label}</dt>
+              <dd className="h-compare__text">{side.text}</dd>
+            </div>
+          ))}
+        </dl>
       </div>
-      <div className="h-wrap h-compare__grid">
-        <figure className="h-compare__item h-compare__item--photo" data-reveal>
-          <Photo image={media.comparePhoto} className="h-compare__media" sizes="(min-width: 1000px) 30vw, 80vw" />
-          <figcaption className="h-compare__caption">
-            <span className="h-label">{compare.photo.label}</span>
-            <span className="h-compare__text">{compare.photo.text}</span>
-          </figcaption>
-        </figure>
-        <figure className="h-compare__item h-compare__item--tour" data-reveal>
-          {media.pano ? (
-            <PanoViewer image={media.pano} label={tour.hint} className="h-compare__media" />
-          ) : (
-            <Photo image={media.compareSpace} className="h-compare__media" sizes="(min-width: 1000px) 62vw, 100vw" />
-          )}
-          <figcaption className="h-compare__caption">
-            <span className="h-label">{compare.tour.label}</span>
-            <span className="h-compare__text">{compare.tour.text}</span>
-          </figcaption>
-        </figure>
-      </div>
-      {temporary ? <p className="h-wrap h-compare__note">{compare.note}</p> : null}
     </section>
   );
 }
 
-// The kinds of space ROSS 360 photographs, set as type.
+// Who ROSS 360 works with, set as type.
 export function SpaceTypes() {
   const { spaces } = home;
   return (
@@ -279,6 +192,27 @@ export function Fees() {
             </li>
           ))}
         </ol>
+      </div>
+    </section>
+  );
+}
+
+// About, briefly.
+export function About() {
+  const { about } = home;
+  return (
+    <section className="h-about" aria-labelledby="h-about-title">
+      <div className="h-wrap h-about__grid" data-reveal>
+        <h2 id="h-about-title" className="h-subtitle">
+          {about.title}
+        </h2>
+        <div className="h-about__body">
+          <p className="h-about__text">{about.text}</p>
+          <Link className="h-link" to="/about">
+            {about.link}
+            <Arrow />
+          </Link>
+        </div>
       </div>
     </section>
   );

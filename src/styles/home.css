@@ -1,8 +1,8 @@
 /* ROSS 360 homepage.
-   Photography first: full-bleed images, a 360° preview the visitor can turn, and strongly cropped
-   compositions. Near-black and warm off-white carry the page; colour comes from the photographs.
-   Motion: slow image settling, gentle reveals, the turning 360° view and a few hover states. All of it
-   stops for visitors who prefer reduced motion. */
+   One opening photograph, one interactive tour, and the service set as type. Near-black and warm
+   off-white carry the page; colour comes from the photographs.
+   Motion: slow image settling, gentle reveals and a few hover states. All of it stops for visitors who
+   prefer reduced motion. */
 
 .home {
   --paper: #f2f0eb;
@@ -118,83 +118,6 @@
   background: #24221f;
 }
 
-/* ---------- 360° preview ---------- */
-
-.pano {
-  position: relative;
-  overflow: hidden;
-  background: #1c1b19;
-  cursor: grab;
-  touch-action: pan-y;
-  user-select: none;
-  -webkit-user-select: none;
-}
-
-.pano:active {
-  cursor: grabbing;
-}
-
-.pano__canvas {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  opacity: 0;
-  transition: opacity 1.2s var(--ease);
-}
-
-.pano.is-ready .pano__canvas {
-  opacity: 1;
-}
-
-.pano__flat {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.pano__hint {
-  position: absolute;
-  left: 50%;
-  bottom: 24px;
-  z-index: 1;
-  display: inline-flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 16px;
-  background: rgba(15, 15, 14, 0.62);
-  color: #ffffff;
-  font-size: 0.68rem;
-  font-weight: 500;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  white-space: nowrap;
-  transform: translateX(-50%);
-  transition: opacity 0.6s var(--ease);
-  pointer-events: none;
-}
-
-.pano__hint::before,
-.pano__hint::after {
-  content: '';
-  width: 18px;
-  height: 1px;
-  background: currentColor;
-}
-
-.pano.is-touched .pano__hint {
-  opacity: 0;
-}
-
-.pano--empty {
-  cursor: default;
-}
-
-.pano:focus-visible {
-  outline: 2px solid #ffffff;
-  outline-offset: -6px;
-}
-
 /* ---------- Opening ---------- */
 
 .h-hero {
@@ -290,7 +213,7 @@
 /* ---------- Step inside ---------- */
 
 .h-tour {
-  padding: clamp(64px, 8vw, 128px) 0 0;
+  padding: clamp(64px, 8vw, 128px) 0 var(--h-space);
   background: var(--deep);
   color: var(--on-dark);
 }
@@ -318,77 +241,18 @@
   color: #ffffff;
 }
 
-.h-tour__stage {
-  position: relative;
-  height: 86svh;
-  min-height: 480px;
-  max-height: 1000px;
-  overflow: hidden;
-  background: #1c1b19;
-}
-
-.h-tour__pano,
-.h-tour__still,
-.h-tour__stage .tour-stage {
-  position: absolute;
-  inset: 0;
-  height: 100%;
-  aspect-ratio: auto;
-}
-
-.h-tour__tag {
-  top: 16px;
-  left: var(--gutter);
-}
-
-/* Until the tour is added: the still is dimmed and says what it is and what will replace it. */
-.h-tour__veil {
-  position: absolute;
-  inset: 0;
-  background: rgba(10, 10, 9, 0.32);
-  pointer-events: none;
-}
-
-.h-tour__placeholder {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: clamp(32px, 5vw, 72px);
-  z-index: 1;
-  color: #ffffff;
-}
-
-.h-tour__placeholder .h-label {
-  color: rgba(255, 255, 255, 0.8);
-}
-
-.h-tour__placeholder p {
-  max-width: 24ch;
-  margin: 14px 0 0;
-  font-size: clamp(1.35rem, 2.4vw, 2.2rem);
-  font-weight: 300;
-  line-height: 1.15;
-  letter-spacing: -0.02em;
-}
-
 .h-tour__note {
-  margin-top: 16px;
-  margin-bottom: 0;
+  margin: 16px 0 0;
   color: var(--muted-on-dark);
   font-size: 0.85rem;
 }
 
-.h-tour__stage .tour-stage__facade .btn {
+.h-tour .tour-stage__facade .btn {
   min-height: 60px;
   padding: 0 28px;
   font-size: 0.8rem;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-}
-
-.h-tour__stage .tour-stage__badge {
-  top: 16px;
-  left: var(--gutter);
 }
 
 .h-tour :focus-visible {
@@ -401,10 +265,6 @@
     gap: 0 48px;
     align-items: end;
   }
-  .h-tour__stage {
-    height: min(100svh, 64vw);
-    max-height: none;
-  }
 }
 
 /* ---------- Understanding ---------- */
@@ -415,7 +275,7 @@
 
 .h-understand__grid {
   display: grid;
-  gap: 40px;
+  gap: 48px;
 }
 
 .h-understand__body {
@@ -425,201 +285,83 @@
   font-size: clamp(1.02rem, 1.2vw, 1.15rem);
 }
 
-.h-understand__photo {
-  aspect-ratio: 3 / 2;
+.h-understand__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--line);
+}
+
+.h-understand__list li {
+  padding: 18px 0;
+  border-bottom: 1px solid var(--line);
+  color: var(--ink);
+  font-size: clamp(1.05rem, 1.4vw, 1.3rem);
+  font-weight: 300;
+  letter-spacing: -0.01em;
 }
 
 @media (min-width: 1000px) {
   .h-understand__grid {
     grid-template-columns: repeat(12, minmax(0, 1fr));
     gap: 0 32px;
-    align-items: center;
+    align-items: start;
   }
   .h-understand__text {
-    grid-column: 1 / 6;
+    grid-column: 1 / 7;
   }
-  .h-understand__photo {
-    grid-column: 7 / 13;
-    aspect-ratio: 4 / 3;
+  .h-understand__list {
+    grid-column: 8 / 13;
+    margin-top: 12px;
   }
 }
 
 /* ---------- Compare ---------- */
 
 .h-compare {
-  padding: var(--h-space) 0;
-  background: var(--deep);
-  color: var(--on-dark);
-}
-
-.h-compare__head {
-  margin-bottom: clamp(40px, 5vw, 72px);
+  padding: 0 0 var(--h-space);
 }
 
 .h-compare .h-title {
-  color: #ffffff;
+  color: var(--ink);
 }
 
 .h-compare__grid {
   display: grid;
-  gap: 48px;
+  gap: clamp(40px, 5vw, 72px);
+  padding-top: var(--h-space);
+  border-top: 1px solid var(--line);
 }
 
-.h-compare__item {
+.h-compare__pair {
+  display: grid;
+  gap: 40px;
   margin: 0;
 }
 
-.h-compare__item--photo {
-  width: 72%;
+.h-compare__side {
+  padding-top: 20px;
+  border-top: 1px solid var(--ink);
 }
 
-.h-compare__item--photo .h-compare__media {
-  aspect-ratio: 4 / 5;
-}
-
-.h-compare__item--tour .h-compare__media {
-  aspect-ratio: 4 / 3;
-}
-
-.h-compare__caption {
-  display: grid;
-  gap: 8px;
-  margin-top: 20px;
-  padding-top: 16px;
-  border-top: 1px solid var(--line-on-dark);
-}
-
-.h-compare__caption .h-label {
-  color: var(--muted-on-dark);
+.h-compare__side .h-label {
+  color: var(--muted);
 }
 
 .h-compare__text {
-  max-width: 30ch;
-  color: #ffffff;
-  font-size: clamp(1.15rem, 1.7vw, 1.5rem);
-  font-weight: 300;
-  line-height: 1.25;
-  letter-spacing: -0.01em;
-}
-
-.h-compare__note {
-  margin-top: clamp(32px, 4vw, 56px);
-  margin-bottom: 0;
-  color: var(--muted-on-dark);
-  font-size: 0.85rem;
-}
-
-.h-compare :focus-visible {
-  outline-color: #ffffff;
-}
-
-/* Desktop: both sides at the same height, so the single view reads against the whole space. */
-@media (min-width: 1000px) {
-  .h-compare__grid {
-    grid-template-columns: repeat(12, minmax(0, 1fr));
-    gap: 0 32px;
-  }
-  .h-compare__item--photo {
-    grid-column: 1 / 5;
-    width: auto;
-  }
-  .h-compare__item--tour {
-    grid-column: 5 / 13;
-  }
-  .h-compare__item .h-compare__media {
-    height: clamp(380px, 38vw, 620px);
-    aspect-ratio: auto;
-  }
-}
-
-/* ---------- Spaces we photograph ---------- */
-
-.h-work {
-  padding: var(--h-space) 0;
-}
-
-.h-work .h-title {
+  max-width: 22ch;
+  margin: 14px 0 0;
   color: var(--ink);
-}
-
-.h-work__head {
-  display: grid;
-  gap: 16px;
-  margin-bottom: clamp(40px, 5vw, 72px);
-}
-
-.h-work__note {
-  max-width: 44ch;
-  margin: 0;
-  color: var(--muted);
-  font-size: 0.9rem;
-}
-
-.h-work__list {
-  display: grid;
-  gap: 48px;
-  padding: 0;
-  list-style: none;
-}
-
-.h-space__frame {
-  position: relative;
-}
-
-.h-space__photo {
-  aspect-ratio: 4 / 5;
-}
-
-.h-space__tag {
-  right: 12px;
-  bottom: 12px;
-}
-
-.h-space__caption {
-  margin-top: 20px;
-}
-
-.h-space__sector {
-  margin: 0 0 6px;
-  color: var(--muted);
-  font-size: 0.72rem;
-  font-weight: 500;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-}
-
-.h-space__title {
-  margin: 0;
-  color: var(--ink);
-  font-size: clamp(1.3rem, 1.8vw, 1.7rem);
+  font-size: clamp(1.5rem, 2.8vw, 2.6rem);
   font-weight: 300;
-  line-height: 1.1;
+  line-height: 1.12;
   letter-spacing: -0.02em;
 }
 
-.h-space__caption .h-link {
-  margin-top: 16px;
-}
-
 @media (min-width: 700px) {
-  .h-work__list {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 0 24px;
-  }
-}
-
-@media (min-width: 1000px) {
-  .h-work__head {
-    grid-template-columns: 7fr 5fr;
-    gap: 0 48px;
-    align-items: end;
-  }
-  .h-work__list {
+  .h-compare__pair {
+    grid-template-columns: 1fr 1fr;
     gap: 0 32px;
-  }
-  /* A slight stagger, so the three read as a row of spaces rather than a grid of cards. */
-  .h-space:nth-child(2) {
-    margin-top: clamp(48px, 6vw, 96px);
   }
 }
 
@@ -891,6 +633,39 @@
   }
 }
 
+/* ---------- About ---------- */
+
+.h-about {
+  padding: 0 0 var(--h-space);
+}
+
+.h-about__grid {
+  display: grid;
+  gap: 20px;
+  padding-top: clamp(40px, 5vw, 72px);
+  border-top: 1px solid var(--line);
+}
+
+.h-about__text {
+  max-width: 40ch;
+  margin: 0 0 24px;
+  color: var(--ink-soft);
+  font-size: clamp(1.02rem, 1.2vw, 1.15rem);
+}
+
+@media (min-width: 1000px) {
+  .h-about__grid {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: 0 32px;
+  }
+  .h-about__grid .h-subtitle {
+    grid-column: 1 / 5;
+  }
+  .h-about__body {
+    grid-column: 6 / 13;
+  }
+}
+
 /* ---------- Closing ---------- */
 
 .h-close {
@@ -1004,15 +779,6 @@
 
 .has-reveal .home [data-reveal='image'].is-revealed .photo__img {
   transform: none;
-}
-
-@media (hover: hover) {
-  .h-space__frame .photo__img {
-    transition: transform 1.6s var(--ease);
-  }
-  .h-space__frame:hover .photo__img {
-    transform: scale(1.025);
-  }
 }
 
 @keyframes h-settle {

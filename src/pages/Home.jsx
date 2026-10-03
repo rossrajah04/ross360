@@ -5,10 +5,10 @@ import {
   StepInside,
   Understanding,
   Compare,
-  Work,
   SpaceTypes,
   Process,
   Fees,
+  About,
   Closing,
 } from '../components/home/HomeSections.jsx';
 import '../styles/home.css';
@@ -22,10 +22,10 @@ export default function Home() {
       <StepInside />
       <Understanding />
       <Compare />
-      <Work />
       <SpaceTypes />
       <Process />
       <Fees />
+      <About />
       <Closing />
     </div>
   );

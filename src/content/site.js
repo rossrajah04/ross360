@@ -37,9 +37,11 @@ export const site = {
   quoteLink: { label: 'Get a Quote', to: '/get-a-quote' },
 
   // Example tour. While `isRealProject` is false it is labelled as a demonstration.
-  // Set `embedUrl` (Panoee embed) and/or `openUrl` (opens in a new tab) to show the
-  // "Explore a 360° Tour" section on the homepage and Portfolio page. While both are empty
-  // the section is not shown, so nothing links to a tour that does not exist.
+  // `embedUrl`: the Panoee embed address (the src="…" of Panoee's iframe code), e.g.
+  //   https://tour.panoee.net/…  It fills the homepage "Step inside" frame, which shows a placeholder
+  //   until this is set, and the "Explore a 360° Tour" section on the Portfolio page.
+  // `openUrl`: the tour's own page, opened in a new tab.
+  // While both are empty the Portfolio section is not shown, so nothing links to a tour that does not exist.
   exampleTour: {
     isRealProject: false,
     embedUrl: '',
