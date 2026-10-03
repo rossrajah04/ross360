@@ -42,10 +42,11 @@ export function Opening() {
 }
 
 // Step inside: the one tour on the homepage. The frame holds the Panoee tour set in
-// site.exampleTour.embedUrl, and a placeholder until then.
+// site.stepInsideTour, and a placeholder if that is empty. An external example is labelled and
+// credited under the frame.
 export function StepInside() {
   const { tour } = home;
-  const example = site.exampleTour;
+  const example = site.stepInsideTour;
   return (
     <section id="step-inside" className="h-tour" aria-labelledby="h-tour-title">
       <div className="h-wrap h-tour__head">
@@ -65,7 +66,14 @@ export function StepInside() {
       </div>
       <div className="h-wrap">
         <TourStage tour={example} label={tour.placeholderLabel} placeholder={tour.placeholder} />
-        {example.embedUrl && !example.isRealProject ? <p className="h-tour__note">{tour.demoNote}</p> : null}
+        {example.embedUrl && example.external ? (
+          <p className="h-tour__note">
+            <span className="h-tour__note-label">{example.label}</span>
+            <span>{example.credit}</span>
+          </p>
+        ) : example.embedUrl && !example.isRealProject ? (
+          <p className="h-tour__note">{tour.demoNote}</p>
+        ) : null}
       </div>
     </section>
   );

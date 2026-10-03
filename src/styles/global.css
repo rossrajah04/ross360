@@ -1294,6 +1294,17 @@ main:focus {
   }
 }
 
+/* A live tour on a phone is square, so there is page above and below it to scroll by. */
+.tour-frame--live {
+  aspect-ratio: 1 / 1;
+}
+
+@media (min-width: 700px) {
+  .tour-frame--live {
+    aspect-ratio: 16 / 9;
+  }
+}
+
 .tour-frame__embed {
   position: absolute;
   inset: 0;

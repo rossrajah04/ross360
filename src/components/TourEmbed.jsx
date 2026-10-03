@@ -5,8 +5,10 @@ import { site } from '../content/site.js';
 //  - Click-to-load, so the tour is only fetched when someone wants it.
 //  - If the embed fails, a calm "unavailable" state replaces it.
 // Demonstration tours carry a small "Example tour" label so they are never mistaken for client work.
+// External examples (someone else's tour) load straight away and are labelled and credited by the
+// section that shows them, under the frame, so nothing covers the tour's own controls.
 export default function TourEmbed({ tour = site.exampleTour, className = '' }) {
-  const [active, setActive] = useState(false);
+  const [active, setActive] = useState(Boolean(tour.external));
   const [failed, setFailed] = useState(false);
 
   const activate = useCallback(() => setActive(true), []);
@@ -52,7 +54,7 @@ export default function TourEmbed({ tour = site.exampleTour, className = '' }) {
 
   return (
     <div className={`tour-stage ${className}`.trim()}>
-      {tour.isRealProject ? null : <span className="tour-stage__badge">Example tour</span>}
+      {tour.isRealProject || tour.external ? null : <span className="tour-stage__badge">Example tour</span>}
       {body}
     </div>
   );

@@ -242,9 +242,21 @@
 }
 
 .h-tour__note {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 16px;
   margin: 16px 0 0;
   color: var(--muted-on-dark);
   font-size: 0.85rem;
+}
+
+.h-tour__note-label {
+  color: #ffffff;
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
 }
 
 .h-tour .tour-stage__facade .btn {

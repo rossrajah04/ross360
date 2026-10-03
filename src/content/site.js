@@ -49,6 +49,19 @@ export const site = {
     title: 'Example tour',
   },
 
+  // The homepage "Step inside" tour. An external example used with its creator's permission; it is not
+  // ROSS 360's work, so it is labelled as such and credited under the frame. It is not used on any other
+  // page. Replace it with a ROSS 360 tour once one exists.
+  stepInsideTour: {
+    isRealProject: false,
+    external: true,
+    embedUrl: 'https://tour.panoee.com/avalon-hotel/',
+    openUrl: 'https://tour.panoee.com/avalon-hotel/',
+    title: 'Avalon Hotel',
+    label: 'External example',
+    credit: 'Example tour by OCEAN.LV / Avalon Hotel.',
+  },
+
   // Genuine photography only, for the inner pages. Each slot shows a reserved image area until a real
   // image is added. Put files in /public/images/ and set
   // { src: '/images/name.jpg', alt: 'What the photo shows', width: 1600, height: 1000 }.
