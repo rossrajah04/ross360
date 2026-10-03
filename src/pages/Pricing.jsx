@@ -37,13 +37,10 @@ export default function Pricing() {
 
       <section className="section" aria-labelledby="payment-heading">
         <div className="container">
-          <SectionHeading id="payment-heading" title="Payment and hosting">
+          <SectionHeading id="payment-heading" title="Payment">
             <p>
               Payment is made in full once the quotation is accepted. Cancellation is free up to{' '}
               {site.policy.freeCancellationHours} hours before the appointment.
-            </p>
-            <p>
-              {site.hosting.includedMonths} months’ hosting is included. {site.hosting.afterwards}
             </p>
             <p>
               Full details are set out in the <Link to="/terms">Terms &amp; Conditions</Link>.

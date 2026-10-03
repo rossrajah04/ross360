@@ -20,13 +20,13 @@ export const pages = {
   businesses: {
     path: '/businesses',
     title: '360° Virtual Tours for Businesses | ROSS 360',
-    description: `360° virtual tours for restaurants, gyms, hotels, venues, retail premises, showrooms, clinics and offices. UK-wide. Business tours from £${lowestPrice}.`,
+    description: `Professional 360° virtual tours for businesses: restaurants, hotels, gyms, venues, retail, clinics and offices. UK-wide. Business tours from £${lowestPrice}.`,
   },
   property: {
     path: '/property',
-    title: '360° Property Tours | ROSS 360',
+    title: '360° Virtual Tours for Property | ROSS 360',
     description:
-      '360° photography and interactive virtual tours for residential and commercial property, estate agents and property professionals. Individually quoted.',
+      'Interactive 360° virtual tours for property: estate agents, letting agents, developers and commercial property professionals. UK-wide, individually quoted.',
   },
   portfolio: {
     path: '/portfolio',
@@ -108,6 +108,6 @@ const tourService = {
 export function jsonLdFor(key) {
   if (key === 'notFound') return [];
   const items = [organization, website];
-  if (key === 'virtualTours') items.push(tourService);
+  if (['virtualTours', 'businesses', 'property'].includes(key)) items.push(tourService);
   return items;
 }

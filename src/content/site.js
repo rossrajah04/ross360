@@ -74,12 +74,6 @@ export const site = {
     founder: null,
   },
 
-  // Hosting wording. No renewal price is published; terms after the first 12 months are agreed separately.
-  hosting: {
-    includedMonths: 12,
-    afterwards: 'Hosting after the first 12 months is agreed separately.',
-  },
-
   // Google wording
   google: {
     disclaimer:

@@ -12,7 +12,6 @@ export const plans = [
       'Interactive virtual tour',
       'Website embed',
       'Google publishing where appropriate',
-      '12 months’ hosting',
       'Final tour URL',
     ],
   },
@@ -28,7 +27,6 @@ export const plans = [
       'Additional viewpoints and areas',
       'More comprehensive tour coverage',
       'Google publishing where appropriate',
-      '12 months’ hosting',
     ],
   },
   {

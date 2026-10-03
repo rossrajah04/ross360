@@ -25,7 +25,6 @@ export const projectIncludes = [
   'Mobile and desktop compatibility',
   'Website embed capability',
   'Google Street View publishing where appropriate and separately authorised',
-  '12 months of tour hosting',
   'Final tour URL for sharing',
 ];
 

@@ -78,9 +78,8 @@ export default function Terms() {
 
           <h2>8. Hosting</h2>
           <p>
-            {site.hosting.includedMonths} months of ROSS 360 interactive-tour hosting is included.{' '}
-            {site.hosting.afterwards} Imagery published to Google Street View is held by Google and does
-            not carry a ROSS 360 hosting fee.
+            ROSS 360 does not charge a recurring hosting fee. Imagery published to Google Street View is held by
+            Google.
           </p>
 
           <h2>9. Corrections</h2>
