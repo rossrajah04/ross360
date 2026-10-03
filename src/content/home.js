@@ -17,6 +17,7 @@ export const home = {
     hint: 'Drag to look around',
     // Shown over the still image until the Panoee tour (site.exampleTour) or a 360° image is added.
     illustrative: 'Illustrative image',
+    temporary: 'Temporary preview',
     placeholder: 'The interactive 360° tour will be shown here.',
     demoNote: 'This is a demonstration tour.',
   },
@@ -26,26 +27,18 @@ export const home = {
     text: 'ROSS 360 creates professional 360° photography and interactive virtual tours for commercial premises and property.',
   },
 
-  // Spaces. Before launch this describes the kinds of space ROSS 360 photographs; it is not a portfolio.
-  // No project or client is named or implied, and the note says the imagery is illustrative.
-  // Genuine projects belong in the portfolio, each with its own tour; tourUrl links one from here.
-  work: {
-    title: 'Spaces',
-    note: 'Illustrative imagery. Client projects will be added to the portfolio as they are completed.',
-    imageLabel: 'Illustrative image',
-    link: 'Explore space',
-    items: [
-      { sector: 'Hospitality', type: 'Restaurant / Café', media: 'spaceHospitality', tourUrl: '' },
-      { sector: 'Fitness', type: 'Gym / Studio', media: 'spaceFitness', tourUrl: '' },
-      { sector: 'Property', type: 'Residential / Commercial', media: 'spaceProperty', tourUrl: '' },
-    ],
-  },
-
   compare: {
     title: 'A more complete view',
     photo: { label: 'Traditional photography', text: 'Photography shows selected views.' },
     tour: { label: '360° tour', text: 'A 360° tour allows visitors to explore the space themselves.' },
     note: 'Illustrative images.',
+  },
+
+  // 360° photography + interactive virtual tours. Wording from the owner's brief and the Virtual Tours page.
+  experience: {
+    title: '360° photography + interactive virtual tours',
+    text: 'A ROSS 360 virtual tour combines high-resolution 360° photography with an interactive interface, allowing visitors to move between viewpoints and examine the premises from different positions.',
+    diagram: 'Diagram of a room in 360°, shown as one continuous panorama from 0° to 360°',
   },
 
   spaces: {

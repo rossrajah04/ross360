@@ -1,13 +1,14 @@
 import { Link } from 'react-router-dom';
 import Photo from './Photo.jsx';
 import PanoViewer from './PanoViewer.jsx';
+import PanoramaDiagram from './PanoramaDiagram.jsx';
 import TourEmbed from '../TourEmbed.jsx';
 import { home } from '../../content/home.js';
 import { media } from '../../content/media.js';
 import { site } from '../../content/site.js';
 import { plans } from '../../content/pricing.js';
 
-// Homepage: space, 360° experience, understanding, spaces and services, enquiry.
+// Homepage: space, 360° experience, understanding, services, enquiry.
 // Wording comes from src/content/home.js and photographs from src/content/media.js.
 
 const pad = (number) => String(number).padStart(2, '0');
@@ -61,6 +62,7 @@ export function StepInside() {
       <>
         <Photo image={media.tourStill} className="h-tour__still" sizes="100vw" reveal />
         <div className="h-tour__veil" aria-hidden="true" />
+        <span className="h-tour__badge">{tour.temporary}</span>
         <div className="h-wrap h-tour__placeholder">
           <span className="h-label">{tour.illustrative}</span>
           <p>{tour.placeholder}</p>
@@ -85,7 +87,7 @@ export function StepInside() {
           ) : null}
         </div>
       </div>
-      <div className="h-tour__stage">{stage}</div>
+      <div className={`h-tour__stage${example.embedUrl || media.pano ? '' : ' h-tour__stage--temporary'}`}>{stage}</div>
       {example.embedUrl && !example.isRealProject ? (
         <p className="h-wrap h-tour__note">{tour.demoNote}</p>
       ) : null}
@@ -112,56 +114,6 @@ export function Understanding() {
           reveal
         />
       </div>
-    </section>
-  );
-}
-
-// The spaces ROSS 360 photographs: three sectors, one image each. A service section, not a portfolio.
-export function Work() {
-  const { work } = home;
-  const temporary = work.items.some((item) => media[item.media]?.temporary);
-  return (
-    <section className="h-work" aria-labelledby="h-work-title">
-      <div className="h-wrap h-work__head">
-        <h2 id="h-work-title" className="h-title" data-reveal>
-          {work.title}
-        </h2>
-        {temporary ? (
-          <p className="h-work__note" data-reveal>
-            {work.note}
-          </p>
-        ) : null}
-      </div>
-      <ul className="h-wrap h-work__list">
-        {work.items.map((item) => (
-          <li key={item.type} className="h-space">
-            <div className="h-space__frame">
-              <Photo
-                image={media[item.media]}
-                className="h-space__photo"
-                sizes="(min-width: 1000px) 32vw, 100vw"
-                reveal
-              />
-              {media[item.media]?.temporary ? (
-                <span className="h-tag h-space__tag" aria-hidden="true">
-                  {work.imageLabel}
-                </span>
-              ) : null}
-            </div>
-            <div className="h-space__caption" data-reveal>
-              <p className="h-space__sector">{item.sector}</p>
-              <h3 className="h-space__title">{item.type}</h3>
-              {item.tourUrl ? (
-                <a className="h-link" href={item.tourUrl} target="_blank" rel="noopener noreferrer">
-                  {work.link}
-                  <Arrow />
-                  <span className="visually-hidden"> (opens in a new tab)</span>
-                </a>
-              ) : null}
-            </div>
-          </li>
-        ))}
-      </ul>
     </section>
   );
 }
@@ -199,6 +151,33 @@ export function Compare() {
         </figure>
       </div>
       {temporary ? <p className="h-wrap h-compare__note">{compare.note}</p> : null}
+    </section>
+  );
+}
+
+// 360° photography + interactive virtual tours, shown as a room drawn in 360°. The diagram is not a
+// tour: the Panoee tour belongs in Step inside, and this section links to it once it is connected.
+export function Experience() {
+  const { experience, tour } = home;
+  return (
+    <section className="h-exp" aria-labelledby="h-exp-title">
+      <div className="h-wrap h-exp__head">
+        <h2 id="h-exp-title" className="h-title" data-reveal>
+          {experience.title}
+        </h2>
+        <div className="h-exp__aside" data-reveal>
+          <p>{experience.text}</p>
+          {site.exampleTour.embedUrl ? (
+            <a className="h-link" href="#step-inside">
+              {tour.title}
+              <Arrow />
+            </a>
+          ) : null}
+        </div>
+      </div>
+      <div className="h-wrap h-exp__band" data-reveal>
+        <PanoramaDiagram label={experience.diagram} pano={media.pano} />
+      </div>
     </section>
   );
 }
