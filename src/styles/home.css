@@ -341,33 +341,7 @@
   left: var(--gutter);
 }
 
-/* Until the tour is added: the still is dimmed, marked as a temporary preview, and framed as the place
-   the tour will go. */
-.h-tour__stage--temporary::after {
-  content: '';
-  position: absolute;
-  inset: clamp(12px, 2vw, 24px);
-  z-index: 1;
-  border: 1px dashed rgba(255, 255, 255, 0.55);
-  pointer-events: none;
-}
-
-.h-tour__badge {
-  position: absolute;
-  top: clamp(28px, 3.5vw, 48px);
-  left: 50%;
-  z-index: 2;
-  padding: 10px 18px;
-  background: #ffffff;
-  color: var(--ink);
-  font-size: 0.7rem;
-  font-weight: 500;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  white-space: nowrap;
-  transform: translateX(-50%);
-}
-
+/* Until the tour is added: the still is dimmed and says what it is and what will replace it. */
 .h-tour__veil {
   position: absolute;
   inset: 0;
@@ -558,132 +532,95 @@
   }
 }
 
-/* ---------- 360° photography + interactive virtual tours ---------- */
+/* ---------- Spaces we photograph ---------- */
 
-.h-exp {
+.h-work {
   padding: var(--h-space) 0;
-  overflow: hidden;
 }
 
-.h-exp .h-title {
-  max-width: 16ch;
+.h-work .h-title {
   color: var(--ink);
 }
 
-.h-exp__head {
+.h-work__head {
   display: grid;
-  gap: 24px;
-  margin-bottom: clamp(48px, 6vw, 96px);
+  gap: 16px;
+  margin-bottom: clamp(40px, 5vw, 72px);
 }
 
-.h-exp__aside {
-  max-width: 46ch;
+.h-work__note {
+  max-width: 44ch;
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
 }
 
-.h-exp__aside p {
-  margin: 0 0 20px;
-  color: var(--ink-soft);
-  font-size: clamp(1.02rem, 1.2vw, 1.15rem);
+.h-work__list {
+  display: grid;
+  gap: 48px;
+  padding: 0;
+  list-style: none;
+}
+
+.h-space__frame {
+  position: relative;
+}
+
+.h-space__photo {
+  aspect-ratio: 4 / 5;
+}
+
+.h-space__tag {
+  right: 12px;
+  bottom: 12px;
+}
+
+.h-space__caption {
+  margin-top: 20px;
+}
+
+.h-space__sector {
+  margin: 0 0 6px;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.h-space__title {
+  margin: 0;
+  color: var(--ink);
+  font-size: clamp(1.3rem, 1.8vw, 1.7rem);
+  font-weight: 300;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+.h-space__caption .h-link {
+  margin-top: 16px;
+}
+
+@media (min-width: 700px) {
+  .h-work__list {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0 24px;
+  }
 }
 
 @media (min-width: 1000px) {
-  .h-exp__head {
+  .h-work__head {
     grid-template-columns: 7fr 5fr;
     gap: 0 48px;
     align-items: end;
   }
-}
-
-/* The room in 360°: on narrow screens it keeps its proportions and is cropped at the sides. */
-.pd {
-  position: relative;
-  left: 50%;
-  width: max(100%, 960px);
-  transform: translateX(-50%);
-}
-
-.pd__svg {
-  display: block;
-  width: 100%;
-  height: auto;
-  aspect-ratio: 3600 / 1000;
-  overflow: hidden;
-}
-
-.pd__grid line {
-  stroke: rgba(15, 15, 14, 0.08);
-  stroke-width: 1;
-  vector-effect: non-scaling-stroke;
-}
-
-.pd__grid .pd__horizon {
-  stroke: rgba(15, 15, 14, 0.16);
-  stroke-dasharray: 4 6;
-}
-
-.pd__dim,
-.pd__lit {
-  fill: none;
-  stroke-linejoin: round;
-  vector-effect: non-scaling-stroke;
-}
-
-.pd__dim path,
-.pd__dim ellipse {
-  stroke: rgba(15, 15, 14, 0.26);
-  stroke-width: 1;
-  vector-effect: non-scaling-stroke;
-}
-
-.pd__dim image {
-  opacity: 0.3;
-}
-
-.pd__lit path,
-.pd__lit ellipse {
-  stroke: var(--ink);
-  stroke-width: 1.6;
-  vector-effect: non-scaling-stroke;
-}
-
-.pd__frame {
-  fill: rgba(15, 15, 14, 0.035);
-  stroke: var(--ink);
-  stroke-width: 1;
-  vector-effect: non-scaling-stroke;
-}
-
-/* One view, moving slowly round the room and back. */
-.pd__move {
-  transform: translateX(1350px);
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .pd__move {
-    animation: pd-look 26s var(--ease) infinite alternate;
+  .h-work__list {
+    gap: 0 32px;
   }
-}
-
-@keyframes pd-look {
-  from {
-    transform: translateX(0);
+  /* A slight stagger, so the three read as a row of spaces rather than a grid of cards. */
+  .h-space:nth-child(2) {
+    margin-top: clamp(48px, 6vw, 96px);
   }
-  to {
-    transform: translateX(2700px);
-  }
-}
-
-.pd__scale {
-  display: flex;
-  justify-content: space-between;
-  margin: 14px 0 0;
-  padding: 12px 0 0;
-  border-top: 1px solid var(--line);
-  list-style: none;
-  color: var(--muted);
-  font-size: 0.7rem;
-  letter-spacing: 0.14em;
-  font-variant-numeric: tabular-nums;
 }
 
 /* ---------- Space types ---------- */
@@ -1067,6 +1004,15 @@
 
 .has-reveal .home [data-reveal='image'].is-revealed .photo__img {
   transform: none;
+}
+
+@media (hover: hover) {
+  .h-space__frame .photo__img {
+    transition: transform 1.6s var(--ease);
+  }
+  .h-space__frame:hover .photo__img {
+    transform: scale(1.025);
+  }
 }
 
 @keyframes h-settle {

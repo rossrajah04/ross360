@@ -5,7 +5,7 @@ import {
   StepInside,
   Understanding,
   Compare,
-  Experience,
+  Work,
   SpaceTypes,
   Process,
   Fees,
@@ -22,7 +22,7 @@ export default function Home() {
       <StepInside />
       <Understanding />
       <Compare />
-      <Experience />
+      <Work />
       <SpaceTypes />
       <Process />
       <Fees />

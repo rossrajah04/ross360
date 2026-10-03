@@ -30,6 +30,38 @@
     ],
     "color": "#887868"
   },
+  "space-fitness": {
+    "width": 1984,
+    "height": 1432,
+    "widths": [
+      640,
+      1024,
+      1600,
+      1984
+    ],
+    "color": "#080808"
+  },
+  "space-hospitality": {
+    "width": 1864,
+    "height": 1432,
+    "widths": [
+      640,
+      1024,
+      1600,
+      1864
+    ],
+    "color": "#080808"
+  },
+  "space-property": {
+    "width": 1240,
+    "height": 1248,
+    "widths": [
+      640,
+      1024,
+      1240
+    ],
+    "color": "#987868"
+  },
   "understand-wide": {
     "width": 2400,
     "height": 923,

@@ -46,6 +46,16 @@ const slots = {
   },
   compareSpace: { file: 'wide-compare', alt: 'The same restaurant seen along its full length', temporary: true },
 
+  // Spaces we photograph. Each image is used once on the page.
+  spaceHospitality: {
+    file: 'space-hospitality',
+    alt: 'Restaurant interior with warm lighting',
+    temporary: true,
+    position: '50% 75%',
+  },
+  spaceFitness: { file: 'space-fitness', alt: 'Gym with racks and tall windows', temporary: true, position: '30% 50%' },
+  spaceProperty: { file: 'space-property', alt: 'Kitchen with an island and pendant lights', temporary: true },
+
   closing: { file: 'closing', alt: '', temporary: true },
 };
 
