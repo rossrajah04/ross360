@@ -3,7 +3,9 @@
 // The React app still renders the page content in the browser as normal.
 //
 // Runs after `vite build` (see "build" in package.json). Output on Cloudflare Pages:
-//   dist/index.html, dist/virtual-tours/index.html, ... and dist/404.html
+//   dist/index.html, dist/virtual-tours.html, ... and dist/404.html
+// Cloudflare Pages serves dist/virtual-tours.html at /virtual-tours (no trailing slash), which matches the
+// canonical URLs and sitemap. A folder with index.html would instead redirect /virtual-tours to /virtual-tours/.
 // With a 404.html present, Cloudflare Pages serves it (with a 404 status) for unknown URLs.
 
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
@@ -84,9 +86,9 @@ for (const [key, page] of Object.entries(pages)) {
   } else if (page.path === '/') {
     await writeFile(templatePath, render(key));
   } else {
-    const dir = join(dist, page.path.replace(/^\//, ''));
-    await mkdir(dir, { recursive: true });
-    await writeFile(join(dir, 'index.html'), render(key));
+    const file = join(dist, `${page.path.replace(/^\//, '')}.html`);
+    await mkdir(dirname(file), { recursive: true });
+    await writeFile(file, render(key));
   }
   count += 1;
 }

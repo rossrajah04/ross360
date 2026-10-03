@@ -1295,3 +1295,9 @@ textarea.input {
     padding-bottom: 32px;
   }
 }
+
+/* Shown only when JavaScript is off. A class rather than an inline style, so the CSP (style-src 'self') allows it. */
+.noscript-message {
+  padding: 24px;
+  font-family: sans-serif;
+}

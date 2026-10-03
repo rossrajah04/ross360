@@ -62,8 +62,8 @@ Everything business-specific lives in `src/content/`, so values are not duplicat
 - **Legal pages** are structured drafts. Anything undecided is in `[square brackets]`. Set `legalDraft: false` in
   `site.js` to hide the draft banner once the wording is approved.
 - **Hosting after 12 months** is deliberately not priced anywhere.
-- **Content Security Policy** (`public/_headers`) allows Panoee frames from `panoee.com` / `*.panoee.com`. Confirm
-  the real embed domain and adjust `frame-src`.
+- **Content Security Policy** (`public/_headers`) allows Panoee frames from `panoee.com`, `panoee.net` and their
+  subdomains (Panoee's hosted tours are served from `tour.panoee.net`). If you use a custom tour domain, add it to `frame-src`.
 
 ## Stripe
 
@@ -78,7 +78,7 @@ For extra protection add a Cloudflare WAF rate-limiting rule on `/api/quote`.
 
 ## First things to test (once npm works)
 
-1. `npm install && npm run build` succeeds, and `dist/` contains `404.html`, `sitemap.xml` and a folder per route
+1. `npm install && npm run build` succeeds, and `dist/` contains `404.html`, `sitemap.xml` and an `.html` file per route
    (the prerender script fails loudly if the SEO markers are missing).
 2. `npm run dev`: open every page with the browser console open; confirm no errors or warnings.
 3. Mobile menu opens, closes (link tap, Escape) and is keyboard operable.
