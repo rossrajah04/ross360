@@ -1,202 +1,359 @@
 import { Link } from 'react-router-dom';
-import Button from '../Button.jsx';
-import SectionHeading from '../SectionHeading.jsx';
-import Frame from '../Frame.jsx';
-import FeeSchedule from '../FeeSchedule.jsx';
-import PortfolioGallery from '../PortfolioGallery.jsx';
-import ProcessSteps from '../ProcessSteps.jsx';
+import Plate from './Plate.jsx';
+import TourEmbed from '../TourEmbed.jsx';
+import { home } from '../../content/home.js';
 import { site } from '../../content/site.js';
-import { lowestPrice, pricingHeading, pricingIntro, propertyPricingLine } from '../../content/pricing.js';
-import { provides, businessPremises, propertyClients, agencyNote } from '../../content/services.js';
-import { projects } from '../../content/portfolio.js';
+import { plans } from '../../content/pricing.js';
 
-// 1. Hero: typography, then a large image area reserved for real 360° photography, then the facts.
-export function Hero() {
+// Homepage, in the order: show the space, let people experience it, then explain.
+// All wording comes from src/content/home.js.
+
+const pad = (number) => String(number).padStart(2, '0');
+
+function Index({ n }) {
   return (
-    <section className="hero" aria-labelledby="hero-heading">
-      <div className="container hero__top">
-        <h1 id="hero-heading" className="hero__title">
-          {site.descriptor}
+    <span className="h-index" aria-hidden="true">
+      {pad(n)}
+    </span>
+  );
+}
+
+function Arrow() {
+  return (
+    <span className="h-arrow" aria-hidden="true">
+      →
+    </span>
+  );
+}
+
+// 01. Opening: the photograph fills the screen; the type sits quietly over it.
+export function Opening() {
+  const { hero } = home;
+  return (
+    <section className={`h-hero${hero.image ? ' h-hero--photo' : ''}`} aria-labelledby="h-hero-title">
+      <Plate className="h-hero__media" image={hero.image} spec={hero.spec} eager />
+      <div className="h-wrap h-hero__content">
+        <p className="h-hero__label">{hero.label}</p>
+        <h1 id="h-hero-title" className="h-hero__title">
+          {hero.title}
         </h1>
-        <div className="hero__body">
-          <p className="lead lead--ink">
-            Professional 360° photography and interactive virtual tours for commercial premises and property.
-          </p>
-          <p>
-            ROSS 360 creates detailed virtual tours that allow customers, clients, buyers and tenants to explore a
-            space online before visiting.
-          </p>
-          <div className="btn-row">
-            <Button to="/get-a-quote">{site.cta.primary}</Button>
-            <Button to="/portfolio" variant="secondary">
-              {site.cta.work}
-            </Button>
-          </div>
+        <p className="h-hero__lead">{hero.lead}</p>
+      </div>
+      <a className="h-hero__scroll" href="#step-inside">
+        {hero.scroll}
+        <span className="h-hero__scroll-line" aria-hidden="true" />
+      </a>
+    </section>
+  );
+}
+
+// 360° panel: an equirectangular image pans slowly and loops, as if turning around in the room.
+// Without an image, a compass scale stands in for it.
+function Pano({ image }) {
+  const strip = (hidden) =>
+    image ? (
+      <img
+        className="h-pano__img"
+        src={image.src}
+        alt={hidden ? '' : image.alt}
+        width={image.width}
+        height={image.height}
+        loading="lazy"
+        decoding="async"
+        aria-hidden={hidden || undefined}
+      />
+    ) : (
+      <span className="h-pano__scale" aria-hidden="true">
+        {[0, 45, 90, 135, 180, 225, 270, 315].map((degrees) => (
+          <span key={degrees} className="h-pano__tick">
+            {degrees}°
+          </span>
+        ))}
+      </span>
+    );
+  return (
+    <div className={`h-pano${image ? '' : ' h-pano--empty'}`}>
+      <div className="h-pano__track">
+        {strip(false)}
+        {strip(true)}
+      </div>
+    </div>
+  );
+}
+
+// 02. Step inside: the example tour, at full width, as part of the page.
+export function StepInside() {
+  const { tour } = home;
+  const example = site.exampleTour;
+  return (
+    <section id="step-inside" className="h-tour" aria-labelledby="h-tour-title">
+      <div className="h-wrap h-tour__head">
+        <Index n={2} />
+        <h2 id="h-tour-title" className="h-display" data-reveal>
+          {tour.title}
+        </h2>
+        <div className="h-tour__aside" data-reveal>
+          <p>{tour.text}</p>
+          {example.openUrl ? (
+            <a className="h-link" href={example.openUrl} target="_blank" rel="noopener noreferrer">
+              {tour.open}
+              <Arrow />
+              <span className="visually-hidden"> (opens in a new tab)</span>
+            </a>
+          ) : null}
         </div>
       </div>
-      <div className="container container--wide">
-        <Frame image={site.images.hero} ratio="wide" caption="360° photography" className="hero__media" />
-      </div>
-      <div className="container">
-        <ul className="hero__facts">
-          <li>UK-wide service</li>
-          <li>Business tours from £{lowestPrice}</li>
-          <li>Property individually quoted</li>
-          <li>{site.hosting.includedMonths} months’ hosting</li>
-        </ul>
-      </div>
-    </section>
-  );
-}
-
-// 3. What ROSS 360 provides: an indexed list rather than feature cards.
-export function WhatWeProvide() {
-  return (
-    <section className="section" aria-labelledby="provide-heading">
-      <div className="container">
-        <SectionHeading id="provide-heading" title="Professional 360° photography and virtual tour production">
-          <p className="lead lead--ink">
-            We photograph your premises in 360° and produce an interactive virtual tour that can be shared online
-            and embedded into your website.
-          </p>
-          <p>Depending on the project, tours can also be prepared for publication on Google Street View.</p>
-        </SectionHeading>
-        <ol className="index-list">
-          {provides.map((item, index) => (
-            <li key={item.title} className="index-list__item">
-              <span className="index-list__num" aria-hidden="true">
-                {String(index + 1).padStart(2, '0')}
-              </span>
-              <h3 className="index-list__title">{item.title}</h3>
-              <p className="index-list__text">{item.text}</p>
-            </li>
-          ))}
-        </ol>
-      </div>
-    </section>
-  );
-}
-
-// 4. Business and property: two applications, each led by a large image area.
-export function Applications() {
-  return (
-    <section className="section section--soft" aria-labelledby="who-heading">
-      <div className="container">
-        <SectionHeading id="who-heading" title="Who we work with" />
-
-        <article className="application" aria-labelledby="app-business">
-          <Frame image={site.images.business} ratio="landscape" caption="Business premises" className="application__media" />
-          <div className="application__body">
-            <h3 id="app-business" className="application__title">
-              Businesses
-            </h3>
-            <p>360° virtual tours for premises including:</p>
-            <ul className="columns-list">
-              {businessPremises.map((item) => (
-                <li key={item}>{item}</li>
-              ))}
-            </ul>
-            <Link className="text-link" to="/businesses">
-              Business virtual tours
-            </Link>
+      <div className="h-tour__stage" data-reveal>
+        {example.embedUrl ? (
+          <TourEmbed className="tour-stage--home" />
+        ) : (
+          <div className="h-tour__placeholder" aria-hidden="true">
+            <Pano />
+            <span className="h-pano__note">
+              <span className="plate__label">Placeholder</span>
+              <span className="plate__spec">Example 360° tour · Panoee embed</span>
+            </span>
           </div>
-        </article>
-
-        <article className="application application--reverse" aria-labelledby="app-property">
-          <Frame image={site.images.property} ratio="landscape" caption="Property" className="application__media" />
-          <div className="application__body">
-            <h3 id="app-property" className="application__title">
-              Property
-            </h3>
-            <p>360° tours for:</p>
-            <ul className="columns-list">
-              {propertyClients.map((item) => (
-                <li key={item}>{item}</li>
-              ))}
-            </ul>
-            <Link className="text-link" to="/property">
-              Property tours
-            </Link>
-          </div>
-        </article>
-
-        <p className="section-note">{agencyNote}</p>
+        )}
       </div>
+      {example.embedUrl && !example.isRealProject ? (
+        <p className="h-wrap h-tour__note">{tour.demoNote}</p>
+      ) : null}
     </section>
   );
 }
 
-// 5. Selected work. Image-led once projects exist; a composed statement until then.
-export function SelectedWork() {
-  const hasProjects = projects.length > 0;
+// 03. What ROSS 360 does: one statement, set large.
+export function Statement() {
+  const { statement } = home;
   return (
-    <section className="section section--dark" aria-labelledby="work-heading">
-      <div className="container">
-        <SectionHeading id="work-heading" title="Our Work">
-          <p className="lead">Selected 360° virtual tours produced by ROSS 360.</p>
-          {hasProjects ? null : (
-            <p>
-              Our portfolio is currently being developed. New business and property projects will be added here as
-              they are completed.
-            </p>
-          )}
-          <Link className="text-link" to="/portfolio">
-            {site.cta.work}
-          </Link>
-        </SectionHeading>
-        {hasProjects ? <PortfolioGallery headingLevel="h3" limit={3} /> : null}
-      </div>
-    </section>
-  );
-}
-
-// 6. Process
-export function HowItWorks() {
-  return (
-    <section id="how-it-works" className="section" aria-labelledby="how-heading">
-      <div className="container">
-        <SectionHeading id="how-heading" title="A straightforward process from photography to delivery" />
-        <ProcessSteps />
-      </div>
-    </section>
-  );
-}
-
-// 7. Pricing
-export function PricingPreview() {
-  return (
-    <section className="section section--soft" aria-labelledby="pricing-heading">
-      <div className="container">
-        <SectionHeading id="pricing-heading" title={pricingHeading} lead={pricingIntro} />
-        <FeeSchedule />
-        <p className="section-note">
-          {propertyPricingLine} <Link to="/pricing">Pricing factors</Link>
+    <section className="h-statement" aria-labelledby="h-statement-title">
+      <div className="h-wrap h-statement__grid">
+        <Index n={3} />
+        <h2 id="h-statement-title" className="h-statement__title" data-reveal>
+          {statement.title}
+        </h2>
+        <p className="h-statement__text" data-reveal>
+          {statement.text}
         </p>
       </div>
     </section>
   );
 }
 
-// 8. About / founder
-export function AboutPreview() {
-  const photo = site.images.founder;
+// 04. Selected work: an archive of large images with varied compositions.
+export function SelectedWork() {
+  const { work } = home;
   return (
-    <section className="section" aria-labelledby="about-heading">
-      <div className={`container${photo ? ' founder' : ''}`}>
-        {photo ? <Frame image={photo} ratio="portrait" className="founder__photo" /> : null}
-        <SectionHeading id="about-heading" title="About ROSS 360">
-          <p className="lead lead--ink">
-            ROSS 360 was founded by {site.founder} to provide businesses and property professionals with a
-            straightforward way to present their premises online.
+    <section className="h-work" aria-labelledby="h-work-title">
+      <div className="h-wrap h-head">
+        <Index n={4} />
+        <h2 id="h-work-title" className="h-display" data-reveal>
+          {work.title}
+        </h2>
+        <p className="h-head__note" data-reveal>
+          {work.note}
+        </p>
+      </div>
+      <ol className="h-work__list">
+        {work.items.map((item, index) => (
+          <li
+            key={item.type}
+            className={`h-project h-project--${item.layout}${item.layout === 'full' ? '' : ' h-wrap'}`}
+          >
+            <div className={`h-project__meta${item.layout === 'full' ? ' h-wrap' : ''}`} data-reveal>
+              <p className="h-project__sector">
+                <span className="h-project__num">{pad(index + 1)}</span> / {item.sector}
+              </p>
+              <h3 className="h-project__title">{item.type}</h3>
+              {item.tourUrl ? (
+                <a className="h-link" href={item.tourUrl} target="_blank" rel="noopener noreferrer">
+                  {work.link}
+                  <Arrow />
+                  <span className="visually-hidden"> (opens in a new tab)</span>
+                </a>
+              ) : null}
+            </div>
+            <Plate className="h-project__media" image={item.image} spec={item.spec} reveal />
+          </li>
+        ))}
+      </ol>
+    </section>
+  );
+}
+
+// 05. Why 360: one fixed photograph against a view that turns.
+export function CompleteView() {
+  const { view } = home;
+  return (
+    <section className="h-view" aria-labelledby="h-view-title">
+      <div className="h-wrap h-head">
+        <Index n={5} />
+        <h2 id="h-view-title" className="h-display" data-reveal>
+          {view.title}
+        </h2>
+      </div>
+      <div className="h-wrap h-view__grid">
+        <figure className="h-view__item h-view__item--photo" data-reveal>
+          <Plate className="h-view__media" image={view.photo.image} spec={view.photo.spec} reveal />
+          <figcaption className="h-view__caption">
+            <span className="h-label">{view.photo.label}</span>
+            <span className="h-view__text">{view.photo.text}</span>
+          </figcaption>
+        </figure>
+        <figure className="h-view__item h-view__item--tour" data-reveal>
+          <div className="plate h-view__media">
+            <Pano image={view.tour.image} />
+            {view.tour.image ? null : (
+              <span className="h-pano__note" aria-hidden="true">
+                <span className="plate__label">Placeholder</span>
+                <span className="plate__spec">{view.tour.spec}</span>
+              </span>
+            )}
+          </div>
+          <figcaption className="h-view__caption">
+            <span className="h-label">{view.tour.label}</span>
+            <span className="h-view__text">{view.tour.text}</span>
+          </figcaption>
+        </figure>
+      </div>
+    </section>
+  );
+}
+
+// 06. Who it is for: the list itself is the composition.
+export function Audience() {
+  const { audience } = home;
+  return (
+    <section className="h-who" aria-labelledby="h-who-title">
+      <div className="h-wrap">
+        <div className="h-who__head">
+          <Index n={6} />
+          <h2 id="h-who-title" className="h-who__title" data-reveal>
+            {audience.title}
+          </h2>
+        </div>
+        <ul className="h-who__list">
+          {audience.items.map((item, index) => (
+            <li key={item.label} className="h-who__item" data-reveal>
+              <Link className="h-who__link" to={item.to}>
+                <span className="h-who__num" aria-hidden="true">
+                  {pad(index + 1)}
+                </span>
+                <span className="h-who__name">{item.label}</span>
+                <Arrow />
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </section>
+  );
+}
+
+// 07. Process: five steps on one line.
+export function Process() {
+  const { process } = home;
+  return (
+    <section className="h-process" aria-labelledby="h-process-title">
+      <div className="h-wrap h-head">
+        <Index n={7} />
+        <h2 id="h-process-title" className="h-display" data-reveal>
+          {process.title}
+        </h2>
+      </div>
+      <ol className="h-wrap h-process__list">
+        {process.steps.map((step, index) => (
+          <li key={step.title} className="h-process__step" data-reveal>
+            <span className="h-process__num" aria-hidden="true">
+              {pad(index + 1)}
+            </span>
+            <h3 className="h-process__title">{step.title}</h3>
+            <p className="h-process__text">{step.text}</p>
+          </li>
+        ))}
+      </ol>
+    </section>
+  );
+}
+
+// 08. Pricing: a fee schedule. Professional is set larger, not badged.
+export function Fees() {
+  const { pricing } = home;
+  return (
+    <section className="h-fees" aria-labelledby="h-fees-title">
+      <div className="h-wrap h-fees__grid">
+        <div className="h-fees__head">
+          <Index n={8} />
+          <h2 id="h-fees-title" className="h-display" data-reveal>
+            {pricing.title}
+          </h2>
+        </div>
+        <div className="h-fees__body">
+          <ol className="h-fees__list">
+            {plans.map((plan) => (
+              <li key={plan.id} className={`h-fee${plan.featured ? ' h-fee--main' : ''}`} data-reveal>
+                <h3 className="h-fee__name">{plan.name}</h3>
+                <p className="h-fee__price">
+                  <span className="h-fee__from">From</span> £{plan.price}
+                </p>
+              </li>
+            ))}
+          </ol>
+          <p className="h-fees__property" data-reveal>
+            {pricing.property}
           </p>
-          <p>
-            Each project is handled directly from initial enquiry through photography, tour production and delivery.
+          <Link className="h-link" to="/pricing">
+            {pricing.link}
+            <Arrow />
+          </Link>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// 09. About: the company, briefly.
+export function About() {
+  const { about } = home;
+  return (
+    <section className="h-about" aria-labelledby="h-about-title">
+      <div className="h-wrap h-about__grid">
+        <Plate className="h-about__media" image={about.image} spec={about.spec} reveal />
+        <div className="h-about__body">
+          <Index n={9} />
+          <h2 id="h-about-title" className="h-display" data-reveal>
+            {about.title}
+          </h2>
+          <p className="h-about__text" data-reveal>
+            {about.text}
           </p>
-          <p>
-            The focus is simple: accurate photography, professionally produced tours and a clear service from start
-            to finish.
-          </p>
-        </SectionHeading>
+          <Link className="h-link" to="/about">
+            {about.link}
+            <Arrow />
+          </Link>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// 10. Closing screen.
+export function Closing() {
+  const { closing } = home;
+  return (
+    <section className="h-close" aria-labelledby="h-close-title">
+      <div className="h-wrap h-close__inner">
+        <h2 id="h-close-title" className="h-close__title" data-reveal>
+          {closing.title}
+        </h2>
+        <div className="h-close__action" data-reveal>
+          <Link className="h-close__cta" to={site.quoteLink.to}>
+            {closing.cta}
+            <Arrow />
+          </Link>
+          <p className="h-close__note">{closing.note}</p>
+        </div>
       </div>
     </section>
   );

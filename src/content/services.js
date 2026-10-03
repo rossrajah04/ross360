@@ -31,14 +31,6 @@ export const projectIncludes = [
 
 export const outOfScopeNote = 'Additional requirements outside the agreed scope can be quoted separately.';
 
-// "What ROSS 360 provides": concise factual descriptions only.
-export const provides = [
-  { title: '360° Photography', text: 'Full 360° imagery captured on site from each agreed viewpoint.' },
-  { title: 'Interactive Tour', text: 'Viewpoints connected into a single tour that runs in a web browser.' },
-  { title: 'Website Integration', text: 'Embed code for your website and a tour URL for direct sharing.' },
-  { title: 'Google Street View', text: 'Publication to Google Street View where appropriate and separately authorised.' },
-];
-
 // "Why use a 360° tour?"
 export const reasons = [
   {

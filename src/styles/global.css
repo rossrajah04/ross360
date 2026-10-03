@@ -563,6 +563,7 @@ main:focus {
     display: block;
     position: static;
     padding: 0;
+    background: transparent;
     border: 0;
     max-height: none;
     overflow: visible;
@@ -591,6 +592,55 @@ main:focus {
   }
   .nav__cta .btn {
     width: auto;
+  }
+}
+
+/* Homepage: transparent over the opening photograph, solid once scrolled past it (see Header.jsx). */
+
+.site-header {
+  transition: background-color 0.35s ease, border-color 0.35s ease;
+}
+
+.site-header--home {
+  background: var(--bg-soft);
+}
+
+/* The homepage uses a wider measure; the header and footer align to it there. */
+.site-header--home .header-inner,
+.site-footer--home .container {
+  width: min(100% - 2 * var(--gutter), 1480px);
+}
+
+.site-header--overlay {
+  background: transparent;
+  border-bottom-color: transparent;
+}
+
+.site-header--overlay .wordmark,
+.site-header--overlay .nav-toggle {
+  color: #ffffff;
+}
+
+.site-header--overlay :focus-visible {
+  outline-color: #ffffff;
+}
+
+@media (min-width: 1000px) {
+  .site-header--overlay .nav__link,
+  .site-header--overlay .nav__link[aria-current='page'] {
+    color: rgba(255, 255, 255, 0.86);
+  }
+  .site-header--overlay .nav__link:hover {
+    color: #ffffff;
+  }
+  .site-header--overlay .nav__cta .btn {
+    background: transparent;
+    border-color: rgba(255, 255, 255, 0.7);
+    color: #ffffff;
+  }
+  .site-header--overlay .nav__cta .btn:hover {
+    background: #ffffff;
+    color: var(--ink);
   }
 }
 
@@ -721,71 +771,6 @@ main:focus {
   color: var(--muted-on-dark);
 }
 
-/* ---------- Home hero ---------- */
-
-.hero {
-  padding: 48px 0 0;
-}
-
-.hero__top {
-  display: grid;
-  gap: 24px;
-  padding-bottom: 40px;
-}
-
-.hero__title {
-  max-width: 17ch;
-  margin: 0;
-}
-
-.hero__body {
-  max-width: 46ch;
-}
-
-.hero__body .lead {
-  margin-bottom: 0.7em;
-}
-
-.hero__body p:not(.lead) {
-  color: var(--muted);
-}
-
-.hero__facts {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0 24px;
-  margin: 0;
-  padding: 0 0 8px;
-  list-style: none;
-  font-size: 0.9rem;
-  color: var(--ink-soft);
-}
-
-.hero__facts li {
-  padding: 16px 0;
-  border-bottom: 1px solid var(--line);
-}
-
-@media (min-width: 900px) {
-  .hero {
-    padding-top: 96px;
-  }
-  .hero__top {
-    grid-template-columns: 7fr 5fr;
-    gap: 64px;
-    align-items: end;
-    padding-bottom: 64px;
-  }
-  .hero__facts {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 0 40px;
-  }
-  .hero__facts li {
-    padding: 20px 0;
-    border-bottom: 0;
-  }
-}
-
 /* ---------- Inner page introduction ---------- */
 
 .page-hero {
@@ -896,64 +881,6 @@ main:focus {
   .index-list--three .index-list__title {
     font-size: 1.3rem;
   }
-}
-
-/* ---------- Applications (business / property) ---------- */
-
-.application {
-  display: grid;
-  gap: 28px;
-  padding: 0 0 56px;
-}
-
-.application + .application {
-  padding-top: 56px;
-  border-top: 1px solid var(--line);
-}
-
-.application__title {
-  margin-bottom: 0.4em;
-  font-size: clamp(1.6rem, 2.6vw, 2.2rem);
-  font-weight: 400;
-  letter-spacing: -0.02em;
-}
-
-.application__body > p {
-  color: var(--muted);
-}
-
-@media (min-width: 900px) {
-  .application {
-    grid-template-columns: 7fr 5fr;
-    gap: 64px;
-    align-items: center;
-    padding-bottom: 88px;
-  }
-  .application + .application {
-    padding-top: 88px;
-  }
-  .application--reverse {
-    grid-template-columns: 5fr 7fr;
-  }
-  .application--reverse .application__media {
-    order: 2;
-  }
-}
-
-.columns-list {
-  margin: 0 0 24px;
-  padding: 0;
-  list-style: none;
-  columns: 2 160px;
-  column-gap: 32px;
-  font-size: 0.97rem;
-  color: var(--ink);
-}
-
-.columns-list li {
-  padding: 8px 0;
-  border-top: 1px solid var(--line);
-  break-inside: avoid;
 }
 
 /* ---------- Ruled lists ---------- */

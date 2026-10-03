@@ -47,11 +47,11 @@ export const site = {
     title: 'Example tour',
   },
 
-  // Genuine photography only. Each slot stays hidden (or uses the line illustration, for the
-  // homepage hero) until a real image is added. Put files in /public/images/ and set
+  // Genuine photography only, for the inner pages. Each slot shows a reserved image area until a real
+  // image is added. Put files in /public/images/ and set
   // { src: '/images/name.jpg', alt: 'What the photo shows', width: 1600, height: 1000 }.
+  // Homepage images are set in src/content/home.js.
   images: {
-    hero: null,
     business: null,
     property: null,
     founder: null,

@@ -2,10 +2,11 @@ import { Link, useLocation } from 'react-router-dom';
 import { site } from '../content/site.js';
 
 // Subtle sticky "Get a Quote" bar for small screens only (hidden on desktop via CSS).
-// Hidden on the quote page itself, where it would be redundant.
+// Hidden on the quote page itself, where it would be redundant, and on the homepage, which closes
+// with its own enquiry screen and keeps its compositions clear of fixed controls.
 export default function StickyQuoteCta() {
   const { pathname } = useLocation();
-  if (pathname === site.quoteLink.to) return null;
+  if (pathname === site.quoteLink.to || pathname === '/') return null;
 
   return (
     <aside className="sticky-cta" aria-label="Request a quote">
