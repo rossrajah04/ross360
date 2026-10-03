@@ -3,13 +3,12 @@ import useReveal from '../lib/useReveal.js';
 import {
   Opening,
   StepInside,
-  Statement,
-  SelectedWork,
-  CompleteView,
-  Audience,
+  Understanding,
+  Work,
+  Compare,
+  SpaceTypes,
   Process,
   Fees,
-  About,
   Closing,
 } from '../components/home/HomeSections.jsx';
 import '../styles/home.css';
@@ -21,13 +20,12 @@ export default function Home() {
       <Seo page="home" />
       <Opening />
       <StepInside />
-      <Statement />
-      <SelectedWork />
-      <CompleteView />
-      <Audience />
+      <Understanding />
+      <Work />
+      <Compare />
+      <SpaceTypes />
       <Process />
       <Fees />
-      <About />
       <Closing />
     </div>
   );

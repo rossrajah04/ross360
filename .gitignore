@@ -10,3 +10,6 @@ dist
 
 *.log
 .DS_Store
+
+# Original photographs for `npm run images` (outputs in public/images/home are committed)
+images/source/
