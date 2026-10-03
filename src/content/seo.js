@@ -30,8 +30,9 @@ export const pages = {
   },
   portfolio: {
     path: '/portfolio',
-    title: 'Our Work | ROSS 360',
-    description: 'Selected 360° virtual tours produced by ROSS 360.',
+    title: 'Portfolio | ROSS 360',
+    description:
+      'The ROSS 360 portfolio of 360° virtual tours and 360° photography. Genuine business and property projects are added as they are completed.',
   },
   pricing: {
     path: '/pricing',

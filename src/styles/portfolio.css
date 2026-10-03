@@ -1,0 +1,105 @@
+/* Portfolio page. Uses the Virtual Tours and service-page styles; adds only the launch-stage band's
+   details and the project list for when genuine projects are added. */
+
+/* ---------- Hero ---------- */
+
+.pf-intro__head {
+  margin-bottom: 0;
+}
+
+.pf .vt-intro__aside p + p {
+  margin-top: -8px;
+}
+
+/* ---------- Launch stage ---------- */
+
+.pf-empty__title {
+  margin: 0;
+}
+
+.pf-empty__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+/* ---------- Projects ---------- */
+
+.pf-projects {
+  padding: var(--h-gap) 0;
+}
+
+.pf-projects__list {
+  display: grid;
+  gap: clamp(40px, 5vw, 72px);
+  margin: clamp(28px, 3vw, 44px) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pf-project {
+  display: grid;
+  gap: 20px;
+  padding-top: 24px;
+  border-top: 1px solid var(--line-strong);
+}
+
+.pf-project__media {
+  min-width: 0;
+}
+
+.pf-project__image,
+.pf-project .pf-project__frame {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 3 / 2;
+  object-fit: cover;
+  background: #1c1b19;
+}
+
+.pf-project__meta {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.pf-project__title {
+  margin: 6px 0 0;
+  color: var(--ink);
+  font-size: clamp(1.3rem, 1.9vw, 1.6rem);
+  font-weight: 400;
+  line-height: 1.2;
+  letter-spacing: -0.015em;
+}
+
+.pf-project__text {
+  max-width: 44ch;
+  margin: 10px 0 20px;
+  color: var(--ink-soft);
+  font-size: clamp(1.05rem, 1.3vw, 1.15rem);
+  line-height: 1.55;
+}
+
+.pf-project .h-link {
+  font-size: 0.85rem;
+  letter-spacing: 0.12em;
+}
+
+@media (min-width: 900px) {
+  .pf-project {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: 0 32px;
+    padding-top: 32px;
+  }
+  .pf-project__media {
+    grid-column: 1 / 8;
+  }
+  .pf-project__body {
+    grid-column: 9 / 13;
+  }
+}
+
+.pf .vt-intro__aside p:first-child {
+  color: #ffffff;
+}
