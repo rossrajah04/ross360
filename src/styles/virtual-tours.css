@@ -112,7 +112,7 @@
   }
 }
 
-/* ---------- Why ROSS 360: three reasons, divided by rules ---------- */
+/* ---------- Why ROSS 360: four service standards, two by two, divided by rules ---------- */
 
 .vt-why {
   padding: var(--h-gap) 0 0;
@@ -126,12 +126,19 @@
 }
 
 .vt-reason {
-  padding: 24px 0;
+  padding: 22px 0 24px;
   border-top: 1px solid var(--line);
 }
 
+.vt-reason__num {
+  display: block;
+  color: var(--muted);
+  font-size: 0.95rem;
+  font-variant-numeric: tabular-nums;
+}
+
 .vt-reason__title {
-  margin: 0;
+  margin: 6px 0 0;
   color: var(--ink);
   font-size: clamp(1.3rem, 1.9vw, 1.6rem);
   font-weight: 400;
@@ -140,26 +147,26 @@
 }
 
 .vt-reason__text {
-  max-width: 34ch;
-  margin: 12px 0 0;
+  max-width: 44ch;
+  margin: 10px 0 0;
   color: var(--ink-soft);
   font-size: clamp(1.05rem, 1.3vw, 1.15rem);
   line-height: 1.55;
 }
 
-@media (min-width: 900px) {
+@media (min-width: 760px) {
   .vt-why__list {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     border-top: 1px solid var(--line-strong);
   }
   .vt-reason {
-    padding: 32px 32px 8px;
+    padding: 28px 32px 32px 0;
+  }
+  .vt-reason:nth-child(-n + 2) {
     border-top: 0;
   }
-  .vt-reason:first-child {
-    padding-left: 0;
-  }
-  .vt-reason + .vt-reason {
+  .vt-reason:nth-child(even) {
+    padding-left: 32px;
     border-left: 1px solid var(--line);
   }
 }

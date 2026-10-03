@@ -9,6 +9,8 @@ export const site = {
   // Public contact address. Also the default destination for quote enquiries (functions/api/quote.js),
   // unless QUOTE_TO_EMAIL is set in Cloudflare.
   email: 'contact@ross360.co.uk',
+  // Used only where the operator's identity is needed: the Privacy Notice and Terms & Conditions.
+  // Not shown in the footer or marketing pages.
   founder: 'Ross Rajah',
   legalName: 'Ross Rajah, sole trader trading as ROSS 360',
   serviceArea: 'UK-wide',

@@ -42,7 +42,7 @@ export const pages = {
     path: '/about',
     title: 'About ROSS 360',
     description:
-      'Professional 360° photography and virtual tours for businesses and property. ROSS 360 was founded by Ross Rajah.',
+      'Professional 360° photography and virtual tours for businesses and property.',
   },
   quote: {
     path: '/get-a-quote',
@@ -85,7 +85,6 @@ const organization = {
   url: site.url,
   email: site.email,
   description: 'Professional 360° photography and interactive virtual tours for commercial premises and property, UK-wide.',
-  founder: { '@type': 'Person', name: site.founder },
   areaServed: { '@type': 'Country', name: 'United Kingdom' },
 };
 

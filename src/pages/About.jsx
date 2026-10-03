@@ -19,7 +19,7 @@ export default function About() {
         <div className={`container ${founderPhoto ? 'founder' : 'statement'}`}>
           {founderPhoto ? <Frame image={founderPhoto} ratio="portrait" className="founder__photo" /> : null}
           <p className={founderPhoto ? 'statement__text statement__text--small' : 'statement__text'}>
-            ROSS 360 was founded by {site.founder} to provide businesses and property professionals with a
+            ROSS 360 was founded to provide businesses and property professionals with a
             straightforward way to present their premises online.
           </p>
           <div className="statement__aside">
@@ -41,10 +41,6 @@ export default function About() {
               <div>
                 <dt>Trading name</dt>
                 <dd>{site.brand}</dd>
-              </div>
-              <div>
-                <dt>Operated by</dt>
-                <dd>{site.founder}, sole trader</dd>
               </div>
               <div>
                 <dt>Service area</dt>

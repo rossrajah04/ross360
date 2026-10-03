@@ -49,7 +49,7 @@ export default function Footer() {
 
       <div className="container footer__legal">
         <p>
-          © {year} {site.brand}. {site.legalName}.
+          © {year} {site.brand}.
         </p>
       </div>
     </footer>

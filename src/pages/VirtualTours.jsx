@@ -90,8 +90,11 @@ export default function VirtualTours() {
             {why.title}
           </h2>
           <ul className="vt-why__list">
-            {why.items.map((item) => (
+            {why.items.map((item, index) => (
               <li key={item.title} className="vt-reason" data-reveal>
+                <span className="vt-reason__num" aria-hidden="true">
+                  {String(index + 1).padStart(2, '0')}
+                </span>
                 <h3 className="vt-reason__title">{item.title}</h3>
                 <p className="vt-reason__text">{item.text}</p>
               </li>

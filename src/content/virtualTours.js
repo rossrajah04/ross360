@@ -15,20 +15,26 @@ export const virtualTours = {
     text: 'Unlike a collection of photographs, a virtual tour gives people a sense of how the different areas of a space connect and allows them to explore at their own pace.',
   },
 
+  // ROSS 360's service standards (supplied 3 October 2026). They describe how every project is run:
+  // plan, capture, produce, check, deliver. Don't add turnaround times or other unagreed service levels.
   why: {
     title: 'Why ROSS 360',
     items: [
       {
-        title: 'Professional capture',
-        text: 'Carefully captured 360° imagery designed to give visitors a clear, consistent view of the space.',
+        title: 'Planned around your space',
+        text: 'We plan the capture around how visitors should experience the premises, connecting important areas into a natural journey.',
       },
       {
-        title: 'Built around your space',
-        text: 'Each tour is produced around the areas and requirements agreed for the project.',
+        title: 'Ready to use from day one',
+        text: 'Your finished tour comes with a shareable URL, website embed and the supporting files you need to put it to work.',
       },
       {
-        title: 'From capture to delivery',
-        text: 'We handle the photography, tour production and final delivery as one service.',
+        title: 'Checked before delivery',
+        text: 'Every tour is reviewed before it reaches you, including navigation, imagery, agreed areas and the experience across desktop and mobile.',
+      },
+      {
+        title: 'Handled from start to finish',
+        text: 'From preparation and capture through to production and delivery, you have one point of contact throughout.',
       },
     ],
   },
