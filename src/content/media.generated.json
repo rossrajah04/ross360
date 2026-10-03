@@ -1,1 +1,158 @@
-{}
+{
+  "compare-photo": {
+    "width": 824,
+    "height": 1432,
+    "widths": [
+      640,
+      824
+    ],
+    "color": "#080808"
+  },
+  "hero": {
+    "width": 1864,
+    "height": 1388,
+    "widths": [
+      640,
+      1024,
+      1600,
+      1864
+    ],
+    "color": "#887868"
+  },
+  "space-fitness-detail": {
+    "width": 944,
+    "height": 1312,
+    "widths": [
+      640,
+      944
+    ],
+    "color": "#080808"
+  },
+  "space-fitness": {
+    "width": 1984,
+    "height": 1432,
+    "widths": [
+      640,
+      1024,
+      1600,
+      1984
+    ],
+    "color": "#080808"
+  },
+  "space-hospitality": {
+    "width": 1864,
+    "height": 1432,
+    "widths": [
+      640,
+      1024,
+      1600,
+      1864
+    ],
+    "color": "#080808"
+  },
+  "space-property": {
+    "width": 2320,
+    "height": 1248,
+    "widths": [
+      640,
+      1024,
+      1600,
+      2320
+    ],
+    "color": "#a89888"
+  },
+  "type-agent": {
+    "width": 2400,
+    "height": 1177,
+    "widths": [
+      640,
+      1024,
+      1600,
+      2400
+    ],
+    "color": "#e8e8f8"
+  },
+  "type-clinic": {
+    "width": 1144,
+    "height": 756,
+    "widths": [
+      640,
+      1024,
+      1144
+    ],
+    "color": "#181818"
+  },
+  "type-developer": {
+    "width": 1424,
+    "height": 1248,
+    "widths": [
+      640,
+      1024,
+      1424
+    ],
+    "color": "#e8e8f8"
+  },
+  "type-hotel": {
+    "width": 2400,
+    "height": 907,
+    "widths": [
+      640,
+      1024,
+      1600,
+      2400
+    ],
+    "color": "#080808"
+  },
+  "type-retail": {
+    "width": 1744,
+    "height": 1392,
+    "widths": [
+      640,
+      1024,
+      1600,
+      1744
+    ],
+    "color": "#080808"
+  },
+  "understand-tall": {
+    "width": 1184,
+    "height": 1432,
+    "widths": [
+      640,
+      1024,
+      1184
+    ],
+    "color": "#080808"
+  },
+  "understand-wide": {
+    "width": 2400,
+    "height": 923,
+    "widths": [
+      640,
+      1024,
+      1600,
+      2400
+    ],
+    "color": "#080808"
+  },
+  "wide-compare": {
+    "width": 3064,
+    "height": 696,
+    "widths": [
+      1600,
+      2800,
+      3064
+    ],
+    "color": "#080808"
+  },
+  "wide-tour": {
+    "width": 4400,
+    "height": 1230,
+    "widths": [
+      1600,
+      2800,
+      4400
+    ],
+    "color": "#e8e8f8"
+  }
+}
