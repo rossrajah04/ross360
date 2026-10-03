@@ -173,27 +173,28 @@
 
 .vt-steps__num {
   display: inline-block;
-  min-width: 1.6em;
+  min-width: 2.2em;
   color: var(--muted);
   font-weight: 400;
 }
 
-.vt-steps .vt-item__text {
-  padding-left: 1.6em;
+/* Title and text side by side once there is room, so each point reads as one line of a list. */
+@media (min-width: 760px) {
+  .vt-pair {
+    display: grid;
+    grid-template-columns: minmax(0, 15rem) minmax(0, 1fr);
+    gap: 0 32px;
+    align-items: baseline;
+  }
+  .vt-pair .vt-item__text {
+    margin-top: 0;
+  }
 }
 
-.vt-compare {
-  display: grid;
-  gap: 28px;
-  margin: 28px 0;
+.vt-text + .vt-list {
+  margin-top: 24px;
 }
 
-.vt-compare__title {
-  margin: 0 0 12px;
-  color: var(--ink);
-  font-size: 1.1rem;
-  font-weight: 500;
-}
 
 .vt-next {
   display: block;
@@ -227,9 +228,5 @@
   /* In two columns, both items of the last row carry the closing rule. */
   .vt-list--two > li:nth-last-child(2):nth-child(odd) {
     border-bottom: 1px solid var(--line);
-  }
-  .vt-compare {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 32px;
   }
 }

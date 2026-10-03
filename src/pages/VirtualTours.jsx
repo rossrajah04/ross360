@@ -4,14 +4,15 @@ import TourStage from '../components/home/TourStage.jsx';
 import { Closing } from '../components/home/HomeSections.jsx';
 import useReveal from '../lib/useReveal.js';
 import { virtualTours } from '../content/virtualTours.js';
-import { processSteps, projectIncludes, outOfScopeNote, reasons, tourVsStreetView } from '../content/services.js';
+import { outOfScopeNote, reasons } from '../content/services.js';
 import { site } from '../content/site.js';
 import '../styles/home.css';
 import '../styles/virtual-tours.css';
 
 // Virtual Tours: what a tour is, shown with one live example, then the details set as plain rows
-// (heading on the left, content on the right) in the homepage's type and spacing, and the homepage's
-// closing enquiry. The `home` class gives the page the homepage's tokens and shared styles.
+// (heading on the left, content on the right) in the homepage's type and spacing: how it works, how it
+// compares, why ROSS 360, what is included, where it is used, the process and where to go next, then the
+// homepage's closing enquiry. The `home` class gives the page the homepage's tokens and shared styles.
 // The only tour shown is the external Avalon Hotel example, labelled and credited as someone else's work.
 
 function Arrow() {
@@ -39,7 +40,7 @@ function Row({ id, title, position = '', children }) {
 
 export default function VirtualTours() {
   useReveal();
-  const { intro, how, included, uses, compare, process, next } = virtualTours;
+  const { intro, how, compare, why, included, uses, process, next } = virtualTours;
   const example = site.stepInsideTour;
 
   return (
@@ -79,19 +80,25 @@ export default function VirtualTours() {
         <p className="vt-text vt-text--lead">{how.text}</p>
       </Row>
 
-      <Row id="vt-included" title={included.title}>
-        <ul className="vt-list vt-list--two">
-          {projectIncludes.map((item) => (
-            <li key={item}>{item}</li>
+      <Row id="vt-compare" title={compare.title}>
+        <p className="vt-text">{compare.text}</p>
+        <ul className="vt-list vt-pairs">
+          {compare.items.map((item) => (
+            <li key={item.title} className="vt-item vt-pair">
+              <h3 className="vt-item__title">{item.title}</h3>
+              <p className="vt-item__text">{item.text}</p>
+            </li>
           ))}
         </ul>
-        <p className="vt-small">{outOfScopeNote}</p>
+        <p className="vt-small">
+          {compare.note} {site.google.disclaimer}
+        </p>
       </Row>
 
-      <Row id="vt-uses" title={uses.title}>
-        <ul className="vt-list">
-          {reasons.map((item) => (
-            <li key={item.title} className="vt-item">
+      <Row id="vt-why" title={why.title}>
+        <ul className="vt-list vt-pairs">
+          {why.items.map((item) => (
+            <li key={item.title} className="vt-item vt-pair">
               <h3 className="vt-item__title">{item.title}</h3>
               <p className="vt-item__text">{item.text}</p>
             </li>
@@ -99,40 +106,32 @@ export default function VirtualTours() {
         </ul>
       </Row>
 
-      <Row id="vt-compare" title={compare.title}>
-        {compare.photos.map((text) => (
-          <p key={text} className="vt-text">
-            {text}
-          </p>
-        ))}
-        <div className="vt-compare">
-          <div>
-            <h3 className="vt-compare__title">{compare.tourTitle}</h3>
-            <ul className="vt-list">
-              {tourVsStreetView.tour.map((item) => (
-                <li key={item}>{item}</li>
-              ))}
-            </ul>
-          </div>
-          <div>
-            <h3 className="vt-compare__title">{compare.streetViewTitle}</h3>
-            <ul className="vt-list">
-              {tourVsStreetView.streetView.map((item) => (
-                <li key={item}>{item}</li>
-              ))}
-            </ul>
-          </div>
-        </div>
-        <p className="vt-text">{tourVsStreetView.note}</p>
-        <p className="vt-small">{site.google.disclaimer}</p>
+      <Row id="vt-included" title={included.title}>
+        <ul className="vt-list vt-list--two">
+          {included.items.map((item) => (
+            <li key={item}>{item}</li>
+          ))}
+        </ul>
+        <p className="vt-small">{outOfScopeNote}</p>
+      </Row>
+
+      <Row id="vt-uses" title={uses.title}>
+        <ul className="vt-list vt-pairs">
+          {reasons.map((item) => (
+            <li key={item.title} className="vt-item vt-pair">
+              <h3 className="vt-item__title">{item.title}</h3>
+              <p className="vt-item__text">{item.text}</p>
+            </li>
+          ))}
+        </ul>
       </Row>
 
       <Row id="vt-process" title={process.title}>
-        <ol className="vt-list vt-list--two vt-steps">
-          {processSteps.map((step, index) => (
-            <li key={step.title} className="vt-item">
+        <ol className="vt-list vt-pairs vt-steps">
+          {process.steps.map((step, index) => (
+            <li key={step.title} className="vt-item vt-pair">
               <h3 className="vt-item__title">
-                <span className="vt-steps__num">{index + 1}</span>
+                <span className="vt-steps__num">{String(index + 1).padStart(2, '0')}</span>
                 {step.title}
               </h3>
               <p className="vt-item__text">{step.text}</p>
@@ -142,10 +141,10 @@ export default function VirtualTours() {
       </Row>
 
       <Row id="vt-next" title={next.title} position="last">
-        <ul className="vt-list">
+        <ul className="vt-list vt-pairs">
           {next.links.map((link) => (
             <li key={link.to} className="vt-item">
-              <Link className="vt-next" to={link.to}>
+              <Link className="vt-next vt-pair" to={link.to}>
                 <span className="vt-next__title">
                   {link.title}
                   <Arrow />
