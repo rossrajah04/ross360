@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import Photo from './Photo.jsx';
 import PanoViewer from './PanoViewer.jsx';
+import PanStage from './PanStage.jsx';
 import TourEmbed from '../TourEmbed.jsx';
 import { home } from '../../content/home.js';
 import { media } from '../../content/media.js';
@@ -68,8 +69,19 @@ export function StepInside() {
           <TourEmbed className="tour-stage--home" />
         ) : (
           <>
-            <PanoViewer image={media.pano} label={tour.hint} className="h-tour__pano" />
-            {media.pano?.temporary ? <span className="h-tag h-tour__tag">{tour.illustrative}</span> : null}
+            {media.pano ? (
+              <PanoViewer image={media.pano} label={tour.hint} className="h-tour__pano" />
+            ) : (
+              <PanStage
+                image={media.tourWide}
+                label={tour.hint}
+                sizes="(min-width: 1000px) 210vw, 560vw"
+                className="h-tour__pano"
+              />
+            )}
+            {(media.pano || media.tourWide)?.temporary ? (
+              <span className="h-tag h-tour__tag">{tour.illustrative}</span>
+            ) : null}
           </>
         )}
       </div>
@@ -205,14 +217,23 @@ export function Compare() {
       </div>
       <div className="h-wrap h-compare__grid">
         <figure className="h-compare__item h-compare__item--photo" data-reveal>
-          <Photo image={media.panoView} className="h-compare__media" sizes="(min-width: 1000px) 30vw, 80vw" />
+          <Photo image={media.comparePhoto} className="h-compare__media" sizes="(min-width: 1000px) 30vw, 80vw" />
           <figcaption className="h-compare__caption">
             <span className="h-label">{compare.photo.label}</span>
             <span className="h-compare__text">{compare.photo.text}</span>
           </figcaption>
         </figure>
         <figure className="h-compare__item h-compare__item--tour" data-reveal>
-          <PanoViewer image={media.pano} label={tour.hint} className="h-compare__media" initialYaw={0} />
+          {media.pano ? (
+            <PanoViewer image={media.pano} label={tour.hint} className="h-compare__media" />
+          ) : (
+            <PanStage
+              image={media.compareWide}
+              label={tour.hint}
+              sizes="(min-width: 1000px) 170vw, 320vw"
+              className="h-compare__media"
+            />
+          )}
           <figcaption className="h-compare__caption">
             <span className="h-label">{compare.tour.label}</span>
             <span className="h-compare__text">{compare.tour.text}</span>

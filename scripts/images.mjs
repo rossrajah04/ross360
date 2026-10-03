@@ -10,6 +10,10 @@
 // photography-versus-360° comparison. An optional pano-<name>.json beside it can set the view:
 //   { "yaw": 0, "pitch": 0, "fov": 70 }   (degrees; yaw 0 is the centre of the image)
 //
+// Wide photographs that visitors drag sideways (the temporary "Step inside" and comparison views): name
+// them wide-<name>.jpg. They are kept at larger widths, because they are shown taller than the screen
+// is wide.
+//
 // The sizes and colours of everything generated are recorded in src/content/media.generated.json,
 // which the site reads. Re-run this script after adding, replacing or removing a source image.
 
@@ -25,15 +29,17 @@ const outDir = join(root, 'public', 'images', 'home');
 const manifestPath = join(root, 'src', 'content', 'media.generated.json');
 
 const PHOTO_WIDTHS = [640, 1024, 1600, 2400];
+const WIDE_WIDTHS = [1600, 2800, 4400];
 const PANO_WIDTHS = [2048, 4096, 8192];
 const VIEW = { width: 1600, height: 2000 };
 
 const hex = ({ r, g, b }) => `#${[r, g, b].map((v) => v.toString(16).padStart(2, '0')).join('')}`;
 
-async function writePhoto(input, name) {
+async function writePhoto(input, name, steps = PHOTO_WIDTHS) {
   const image = sharp(input).rotate();
   const { width, height } = await image.metadata();
-  const widths = PHOTO_WIDTHS.filter((w) => w < width).concat(Math.min(width, 2400));
+  const cap = steps[steps.length - 1];
+  const widths = steps.filter((w) => w < width).concat(Math.min(width, cap));
   const unique = [...new Set(widths)].sort((a, b) => a - b);
   for (const w of unique) {
     const resized = sharp(input).rotate().resize({ width: w });
@@ -119,6 +125,8 @@ for (const file of files) {
     const { pano, view } = await writePano(input, `pano-${name}`, file);
     manifest[`pano-${name}`] = pano;
     manifest[`pano-${name}-view`] = view;
+  } else if (key.startsWith('wide-')) {
+    manifest[key] = await writePhoto(input, key, WIDE_WIDTHS);
   } else {
     manifest[key] = await writePhoto(input, key);
   }

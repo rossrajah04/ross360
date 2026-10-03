@@ -1154,3 +1154,38 @@
     transform: translateY(100%);
   }
 }
+
+/* ---------- Wide photograph, dragged sideways ---------- */
+
+.pan {
+  position: relative;
+  overflow: hidden;
+  background: #1c1b19;
+  cursor: grab;
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.pan:active {
+  cursor: grabbing;
+}
+
+.pan__img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: auto;
+  max-width: none;
+  height: 100%;
+  will-change: transform;
+}
+
+.pan.is-touched .pano__hint {
+  opacity: 0;
+}
+
+.pan:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: -6px;
+}

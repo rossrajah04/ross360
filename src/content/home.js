@@ -15,7 +15,7 @@ export const home = {
     text: 'Explore an interactive 360° tour and experience how customers, clients, buyers and tenants can view a space online before visiting.',
     open: 'Open full tour',
     hint: 'Drag to look around',
-    illustrative: 'Illustrative 360° preview',
+    illustrative: 'Illustrative preview',
     demoNote: 'This is a demonstration tour.',
   },
 
