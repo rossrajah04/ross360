@@ -45,7 +45,6 @@ export default function TourEmbed({ tour = site.exampleTour, className = '' }) {
         title={`${tour.title}: interactive 360° tour`}
         loading="lazy"
         allow="fullscreen; xr-spatial-tracking; gyroscope; accelerometer"
-        allowFullScreen
         referrerPolicy="strict-origin-when-cross-origin"
         onError={markFailed}
       />

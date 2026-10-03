@@ -21,24 +21,24 @@ export const home = {
     demoNote: 'This is a demonstration tour.',
   },
 
-  // Directly after the tour: why it matters.
+  // Directly after the tour: why it matters. The text is set as a large statement.
   explore: {
     title: 'Let people explore before they arrive.',
     text: 'A 360° tour gives customers, clients, buyers and tenants a clearer sense of a space before they visit.',
   },
 
-  delivers: {
-    title: 'What ROSS 360 delivers',
+  create: {
+    title: 'What we create',
     items: [
-      '360° photography',
-      'Interactive virtual tour',
-      'Website integration',
-      'Google Street View where appropriate',
+      { title: '360° photography' },
+      { title: 'Interactive virtual tours' },
+      { title: 'Online delivery' },
+      { title: 'Google Street View', note: 'where appropriate' },
     ],
   },
 
   spaces: {
-    title: 'Built for business & property',
+    title: 'Business & property',
     items: [
       { label: 'Restaurants', to: '/businesses' },
       { label: 'Gyms & Studios', to: '/businesses' },
@@ -52,7 +52,7 @@ export const home = {
   },
 
   process: {
-    title: 'From capture to tour',
+    title: 'From space to online',
     steps: [
       { title: 'Capture', text: 'We photograph the agreed space in 360°.' },
       { title: 'Build', text: 'The imagery is processed and assembled into an interactive tour.' },
@@ -61,8 +61,8 @@ export const home = {
   },
 
   pricing: {
-    title: 'Pricing',
-    // Package names, starting prices and the property line come from pricing.js.
+    title: 'Business tours',
+    // Package names, starting prices, the intro and the property line come from pricing.js.
     link: 'View pricing',
   },
 

@@ -93,8 +93,7 @@
 }
 
 .h-link:hover .h-arrow,
-.h-close__cta:hover .h-arrow,
-.h-types__link:hover .h-arrow {
+.h-close__cta:hover .h-arrow {
   transform: translateX(6px);
 }
 
@@ -279,293 +278,351 @@
   }
 }
 
-/* ---------- Below the tour ----------
-   Dark continues from the tour into why it matters. Every section after it shares one layout: the
-   heading on the left, the content on the right, divided by rules and space rather than boxes. The
-   ground turns dark once, for the process. */
+/* ---------- Below the tour: one continuous story ----------
+   No cards, boxes or column grids. Each part is carried by one piece of large type, set off-centre,
+   with a quiet heading to anchor it. Dark continues from the tour, turns light for what we create and
+   for whom, dark again for the three stages, and light for the prices and the introduction. */
+
+.h-kicker {
+  margin: 0 0 clamp(40px, 5vw, 72px);
+  color: var(--ink);
+  font-size: clamp(0.92rem, 1vw, 1rem);
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  line-height: 1.4;
+  text-transform: uppercase;
+}
 
 /* Why it matters */
 
 .h-explore {
-  padding: 0 0 var(--h-space);
+  padding: 0 0 calc(var(--h-space) * 1.15);
   background: var(--deep);
   color: var(--on-dark);
 }
 
-.h-explore__inner {
-  display: grid;
-  gap: clamp(28px, 3vw, 40px);
-  padding-top: clamp(64px, 9vw, 144px);
-  border-top: 1px solid var(--line-on-dark);
-}
-
-.h-explore .h-title {
+.h-explore__title {
   max-width: 14ch;
+  margin: 0;
   color: #ffffff;
-}
-
-.h-explore__text {
-  max-width: 30ch;
-  margin: 0;
-  color: rgba(255, 255, 255, 0.82);
-  font-size: clamp(1.25rem, 2vw, 1.75rem);
+  font-size: clamp(2.2rem, 5vw, 4.6rem);
   font-weight: 300;
-  line-height: 1.35;
-  letter-spacing: -0.01em;
-}
-
-@media (min-width: 1000px) {
-  .h-explore__inner {
-    grid-template-columns: repeat(12, minmax(0, 1fr));
-    gap: 0 32px;
-    align-items: end;
-  }
-  .h-explore .h-title {
-    grid-column: 1 / 8;
-  }
-  .h-explore__text {
-    grid-column: 8 / 13;
-  }
-}
-
-/* The shared section layout */
-
-.h-block {
-  padding: var(--h-space) 0;
-}
-
-.h-block--rule {
-  padding-top: 0;
-}
-
-.h-block--rule .h-block__grid {
-  padding-top: clamp(56px, 7vw, 112px);
-  border-top: 1px solid var(--line);
-}
-
-.h-block--dark {
-  background: var(--deep);
-  color: var(--on-dark);
-}
-
-.h-block__grid {
-  display: grid;
-  gap: clamp(32px, 4vw, 56px);
-}
-
-.h-block__title {
-  max-width: 14ch;
-  margin: 0;
-  color: var(--ink);
-  font-size: clamp(1.6rem, 2.6vw, 2.4rem);
-  font-weight: 300;
-  line-height: 1.05;
-  letter-spacing: -0.025em;
+  line-height: 0.98;
+  letter-spacing: -0.035em;
   text-transform: uppercase;
 }
 
-.h-block--dark .h-block__title {
-  color: #ffffff;
+.h-explore__statement {
+  max-width: 21ch;
+  margin: clamp(56px, 9vw, 160px) 0 0;
+  color: rgba(255, 255, 255, 0.86);
+  font-size: clamp(1.7rem, 3.6vw, 3.6rem);
+  font-weight: 300;
+  line-height: 1.12;
+  letter-spacing: -0.028em;
 }
 
 @media (min-width: 1000px) {
-  .h-block__grid {
-    grid-template-columns: repeat(12, minmax(0, 1fr));
-    gap: 0 32px;
-    align-items: start;
-  }
-  .h-block__title {
-    grid-column: 1 / 5;
-  }
-  .h-block__body {
-    grid-column: 6 / 13;
+  .h-explore__statement {
+    margin-left: 41.66%;
   }
 }
 
-/* What ROSS 360 delivers: four lines of large type. */
+/* What we create, and for whom */
 
-.h-rows {
+.h-create {
+  padding: var(--h-space) 0 calc(var(--h-space) * 1.1);
+}
+
+.h-create__list {
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.h-rows__item {
-  padding: clamp(18px, 2vw, 28px) 0;
-  border-top: 1px solid var(--line);
+.h-create__item {
+  padding: 0.12em 0;
   color: var(--ink);
-  font-size: clamp(1.5rem, 3vw, 2.75rem);
+  font-size: clamp(2.1rem, 5.6vw, 5.8rem);
   font-weight: 300;
-  line-height: 1.1;
-  letter-spacing: -0.025em;
+  line-height: 1.02;
+  letter-spacing: -0.04em;
 }
 
-.h-rows__item:last-child {
-  border-bottom: 1px solid var(--line);
-}
-
-/* Built for business & property: names in two columns. */
-
-.h-types {
-  display: grid;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.h-types__link {
+.h-create__note {
   display: block;
-  padding: 10px 0;
+  margin-top: 0.3em;
+  color: var(--muted);
+  font-size: max(0.42em, 1rem);
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+
+@media (min-width: 700px) {
+  .h-create__note {
+    display: inline;
+    margin: 0;
+  }
+}
+
+/* The lines step in and out, so the list reads as composed type rather than a column. */
+@media (min-width: 1000px) {
+  .h-create__item:nth-child(2) {
+    padding-left: 25%;
+  }
+  .h-create__item:nth-child(3) {
+    padding-left: 8.33%;
+  }
+  .h-create__item:nth-child(4) {
+    padding-left: 33.33%;
+  }
+}
+
+.h-for {
+  margin-top: clamp(112px, 14vw, 240px);
+}
+
+.h-for__list {
+  max-width: 36ch;
+  margin: 0;
+  padding: 0;
+  list-style: none;
   color: var(--ink);
-  font-size: clamp(1.25rem, 2vw, 1.75rem);
+  font-size: clamp(1.45rem, 2.6vw, 2.5rem);
   font-weight: 300;
-  letter-spacing: -0.015em;
+  line-height: 1.32;
+  letter-spacing: -0.02em;
+}
+
+/* Names flow like a sentence. Each keeps its slash, so lines break only between names. */
+.h-for__list {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: 0.3em;
+}
+
+.h-for__item {
+  white-space: nowrap;
+}
+
+.h-for__item:not(:last-child)::after {
+  content: ' /';
+  color: var(--line-strong, #b9b6af);
+}
+
+.h-for__link {
+  color: inherit;
   text-decoration: none;
   transition: color 0.3s var(--ease);
 }
 
 @media (hover: hover) {
-  .h-types:hover .h-types__link {
+  .h-for__list:hover .h-for__link {
     color: var(--muted);
   }
-  .h-types .h-types__link:hover {
+  .h-for__list .h-for__link:hover {
     color: var(--ink);
   }
 }
 
-@media (min-width: 700px) {
-  .h-types {
-    grid-template-columns: 1fr 1fr;
-    column-gap: 32px;
+@media (min-width: 1000px) {
+  .h-for {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: 0 32px;
+    align-items: baseline;
+  }
+  .h-for .h-kicker {
+    grid-column: 1 / 4;
+    margin: 0;
+  }
+  .h-for__list {
+    grid-column: 4 / 13;
   }
 }
 
-/* From capture to tour: three stages on dark. */
+/* From space to online: three stages on dark, each a line of display type. */
 
-.h-steps {
+.h-stages {
+  padding: var(--h-space) 0;
+  background: var(--deep);
+  color: var(--on-dark);
+}
+
+.h-stages .h-kicker {
+  color: #ffffff;
+}
+
+.h-stages__list {
   display: grid;
-  gap: 48px;
+  gap: clamp(56px, 7vw, 112px);
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.h-steps__item {
-  padding-top: 24px;
-  border-top: 1px solid var(--line-on-dark);
-}
-
-.h-steps__num {
+.h-stage__num {
   display: block;
-  margin-bottom: 28px;
+  margin-bottom: 12px;
   color: var(--muted-on-dark);
-  font-size: 0.85rem;
-  letter-spacing: 0.14em;
+  font-size: 1rem;
+  letter-spacing: 0.08em;
   font-variant-numeric: tabular-nums;
 }
 
-.h-steps__name {
-  margin: 0 0 16px;
+.h-stage__name {
+  margin: 0;
   color: #ffffff;
-  font-size: clamp(1.5rem, 2.4vw, 2.2rem);
+  font-size: clamp(3rem, 9.4vw, 9.5rem);
   font-weight: 300;
-  line-height: 1.05;
-  letter-spacing: -0.02em;
+  line-height: 0.86;
+  letter-spacing: -0.045em;
   text-transform: uppercase;
 }
 
-.h-steps__text {
-  max-width: 26ch;
-  margin: 0;
-  color: rgba(255, 255, 255, 0.8);
-  font-size: clamp(1.08rem, 1.3vw, 1.2rem);
-  line-height: 1.55;
+.h-stage__text {
+  max-width: 28ch;
+  margin: 20px 0 0;
+  color: rgba(255, 255, 255, 0.78);
+  font-size: clamp(1.1rem, 1.4vw, 1.3rem);
+  line-height: 1.5;
 }
 
-@media (min-width: 760px) {
-  .h-steps {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+@media (min-width: 900px) {
+  .h-stage {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 6fr) minmax(0, 4fr);
     gap: 0 32px;
+    align-items: baseline;
+  }
+  .h-stage__num {
+    margin: 0;
+  }
+  .h-stage__text {
+    margin: 0;
   }
 }
 
-/* Pricing: name and starting price on one line each. */
+/* Business tours: three starting prices as numerals. */
 
-.h-fees {
+.h-price {
+  padding: var(--h-space) 0;
+}
+
+.h-price__head .h-kicker {
+  margin-bottom: 16px;
+}
+
+.h-price__intro {
+  max-width: 32ch;
   margin: 0;
+  color: var(--ink-soft);
+  font-size: clamp(1.1rem, 1.4vw, 1.3rem);
+}
+
+.h-price__list {
+  display: grid;
+  gap: clamp(36px, 5vw, 56px);
+  margin: clamp(56px, 7vw, 112px) 0 0;
   padding: 0;
   list-style: none;
 }
 
-.h-fees__row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 8px 32px;
-  padding: clamp(20px, 2.4vw, 32px) 0;
-  border-top: 1px solid var(--line);
-}
-
-.h-fees__row:last-child {
-  border-bottom: 1px solid var(--line);
-}
-
-.h-fees__name {
+.h-price__amount {
   margin: 0;
   color: var(--ink);
-  font-size: 0.9rem;
-  font-weight: 500;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-}
-
-.h-fees__price {
-  margin: 0;
-  color: var(--ink);
-  font-size: clamp(2.2rem, 4.4vw, 4rem);
+  font-size: clamp(3.4rem, 8.4vw, 8.8rem);
   font-weight: 300;
-  line-height: 1;
-  letter-spacing: -0.035em;
-  white-space: nowrap;
+  line-height: 0.88;
+  letter-spacing: -0.05em;
+  font-variant-numeric: lining-nums;
 }
 
-.h-fees__from {
-  margin-right: 0.5em;
-  color: var(--muted);
-  font-size: 0.72rem;
+.h-price__name {
+  margin: 18px 0 0;
+  color: var(--ink);
+  font-size: 1rem;
   font-weight: 500;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  vertical-align: 0.6em;
 }
 
-.h-fees__foot {
+.h-price__foot {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
   justify-content: space-between;
   gap: 16px 32px;
-  margin-top: 28px;
+  margin-top: clamp(56px, 7vw, 112px);
 }
 
-.h-fees__property {
+.h-price__foot p {
   margin: 0;
   color: var(--ink-soft);
   font-size: clamp(1.05rem, 1.3vw, 1.2rem);
 }
 
-/* ROSS 360 */
-
-.h-about__lead {
-  max-width: 22ch;
+@media (min-width: 760px) {
+  .h-price__list {
+    grid-template-columns: repeat(3, auto);
+    justify-content: space-between;
+  }
 }
 
-.h-about__text {
-  max-width: 44ch;
-  margin: 28px 0 32px;
+@media (min-width: 1000px) {
+  .h-price__head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 32px;
+  }
+  .h-price__head .h-kicker {
+    margin: 0;
+  }
+}
+
+/* ROSS 360 */
+
+.h-intro {
+  padding: 0 0 var(--h-space);
+}
+
+.h-intro__inner {
+  padding-top: var(--h-space);
+  border-top: 1px solid var(--line);
+}
+
+.h-intro__lead {
+  max-width: 20ch;
+  margin: 0;
+  color: var(--ink);
+  font-size: clamp(1.8rem, 3.8vw, 3.8rem);
+  font-weight: 300;
+  line-height: 1.08;
+  letter-spacing: -0.03em;
+}
+
+.h-intro__text {
+  max-width: 42ch;
+  margin: clamp(24px, 3vw, 40px) 0 32px;
   color: var(--ink-soft);
   font-size: clamp(1.05rem, 1.3vw, 1.2rem);
+}
+
+@media (min-width: 1000px) {
+  .h-intro__inner {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: 0 32px;
+    align-items: baseline;
+  }
+  .h-intro .h-kicker {
+    grid-column: 1 / 4;
+    margin: 0;
+  }
+  .h-intro__body {
+    grid-column: 4 / 13;
+  }
 }
 
 /* ---------- Closing ---------- */
