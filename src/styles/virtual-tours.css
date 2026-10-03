@@ -1,0 +1,235 @@
+/* Virtual Tours page. Builds on the homepage styles (home.css): the same measure, heading size, text
+   size, links and closing band. One live tour on the dark ground at the top, then the details on the
+   light page as rows divided by rules, each with its heading on the left and content on the right. */
+
+/* This page keeps the site's standard measure, so it lines up with the header and footer. */
+.home.vt {
+  --h-max: var(--container);
+}
+
+/* ---------- Introduction and the example tour ---------- */
+
+.vt-intro {
+  padding: clamp(48px, 6vw, 96px) 0 var(--h-gap);
+  background: var(--deep);
+  color: var(--on-dark);
+}
+
+.vt-intro__head {
+  display: grid;
+  gap: 16px;
+  margin-bottom: clamp(24px, 3vw, 40px);
+}
+
+.vt-intro__title {
+  margin: 0;
+  color: #ffffff;
+  font-size: clamp(2rem, 4vw, 3.4rem);
+  font-weight: 400;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+}
+
+.vt-intro__aside {
+  max-width: 44ch;
+}
+
+.vt-intro__aside p {
+  margin: 0 0 20px;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: clamp(1.05rem, 1.3vw, 1.15rem);
+  line-height: 1.55;
+}
+
+.vt-intro .h-link {
+  color: #ffffff;
+}
+
+.vt-intro :focus-visible {
+  outline-color: #ffffff;
+}
+
+@media (min-width: 1000px) {
+  .vt-intro__head {
+    grid-template-columns: 7fr 5fr;
+    gap: 0 48px;
+    align-items: end;
+  }
+  .vt-intro__aside p {
+    margin-bottom: 16px;
+  }
+}
+
+/* ---------- Rows ---------- */
+
+.vt-row {
+  padding-top: clamp(40px, 5vw, 72px);
+}
+
+.vt-row--first {
+  padding-top: var(--h-gap);
+}
+
+.vt-row__inner {
+  display: grid;
+  gap: 20px;
+  padding-top: clamp(28px, 3vw, 40px);
+  border-top: 1px solid var(--line);
+}
+
+.vt-row--first .vt-row__inner {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.vt-row--last {
+  padding-bottom: var(--h-gap);
+}
+
+.vt-row__title {
+  max-width: 20ch;
+}
+
+.vt-row__body {
+  min-width: 0;
+}
+
+@media (min-width: 1000px) {
+  .vt-row__inner {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: 0 32px;
+  }
+  .vt-row__title {
+    grid-column: 1 / 5;
+  }
+  .vt-row__body {
+    grid-column: 6 / 13;
+  }
+}
+
+/* ---------- Content ---------- */
+
+.vt-text {
+  max-width: 52ch;
+  margin: 0 0 16px;
+  color: var(--ink-soft);
+  font-size: clamp(1.05rem, 1.3vw, 1.15rem);
+  line-height: 1.55;
+}
+
+.vt-text--lead {
+  margin: 0;
+  color: var(--ink);
+  font-size: clamp(1.15rem, 1.5vw, 1.3rem);
+}
+
+.vt-small {
+  max-width: 60ch;
+  margin: 16px 0 0;
+  color: var(--muted);
+  font-size: 0.92rem;
+  line-height: 1.55;
+}
+
+.vt-list {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.vt-list > li {
+  padding: 12px 0;
+  border-top: 1px solid var(--line);
+  color: var(--ink);
+  font-size: 1.05rem;
+  line-height: 1.45;
+}
+
+.vt-list > li:last-child {
+  border-bottom: 1px solid var(--line);
+}
+
+.vt-item.vt-item {
+  padding: 18px 0;
+}
+
+.vt-item__title {
+  margin: 0;
+  color: var(--ink);
+  font-size: 1.1rem;
+  font-weight: 500;
+  line-height: 1.35;
+}
+
+.vt-item__text {
+  display: block;
+  max-width: 48ch;
+  margin: 6px 0 0;
+  color: var(--ink-soft);
+  font-size: 1rem;
+  line-height: 1.55;
+}
+
+.vt-steps__num {
+  display: inline-block;
+  min-width: 1.6em;
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.vt-steps .vt-item__text {
+  padding-left: 1.6em;
+}
+
+.vt-compare {
+  display: grid;
+  gap: 28px;
+  margin: 28px 0;
+}
+
+.vt-compare__title {
+  margin: 0 0 12px;
+  color: var(--ink);
+  font-size: 1.1rem;
+  font-weight: 500;
+}
+
+.vt-next {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+}
+
+.vt-next__title {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--ink);
+  font-size: 1.1rem;
+  font-weight: 500;
+}
+
+.vt-next:hover .vt-next__title {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.vt-next:hover .h-arrow {
+  transform: translateX(6px);
+}
+
+@media (min-width: 640px) {
+  .vt-list--two {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 32px;
+  }
+  /* In two columns, both items of the last row carry the closing rule. */
+  .vt-list--two > li:nth-last-child(2):nth-child(odd) {
+    border-bottom: 1px solid var(--line);
+  }
+  .vt-compare {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 32px;
+  }
+}
