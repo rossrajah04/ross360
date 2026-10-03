@@ -15,7 +15,9 @@ export const home = {
     text: 'Explore an interactive 360° tour and experience how customers, clients, buyers and tenants can view a space online before visiting.',
     open: 'Open full tour',
     hint: 'Drag to look around',
-    illustrative: 'Illustrative preview',
+    // Shown over the still image until the Panoee tour (site.exampleTour) or a 360° image is added.
+    illustrative: 'Illustrative image',
+    placeholder: 'The interactive 360° tour will be shown here.',
     demoNote: 'This is a demonstration tour.',
   },
 
@@ -24,18 +26,18 @@ export const home = {
     text: 'ROSS 360 creates professional 360° photography and interactive virtual tours for commercial premises and property.',
   },
 
-  // Work. While the images are temporary this is a collection of spaces, not a portfolio: no project or
-  // client is named or implied, and the note below says the imagery is illustrative.
-  // When a genuine project is ready: add its photographs (media.js), set temporary: false, and add tourUrl.
+  // Spaces. Before launch this describes the kinds of space ROSS 360 photographs; it is not a portfolio.
+  // No project or client is named or implied, and the note says the imagery is illustrative.
+  // Genuine projects belong in the portfolio, each with its own tour; tourUrl links one from here.
   work: {
     title: 'Spaces',
     note: 'Illustrative imagery. Client projects will be added to the portfolio as they are completed.',
     imageLabel: 'Illustrative image',
     link: 'Explore space',
     items: [
-      { sector: 'Hospitality', type: 'Restaurant / Café', media: ['spaceHospitality'], tourUrl: '' },
-      { sector: 'Fitness', type: 'Gym / Studio', media: ['spaceFitness', 'spaceFitnessDetail'], tourUrl: '' },
-      { sector: 'Property', type: 'Residential / Commercial', media: ['spaceProperty'], tourUrl: '' },
+      { sector: 'Hospitality', type: 'Restaurant / Café', media: 'spaceHospitality', tourUrl: '' },
+      { sector: 'Fitness', type: 'Gym / Studio', media: 'spaceFitness', tourUrl: '' },
+      { sector: 'Property', type: 'Residential / Commercial', media: 'spaceProperty', tourUrl: '' },
     ],
   },
 
@@ -43,19 +45,20 @@ export const home = {
     title: 'A more complete view',
     photo: { label: 'Traditional photography', text: 'Photography shows selected views.' },
     tour: { label: '360° tour', text: 'A 360° tour allows visitors to explore the space themselves.' },
+    note: 'Illustrative images.',
   },
 
   spaces: {
     title: 'Built for spaces that need to be experienced.',
     items: [
-      { label: 'Restaurant', to: '/businesses', media: 'typeRestaurant' },
-      { label: 'Gym / Studio', to: '/businesses', media: 'typeGym' },
-      { label: 'Hotel / Venue', to: '/businesses', media: 'typeHotel' },
-      { label: 'Retail / Showroom', to: '/businesses', media: 'typeRetail' },
-      { label: 'Clinic', to: '/businesses', media: 'typeClinic' },
-      { label: 'Estate Agent', to: '/property', media: 'typeAgent' },
-      { label: 'Property', to: '/property', media: 'typeProperty' },
-      { label: 'Developer', to: '/property', media: 'typeDeveloper' },
+      { label: 'Restaurants', to: '/businesses' },
+      { label: 'Gyms & Studios', to: '/businesses' },
+      { label: 'Hotels & Venues', to: '/businesses' },
+      { label: 'Retail & Showrooms', to: '/businesses' },
+      { label: 'Clinics', to: '/businesses' },
+      { label: 'Estate Agents', to: '/property' },
+      { label: 'Property Professionals', to: '/property' },
+      { label: 'Developers', to: '/property' },
     ],
   },
 
@@ -74,6 +77,7 @@ export const home = {
   },
 
   pricing: {
+    label: 'Pricing',
     title: 'Business tours',
     property: 'Property projects are individually quoted based on size, location and requirements.',
     link: 'View pricing',

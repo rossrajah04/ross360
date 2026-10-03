@@ -1,15 +1,13 @@
-import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import Photo from './Photo.jsx';
 import PanoViewer from './PanoViewer.jsx';
-import PanStage from './PanStage.jsx';
 import TourEmbed from '../TourEmbed.jsx';
 import { home } from '../../content/home.js';
 import { media } from '../../content/media.js';
 import { site } from '../../content/site.js';
 import { plans } from '../../content/pricing.js';
 
-// Homepage: space, 360° experience, understanding, work, services, enquiry.
+// Homepage: space, 360° experience, understanding, spaces and services, enquiry.
 // Wording comes from src/content/home.js and photographs from src/content/media.js.
 
 const pad = (number) => String(number).padStart(2, '0');
@@ -42,11 +40,34 @@ export function Opening() {
   );
 }
 
-// Step inside: the 360° experience, as wide as the page. The Panoee tour replaces the preview once
-// site.exampleTour.embedUrl is set.
+// Step inside: the 360° experience, edge to edge and the largest element after the opening photograph.
+// Order of preference: the Panoee tour (site.exampleTour.embedUrl), a 360° image (pano-tour), then a
+// still photograph that says plainly it is illustrative and where the tour will go.
 export function StepInside() {
   const { tour } = home;
   const example = site.exampleTour;
+  let stage;
+  if (example.embedUrl) {
+    stage = <TourEmbed className="tour-stage--home" />;
+  } else if (media.pano) {
+    stage = (
+      <>
+        <PanoViewer image={media.pano} label={tour.hint} className="h-tour__pano" />
+        {media.pano.temporary ? <span className="h-tag h-tour__tag">{tour.illustrative}</span> : null}
+      </>
+    );
+  } else {
+    stage = (
+      <>
+        <Photo image={media.tourStill} className="h-tour__still" sizes="100vw" reveal />
+        <div className="h-tour__veil" aria-hidden="true" />
+        <div className="h-wrap h-tour__placeholder">
+          <span className="h-label">{tour.illustrative}</span>
+          <p>{tour.placeholder}</p>
+        </div>
+      </>
+    );
+  }
   return (
     <section id="step-inside" className="h-tour" aria-labelledby="h-tour-title">
       <div className="h-wrap h-tour__head">
@@ -64,27 +85,7 @@ export function StepInside() {
           ) : null}
         </div>
       </div>
-      <div className="h-tour__stage">
-        {example.embedUrl ? (
-          <TourEmbed className="tour-stage--home" />
-        ) : (
-          <>
-            {media.pano ? (
-              <PanoViewer image={media.pano} label={tour.hint} className="h-tour__pano" />
-            ) : (
-              <PanStage
-                image={media.tourWide}
-                label={tour.hint}
-                sizes="(min-width: 1000px) 210vw, 560vw"
-                className="h-tour__pano"
-              />
-            )}
-            {(media.pano || media.tourWide)?.temporary ? (
-              <span className="h-tag h-tour__tag">{tour.illustrative}</span>
-            ) : null}
-          </>
-        )}
-      </div>
+      <div className="h-tour__stage">{stage}</div>
       {example.embedUrl && !example.isRealProject ? (
         <p className="h-wrap h-tour__note">{tour.demoNote}</p>
       ) : null}
@@ -92,7 +93,7 @@ export function StepInside() {
   );
 }
 
-// What ROSS 360 does, in two sentences set against two photographs.
+// What ROSS 360 does, in two sentences beside one photograph.
 export function Understanding() {
   const { understanding } = home;
   return (
@@ -105,15 +106,9 @@ export function Understanding() {
           <p className="h-understand__body">{understanding.text}</p>
         </div>
         <Photo
-          image={media.understandTall}
-          className="h-understand__tall"
-          sizes="(min-width: 1000px) 36vw, 72vw"
-          reveal
-        />
-        <Photo
-          image={media.understandWide}
-          className="h-understand__wide"
-          sizes="(min-width: 1000px) 44vw, 100vw"
+          image={media.understanding}
+          className="h-understand__photo"
+          sizes="(min-width: 1000px) 52vw, 100vw"
           reveal
         />
       </div>
@@ -121,12 +116,10 @@ export function Understanding() {
   );
 }
 
-const WORK_LAYOUTS = ['full', 'pair', 'offset'];
-
-// The collection of spaces. Each entry has its own composition.
+// The spaces ROSS 360 photographs: three sectors, one image each. A service section, not a portfolio.
 export function Work() {
   const { work } = home;
-  const temporary = work.items.some((item) => item.media.some((key) => media[key]?.temporary));
+  const temporary = work.items.some((item) => media[item.media]?.temporary);
   return (
     <section className="h-work" aria-labelledby="h-work-title">
       <div className="h-wrap h-work__head">
@@ -139,15 +132,24 @@ export function Work() {
           </p>
         ) : null}
       </div>
-      <ol className="h-work__list">
-        {work.items.map((item, index) => {
-          const layout = WORK_LAYOUTS[index % WORK_LAYOUTS.length];
-          const [main, detail] = item.media.map((key) => media[key]);
-          const caption = (
+      <ul className="h-wrap h-work__list">
+        {work.items.map((item) => (
+          <li key={item.type} className="h-space">
+            <div className="h-space__frame">
+              <Photo
+                image={media[item.media]}
+                className="h-space__photo"
+                sizes="(min-width: 1000px) 32vw, 100vw"
+                reveal
+              />
+              {media[item.media]?.temporary ? (
+                <span className="h-tag h-space__tag" aria-hidden="true">
+                  {work.imageLabel}
+                </span>
+              ) : null}
+            </div>
             <div className="h-space__caption" data-reveal>
-              <p className="h-space__sector">
-                {pad(index + 1)} — {item.sector}
-              </p>
+              <p className="h-space__sector">{item.sector}</p>
               <h3 className="h-space__title">{item.type}</h3>
               {item.tourUrl ? (
                 <a className="h-link" href={item.tourUrl} target="_blank" rel="noopener noreferrer">
@@ -157,57 +159,18 @@ export function Work() {
                 </a>
               ) : null}
             </div>
-          );
-          const tag = main?.temporary ? (
-            <span className="h-tag h-space__tag" aria-hidden="true">
-              {work.imageLabel}
-            </span>
-          ) : null;
-          return (
-            <li key={item.type} className={`h-space h-space--${layout}${layout === 'full' ? '' : ' h-wrap'}`}>
-              {layout === 'full' ? (
-                <>
-                  <div className="h-space__frame">
-                    <Photo image={main} className="h-space__main" reveal />
-                    <div className="h-space__shade" aria-hidden="true" />
-                    <div className="h-wrap h-space__overlay">{caption}</div>
-                    {tag}
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div className="h-space__frame h-space__frame--main">
-                    <Photo
-                      image={main}
-                      className="h-space__main"
-                      sizes={layout === 'pair' ? '(min-width: 1000px) 62vw, 100vw' : '(min-width: 1000px) 70vw, 100vw'}
-                      reveal
-                    />
-                    {tag}
-                  </div>
-                  {caption}
-                  {layout === 'pair' && detail ? (
-                    <Photo
-                      image={detail}
-                      className="h-space__detail"
-                      sizes="(min-width: 1000px) 28vw, 56vw"
-                      decorative
-                      reveal
-                    />
-                  ) : null}
-                </>
-              )}
-            </li>
-          );
-        })}
-      </ol>
+          </li>
+        ))}
+      </ul>
     </section>
   );
 }
 
-// One photograph against the same space in 360°.
+// One photograph of a space against the whole space. With a 360° image the right-hand side becomes the
+// interactive view; with genuine photography both sides show the same real premises.
 export function Compare() {
   const { compare, tour } = home;
+  const temporary = media.comparePhoto?.temporary || media.compareSpace?.temporary;
   return (
     <section className="h-compare" aria-labelledby="h-compare-title">
       <div className="h-wrap h-compare__head">
@@ -227,12 +190,7 @@ export function Compare() {
           {media.pano ? (
             <PanoViewer image={media.pano} label={tour.hint} className="h-compare__media" />
           ) : (
-            <PanStage
-              image={media.compareWide}
-              label={tour.hint}
-              sizes="(min-width: 1000px) 170vw, 320vw"
-              className="h-compare__media"
-            />
+            <Photo image={media.compareSpace} className="h-compare__media" sizes="(min-width: 1000px) 62vw, 100vw" />
           )}
           <figcaption className="h-compare__caption">
             <span className="h-label">{compare.tour.label}</span>
@@ -240,53 +198,30 @@ export function Compare() {
           </figcaption>
         </figure>
       </div>
+      {temporary ? <p className="h-wrap h-compare__note">{compare.note}</p> : null}
     </section>
   );
 }
 
-// The kinds of space ROSS 360 photographs. On larger screens the photograph follows the list;
-// on phones each space has its own image in a horizontal row.
+// The kinds of space ROSS 360 photographs, set as type.
 export function SpaceTypes() {
   const { spaces } = home;
-  const [active, setActive] = useState(0);
   return (
     <section className="h-types" aria-labelledby="h-types-title">
       <div className="h-wrap h-types__grid">
-        <div className="h-types__head">
-          <h2 id="h-types-title" className="h-types__title" data-reveal>
-            {spaces.title}
-          </h2>
-        </div>
+        <h2 id="h-types-title" className="h-types__title" data-reveal>
+          {spaces.title}
+        </h2>
         <ul className="h-types__list">
-          {spaces.items.map((item, index) => (
-            <li key={item.label} className="h-types__item">
-              <Link
-                className={`h-types__link${index === active ? ' is-active' : ''}`}
-                to={item.to}
-                onMouseEnter={() => setActive(index)}
-                onFocus={() => setActive(index)}
-              >
-                <Photo image={media[item.media]} className="h-types__thumb" sizes="72vw" decorative />
-                <span className="h-types__num" aria-hidden="true">
-                  {pad(index + 1)}
-                </span>
+          {spaces.items.map((item) => (
+            <li key={item.label} className="h-types__item" data-reveal>
+              <Link className="h-types__link" to={item.to}>
                 <span className="h-types__name">{item.label}</span>
                 <Arrow />
               </Link>
             </li>
           ))}
         </ul>
-        <div className="h-types__stage" aria-hidden="true">
-          {spaces.items.map((item, index) => (
-            <Photo
-              key={item.label}
-              image={media[item.media]}
-              className={`h-types__photo${index === active ? ' is-active' : ''}`}
-              sizes="(min-width: 1000px) 46vw, 1px"
-              decorative
-            />
-          ))}
-        </div>
       </div>
     </section>
   );
@@ -324,6 +259,7 @@ export function Fees() {
     <section className="h-fees" aria-labelledby="h-fees-title">
       <div className="h-wrap h-fees__grid">
         <div className="h-fees__head" data-reveal>
+          <p className="h-label h-fees__label">{pricing.label}</p>
           <h2 id="h-fees-title" className="h-subtitle">
             {pricing.title}
           </h2>
