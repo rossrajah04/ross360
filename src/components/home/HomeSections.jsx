@@ -48,9 +48,12 @@ export function StepInside() {
   return (
     <section id="step-inside" className="h-tour" aria-labelledby="h-tour-title">
       <div className="h-wrap h-tour__head">
-        <h2 id="h-tour-title" className="h-title" data-reveal>
-          {tour.title}
-        </h2>
+        <div data-reveal>
+          <p className="h-tour__label">{tour.label}</p>
+          <h2 id="h-tour-title" className="h-tour__title">
+            {tour.title}
+          </h2>
+        </div>
         <div className="h-tour__aside" data-reveal>
           <p>{tour.text}</p>
           {example.openUrl ? (
@@ -63,7 +66,12 @@ export function StepInside() {
         </div>
       </div>
       <div className="h-wrap">
-        <TourStage tour={example} label={tour.placeholderLabel} placeholder={tour.placeholder} />
+        <TourStage
+          tour={example}
+          label={tour.placeholderLabel}
+          placeholder={tour.placeholder}
+          className="h-tour__stage"
+        />
         {example.embedUrl && example.external ? (
           <p className="h-tour__note">
             <span className="h-tour__note-label">{example.label}</span>

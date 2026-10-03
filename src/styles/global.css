@@ -1722,6 +1722,49 @@ textarea.input {
   margin: 0;
 }
 
+/* Phones: one compact block. The brand, the links in two short columns, the legal links on one line.
+   Column headings are kept for screen readers only. */
+@media (max-width: 799px) {
+  .site-footer {
+    padding-top: 44px;
+  }
+  .footer__grid {
+    gap: 28px;
+  }
+  .footer__descriptor {
+    margin: 10px 0 4px;
+  }
+  .footer__meta {
+    display: none;
+  }
+  .footer__heading {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+  .footer__grid > nav:first-of-type .footer__list {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    column-gap: 24px;
+  }
+  .footer__grid > nav:last-of-type .footer__list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 24px;
+    font-size: 0.92rem;
+  }
+  .footer__grid > nav:last-of-type .footer__list a {
+    color: var(--muted-on-dark);
+  }
+  .footer__legal {
+    margin-top: 28px;
+    padding-top: 16px;
+  }
+}
+
 @media (min-width: 800px) {
   .footer__grid {
     grid-template-columns: 2fr 1fr 1fr;

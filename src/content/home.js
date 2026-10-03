@@ -12,8 +12,9 @@ export const home = {
   },
 
   tour: {
-    title: 'Step inside',
-    text: 'Explore an interactive 360° tour and experience how customers, clients, buyers and tenants can view a space online before visiting.',
+    label: 'Step inside',
+    title: 'Explore a real 360° virtual tour.',
+    text: 'Move through the Avalon Hotel and see how a finished 360° tour can let visitors explore a space online before they arrive.',
     open: 'Open full tour',
     // Shown in the tour frame until the Panoee tour is set in site.exampleTour.
     placeholderLabel: '360° virtual tour',
