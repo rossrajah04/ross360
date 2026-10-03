@@ -26,7 +26,7 @@ export const virtualTours = {
       },
       {
         title: 'Ready to use from day one',
-        text: 'Your finished tour comes with a shareable URL, website embed and the supporting files you need to put it to work.',
+        text: 'Your finished tour comes with a shareable URL, website embed and the files you need to put it to work.',
       },
       {
         title: 'Checked before delivery',
