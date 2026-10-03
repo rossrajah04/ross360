@@ -2,6 +2,7 @@ import Seo from '../components/Seo.jsx';
 import PageHero from '../components/PageHero.jsx';
 import SectionHeading from '../components/SectionHeading.jsx';
 import Checklist from '../components/Checklist.jsx';
+import MediaFrame from '../components/MediaFrame.jsx';
 import CtaBand from '../components/CtaBand.jsx';
 import Button from '../components/Button.jsx';
 import { propertyAudiences, propertyDeliverables, propertyUseCases } from '../content/services.js';
@@ -12,9 +13,9 @@ export default function Property() {
     <>
       <Seo page="property" />
       <PageHero
-        eyebrow="Property & estate agents"
+        eyebrow="Property and estate agents"
         title="360° property tours"
-        lead="Give buyers, tenants and clients a clear understanding of a property’s layout and feel before they visit."
+        lead="A complete 360° tour of the property, so buyers, tenants and clients understand the layout before they arrange a viewing."
       >
         <div className="btn-row">
           <Button to="/get-a-quote?type=property">{site.cta.primary}</Button>
@@ -24,52 +25,61 @@ export default function Property() {
         </div>
       </PageHero>
 
-      <section className="section" aria-labelledby="property-who-heading">
-        <div className="container split">
-          <SectionHeading
-            id="property-who-heading"
-            title="Who it’s for"
-            lead="ROSS 360 can work with a single property or with an agency’s wider portfolio."
-          />
-          <div>
-            <Checklist items={propertyAudiences} />
-          </div>
-        </div>
-      </section>
-
-      <section className="section section--soft" aria-labelledby="property-use-heading">
-        <div className="container split">
-          <SectionHeading id="property-use-heading" title="Where a property tour helps" />
-          <div>
-            <Checklist items={propertyUseCases} />
-          </div>
-        </div>
-      </section>
+      <MediaFrame image={site.images.property} tone="light" className="page-media container" />
 
       <section className="section" aria-labelledby="property-product-heading">
         <div className="container split">
           <SectionHeading
             id="property-product-heading"
-            eyebrow="Core product"
+            eyebrow="The product"
             title="360° Property Tour"
-            lead="The focus is the interactive tour and its use for the property or listing."
+            lead="One tour of the whole property, delivered as a link you can add to listings, emails and your website."
           />
           <div>
             <Checklist items={propertyDeliverables} />
-            <p>
-              Google Street View is not automatically part of the property service. Google publishing is separate
-              and only offered where appropriate.
+            <p className="small">
+              Google Street View is not part of the property service by default. Where it is appropriate, it is
+              arranged separately and only with the owner’s authorisation.
             </p>
           </div>
+        </div>
+      </section>
+
+      <section className="section section--soft" aria-labelledby="property-use-heading">
+        <div className="container">
+          <SectionHeading id="property-use-heading" title="Where a property tour earns its place" />
+          <ul className="rule-grid">
+            {propertyUseCases.map((item) => (
+              <li key={item.title}>
+                <h3>{item.title}</h3>
+                <p>{item.text}</p>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
+
+      <section className="section" aria-labelledby="property-who-heading">
+        <div className="container split">
+          <SectionHeading
+            id="property-who-heading"
+            title="Who we work with"
+            lead="From a single instruction to an agency’s wider portfolio."
+          />
+          <Checklist items={propertyAudiences} />
         </div>
       </section>
 
       <section className="section section--soft" aria-labelledby="property-pricing-heading">
         <div className="container split">
           <SectionHeading id="property-pricing-heading" title="Pricing" />
-          <div>
-            <p>{site.propertyPricingNote}</p>
-            <p>Tell us about the property in the quote form and we will confirm a price before you book.</p>
+          <div className="prose-block">
+            <p className="lead lead--ink">{site.propertyPricingNote}</p>
+            <p>
+              Tell us the address, approximate size or number of rooms, and which areas need to be shown. We confirm
+              the price in writing before anything is booked. ROSS 360 works UK-wide, and any travel charge is
+              included in the quote.
+            </p>
           </div>
         </div>
       </section>
@@ -79,21 +89,16 @@ export default function Property() {
           <SectionHeading
             id="agencies-heading"
             eyebrow="Estate agencies"
-            title="One property, or many"
-            lead="Work with an agency can be a one-off or ongoing."
+            title="Working with agencies"
+            lead="For agencies, ROSS 360 can work on a single property, a batch of instructions or an ongoing basis."
           />
           <div>
             <Checklist
-              items={[
-                'Individual properties',
-                'Multiple properties',
-                'Ongoing agency requirements',
-                'Volume work',
-              ]}
+              items={['Individual properties', 'Multiple properties', 'Ongoing agency requirements', 'Volume work']}
             />
             <p>
-              Tell us what your agency needs and we will discuss how best to work together. Arrangements are
-              agreed individually.
+              Tell us how many properties you expect, where they are and how quickly tours are needed. We will
+              agree an arrangement that suits the way your agency works.
             </p>
             <Button to="/get-a-quote?type=agency">{site.cta.agency}</Button>
           </div>

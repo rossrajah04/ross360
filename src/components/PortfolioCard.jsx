@@ -1,15 +1,14 @@
 import { useCallback, useState } from 'react';
-import Button from './Button.jsx';
 import TourEmbed from './TourEmbed.jsx';
 
-// Renders one REAL project from src/content/portfolio.js.
-// Includes a missing-image state so a broken image never leaves a broken-looking layout.
-export default function PortfolioCard({ project }) {
+// One genuine project from src/content/portfolio.js.
+// A missing or broken image falls back to a neutral panel, so the layout never looks broken.
+export default function PortfolioCard({ project, headingLevel: Heading = 'h2' }) {
   const [imageFailed, setImageFailed] = useState(false);
   const onImageError = useCallback(() => setImageFailed(true), []);
 
   const tour = project.embedUrl
-    ? { isRealProject: true, embedUrl: project.embedUrl, openUrl: '', title: project.name }
+    ? { isRealProject: true, embedUrl: project.embedUrl, openUrl: project.tourUrl || '', title: project.name }
     : null;
 
   return (
@@ -27,9 +26,7 @@ export default function PortfolioCard({ project }) {
           onError={onImageError}
         />
       ) : (
-        <div className="work-card__media work-card__missing" role="img" aria-label="Image unavailable">
-          Image unavailable
-        </div>
+        <div className="work-card__media work-card__missing" role="img" aria-label="Image unavailable" />
       )}
 
       <div className="work-card__body">
@@ -37,7 +34,7 @@ export default function PortfolioCard({ project }) {
           {project.type}
           {project.location ? ` · ${project.location}` : ''}
         </p>
-        <h3>{project.name}</h3>
+        <Heading className="work-card__title">{project.name}</Heading>
         {project.description ? <p>{project.description}</p> : null}
         {project.captured ? (
           <p>
@@ -46,12 +43,14 @@ export default function PortfolioCard({ project }) {
         ) : null}
         {project.usage ? (
           <p>
-            <strong>How the tour can be used:</strong> {project.usage}
+            <strong>How it is used:</strong> {project.usage}
           </p>
         ) : null}
-        <Button to="/get-a-quote" variant="secondary" size="sm">
-          Get a Quote
-        </Button>
+        {project.tourUrl ? (
+          <a className="btn btn--secondary btn--sm" href={project.tourUrl} target="_blank" rel="noopener noreferrer">
+            Open the tour<span className="visually-hidden"> (opens in a new tab)</span>
+          </a>
+        ) : null}
       </div>
     </article>
   );

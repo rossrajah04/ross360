@@ -11,6 +11,7 @@ export default function Footer() {
         <div className="footer__brand">
           <Wordmark light />
           <p className="footer__descriptor">{site.descriptor}</p>
+          <p className="footer__meta">Working {site.serviceArea}</p>
           <p>
             <a className="footer__email" href={`mailto:${site.email}`}>
               {site.email}

@@ -1,33 +1,26 @@
-// Portfolio data. This is intentionally EMPTY: there is no completed client work yet.
-// While the array is empty, the site shows a clearly labelled demo state.
+// Portfolio data. Intentionally EMPTY until there is completed ROSS 360 client work.
+// While it is empty the Portfolio page shows a short, professional empty state, the filters are hidden,
+// and the homepage portfolio section is not shown.
 //
-// Add a project ONLY when it is genuine ROSS 360 work and you have the client's
-// portfolio permission. Shape of a project:
+// Add a project ONLY when it is genuine ROSS 360 work and the client has given portfolio permission.
+// Only include the client's name and location if they have agreed to them being shown.
 //
 // {
 //   id: 'unique-slug',
-//   name: 'Project name',
-//   category: 'business' | 'property',   // used by the All | Business | Property filter
-//   type: 'Restaurant',                  // free-text type label
-//   location: 'Town or city',
-//   image: '/images/projects/slug.jpg',  // optimised hero image (keep under ~300 KB)
+//   name: 'Project or client name',     // client name only with permission
+//   category: 'business' | 'property', // used by the All | Business | Property filter
+//   type: 'Restaurant',                // short type label
+//   location: 'Town or city',          // optional, only with permission
+//   image: '/images/projects/slug.jpg',// optimised image, ideally under ~300 KB
 //   imageAlt: 'Describe what the image shows',
-//   embedUrl: 'https://…',               // Panoee embed URL (optional)
-//   description: 'Short description',
+//   tourUrl: 'https://…',              // public link to the tour (opens in a new tab)
+//   embedUrl: 'https://…',             // optional Panoee embed URL (shown in place of the image)
+//   description: 'One or two sentences about the project',
 //   captured: 'What was captured',
-//   usage: 'How the tour can be used',
+//   usage: 'How the client uses the tour',
 // }
 
 export const projects = [];
-
-// Planned project types (NOT completed projects). Shown only as a labelled outline in the demo state.
-export const plannedProjectTypes = [
-  'Restaurant or café',
-  'Gym, studio or showroom',
-  'Venue or hotel',
-  'Residential property',
-  'Commercial property',
-];
 
 export const portfolioFilters = [
   { id: 'all', label: 'All' },

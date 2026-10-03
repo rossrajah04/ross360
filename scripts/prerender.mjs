@@ -12,7 +12,8 @@ import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { pages, canonicalFor, jsonLdFor } from '../src/content/seo.js';
+import { pages, canonicalFor, jsonLdFor, shareImage } from '../src/content/seo.js';
+import { site } from '../src/content/site.js';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const dist = join(root, 'dist');
@@ -60,9 +61,15 @@ function headFor(key) {
     `<meta property="og:title" content="${escapeHtml(page.title)}" />`,
     `<meta property="og:description" content="${escapeHtml(page.description)}" />`,
     '<meta property="og:type" content="website" />',
+    `<meta property="og:site_name" content="${escapeHtml(site.brand)}" />`,
+    '<meta property="og:locale" content="en_GB" />',
+    `<meta property="og:image" content="${site.url}${shareImage.path}" />`,
+    `<meta property="og:image:width" content="${shareImage.width}" />`,
+    `<meta property="og:image:height" content="${shareImage.height}" />`,
+    `<meta property="og:image:alt" content="${escapeHtml(shareImage.alt)}" />`,
   );
   if (!page.noindex) lines.push(`<meta property="og:url" content="${url}" />`);
-  lines.push('<meta name="twitter:card" content="summary" />');
+  lines.push('<meta name="twitter:card" content="summary_large_image" />');
   for (const item of jsonLdFor(key)) {
     lines.push(`<script type="application/ld+json" data-seo-ld="true">${safeJson(item)}</script>`);
   }

@@ -1,10 +1,10 @@
 // Cloudflare Pages Function: POST /api/quote
-// Website form -> validate -> Resend -> ross@ross360.co.uk (+ optional customer acknowledgement).
+// Website form -> validate -> Resend -> contact@ross360.co.uk (+ optional customer acknowledgement).
 //
 // Secrets are read from environment variables (Cloudflare Pages -> Settings -> Variables and Secrets):
 //   RESEND_API_KEY        (secret, required)
 //   QUOTE_FROM_EMAIL      (required; an address on a domain verified in Resend)
-//   QUOTE_TO_EMAIL        (optional; defaults to ross@ross360.co.uk)
+//   QUOTE_TO_EMAIL        (optional; defaults to contact@ross360.co.uk)
 //   SEND_ACKNOWLEDGEMENT  (optional; "true" sends the customer an acknowledgement email)
 //   TURNSTILE_SECRET_KEY  (optional; enables Cloudflare Turnstile verification)
 //

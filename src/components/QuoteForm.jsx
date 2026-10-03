@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import {
   PROJECT_TYPES,
@@ -44,6 +44,12 @@ export default function QuoteForm() {
   const [token, setToken] = useState('');
   // Recorded once when the form first renders; the server uses it as a basic anti-bot timing check.
   const [startedAt] = useState(() => Date.now());
+
+  const successRef = useRef(null);
+  // Move focus to the confirmation once it appears, so screen-reader and keyboard users hear it.
+  useEffect(() => {
+    if (status === 'success' && successRef.current) successRef.current.focus();
+  }, [status]);
 
   const handleToken = useCallback((value) => setToken(value), []);
 
@@ -113,7 +119,7 @@ export default function QuoteForm() {
 
   if (status === 'success') {
     return (
-      <div className="form-success" role="status" tabIndex={-1}>
+      <div className="form-success" role="status" tabIndex={-1} ref={successRef}>
         <h2>Enquiry received</h2>
         <p>{SUCCESS_MESSAGE}</p>
         <Button to="/" variant="secondary">
@@ -139,7 +145,7 @@ export default function QuoteForm() {
       ) : null}
 
       <fieldset className="form-group">
-        <legend>Contact</legend>
+        <legend>Your details</legend>
         <TextField id="name" label="Name" required autoComplete="name" error={errors.name} />
         <TextField
           id="business"
@@ -181,6 +187,7 @@ export default function QuoteForm() {
 
       <fieldset className="form-group">
         <legend>Location</legend>
+        <p className="form-group__hint">Used to assess travel and plan the visit. ROSS 360 works UK-wide.</p>
         <TextField
           id="address"
           label="Property / business address"
@@ -217,7 +224,7 @@ export default function QuoteForm() {
           id="areas"
           label="Areas to capture"
           rows={3}
-          hint="For example: dining area, bar, outdoor seating."
+          hint="For example: dining room, bar and terrace, or every room plus the garden."
           error={errors.areas}
         />
         <SelectField
@@ -230,7 +237,7 @@ export default function QuoteForm() {
       </fieldset>
 
       <fieldset className="form-group">
-        <legend>Optional</legend>
+        <legend>Anything else</legend>
         <TextField
           id="website"
           label="Website"
@@ -244,7 +251,13 @@ export default function QuoteForm() {
           inputMode="url"
           error={errors.googleLink}
         />
-        <TextAreaField id="message" label="Additional information" rows={4} error={errors.message} />
+        <TextAreaField
+          id="message"
+          label="Additional information"
+          rows={4}
+          hint="Access arrangements, deadlines, or anything else that would help us quote accurately."
+          error={errors.message}
+        />
       </fieldset>
 
       {/* Honeypot: hidden from people and assistive technology. Bots tend to fill it. */}
@@ -256,11 +269,12 @@ export default function QuoteForm() {
       {TURNSTILE_SITE_KEY ? <TurnstileWidget siteKey={TURNSTILE_SITE_KEY} onToken={handleToken} /> : null}
 
       <p className="small">
-        We use these details only to respond to your enquiry. See our <Link to="/privacy">Privacy Notice</Link>.
+        Sending this form does not commit you to anything. Fields marked * are required. See our{' '}
+        <Link to="/privacy">Privacy Notice</Link>.
       </p>
 
       <button type="submit" className="btn btn--primary btn--block" disabled={status === 'submitting'}>
-        {status === 'submitting' ? 'Sending…' : 'Send enquiry'}
+        {status === 'submitting' ? 'Sending…' : 'Request a quote'}
       </button>
       <p className="visually-hidden" aria-live="polite">
         {status === 'submitting' ? 'Sending your enquiry' : ''}

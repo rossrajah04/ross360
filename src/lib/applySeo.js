@@ -40,7 +40,7 @@ export function applySeo(pageKey) {
   } else {
     setMeta('meta[property="og:url"]', metaByProperty('og:url'), url);
   }
-  setMeta('meta[name="twitter:card"]', metaByName('twitter:card'), 'summary');
+  setMeta('meta[name="twitter:card"]', metaByName('twitter:card'), 'summary_large_image');
 
   let canonical = document.head.querySelector('link[rel="canonical"]');
   if (!canonical) {

@@ -1,99 +1,74 @@
-// Shared service lists and process steps.
+// Shared service content: deliverables, process, sectors and benefits.
+// Keep claims factual: no statistics, no promised increases in bookings, enquiries or rankings.
 
 export const processSteps = [
-  { title: 'Enquire', text: 'Tell us about your space with a short quote request.' },
-  { title: 'Plan', text: 'We review the location and requirements and confirm the scope.' },
-  { title: 'Capture', text: 'We visit and capture the space in 360°.' },
-  { title: 'Build', text: 'The photography is processed into a connected, interactive tour.' },
-  { title: 'Publish', text: 'The tour is prepared for your website and, where appropriate, Google.' },
-  { title: 'Deliver', text: 'You receive your finished tour, ready to share and use.' },
+  { title: 'Enquire', text: 'Send a short quote request with the address and a few details about the space.' },
+  { title: 'Plan', text: 'We review the location and scope, then send a quote with your exact price.' },
+  { title: 'Capture', text: 'Once booked, we photograph the agreed areas in 360° on site.' },
+  { title: 'Build', text: 'The panoramas are processed and connected into an interactive tour.' },
+  { title: 'Publish', text: 'The tour is prepared for your website and, if authorised, Google Street View.' },
+  { title: 'Deliver', text: 'You receive the finished tour with the link and embed code, ready to use.' },
 ];
 
-// Homepage "What you receive"
-export const whatYouReceive = [
-  '360° photography',
-  'Interactive virtual tour',
-  'Professional processing',
-  'Website integration',
-  'Google publishing where appropriate',
-  'Mobile and desktop experience',
-  'Initial hosting period',
-  'Professional delivery',
+// Core deliverable: the same in every business package.
+export const coreDeliverable = [
+  '360° photography of the agreed areas',
+  'Interactive tour with connected viewpoints',
+  'Professional processing of every panorama',
+  'Shareable link and website embed code',
+  'Works on phones, tablets and computers',
+  '12 months of interactive-tour hosting',
+  'Google Street View publishing where appropriate and separately authorised',
 ];
 
-// Virtual Tours page
-export const tourIncludes = [
+// Virtual Tours page: what each part of the service involves.
+export const tourComponents = [
   {
     title: '360° photography',
-    text: 'Your space captured from carefully chosen positions, so it reads clearly and naturally.',
+    text: 'Each viewpoint is captured as a full panorama from positions chosen to show the space clearly.',
   },
   {
     title: 'Connected viewpoints',
-    text: 'Each viewpoint links to the next, so visitors can move through the space as they would in person.',
+    text: 'Viewpoints are linked in the order someone would walk through, so the tour follows the real route between rooms and areas.',
   },
   {
     title: 'Interactive navigation',
-    text: 'Visitors look around and move between viewpoints at their own pace.',
+    text: 'Visitors drag or swipe to look in any direction and select a point to move on. There is nothing to download or install.',
   },
   {
     title: 'Professional processing',
-    text: 'Images are processed and assembled into a clean, consistent tour.',
+    text: 'Every panorama is processed so the tour looks clean and consistent from one viewpoint to the next.',
   },
   {
     title: 'Website integration',
-    text: 'The tour is ready to embed on your website or share with a link.',
+    text: 'You receive a link to share and a code snippet to embed the tour on your own website or booking pages.',
   },
   {
-    title: 'Mobile and desktop experience',
-    text: 'The tour is designed to work on phones, tablets and computers.',
+    title: 'Mobile and desktop',
+    text: 'The tour runs in the browser on phones, tablets and computers.',
   },
-  {
-    title: 'Google publishing where appropriate',
-    text: 'Suitable imagery can be published to Google Street View for business tours where it makes sense.',
-  },
-  {
-    title: 'Hosting',
-    text: 'Your interactive tour is hosted by ROSS 360 for the initial period included in your package.',
-  },
-  {
-    title: 'Professional delivery',
-    text: 'You receive your finished tour with the links you need to start using it.',
-  },
-];
-
-// Core deliverable (pricing page)
-export const coreDeliverable = [
-  '360° photography',
-  'Interactive tour with connected viewpoints',
-  'Professional processing',
-  'Website-ready integration',
-  'Google publishing where appropriate',
-  'Mobile and desktop experience',
-  'Initial hosting',
-  'Professional delivery',
 ];
 
 // Property page
 export const propertyDeliverables = [
-  '360° photography',
-  'Interactive tour',
-  'Connected viewpoints',
-  'Shareable URL',
-  'Website and listing integration where applicable',
-  'Professional delivery',
+  '360° property photography',
+  'Interactive tour with connected viewpoints',
+  'Shareable URL for listings, emails and messages',
+  'Website and listing integration where the platform allows it',
+  'Professional processing and delivery',
 ];
 
 export const propertyUseCases = [
-  'Houses for sale',
-  'Rental properties',
-  'Commercial properties',
-  'New developments',
-  'Investment properties',
-  'Larger or more complex properties',
+  { title: 'Sales', text: 'Let buyers understand the layout before booking a viewing.' },
+  { title: 'Lettings', text: 'Give prospective tenants a clear picture of the property, including those relocating from elsewhere.' },
+  { title: 'Commercial', text: 'Present offices, retail units and commercial space to occupiers and agents.' },
+  { title: 'New developments', text: 'Present show homes, communal areas and finishes.' },
+  { title: 'Investment', text: 'Give remote investors and their advisers a proper look at a property.' },
+  { title: 'Larger or complex properties', text: 'Make sense of properties whose layout is hard to follow from photographs alone.' },
 ];
 
 export const propertyAudiences = [
-  'Estate agents',
+  'Estate and letting agents',
   'Residential property',
   'Commercial property',
   'Developers',
@@ -101,62 +76,66 @@ export const propertyAudiences = [
   'Agencies with multiple properties',
 ];
 
-// Businesses page — practical use cases only, no case studies
+// Businesses page — how each sector uses a tour. Practical uses only, no case studies.
 export const businessSectors = [
   {
-    title: 'Restaurants & cafés',
-    text: 'Let people see the atmosphere, seating and layout before they book a table.',
+    title: 'Restaurants and cafés',
+    text: 'Show the dining room, bar and outdoor seating so guests can choose where to sit and groups can judge whether the space suits them.',
   },
   {
-    title: 'Gyms & studios',
-    text: 'Show facilities, equipment areas and the feel of the space to prospective members.',
+    title: 'Gyms and studios',
+    text: 'Let prospective members see the equipment, studios and changing areas before a first visit.',
   },
   {
     title: 'Hotels',
-    text: 'Let guests look around rooms and shared areas before they book.',
+    text: 'Show rooms, reception and shared areas, so guests know what they are booking.',
   },
   {
-    title: 'Wedding & event venues',
-    text: 'Help couples and organisers walk through a venue and picture their event.',
+    title: 'Wedding and event venues',
+    text: 'Let couples and organisers walk the ceremony, dining and reception spaces and plan the day remotely.',
   },
   {
-    title: 'Retail & showrooms',
-    text: 'Give shoppers a look around the shop or showroom from wherever they are.',
+    title: 'Retail and showrooms',
+    text: 'Present the layout and displays to customers who want to know what is there before they travel.',
   },
   {
     title: 'Clinics',
-    text: 'Help new patients become familiar with the premises before their first visit.',
+    text: 'Help new patients find their way and feel familiar with the premises before an appointment.',
   },
   {
-    title: 'Offices & commercial premises',
-    text: 'Present workspaces and commercial units to prospective clients, tenants and staff.',
+    title: 'Offices and commercial premises',
+    text: 'Show workspaces and facilities to prospective clients, tenants and new staff.',
   },
 ];
 
-// Homepage "Why 360°" — practical benefits, no numerical claims
-export const whyThreeSixty = [
+// Where a finished business tour is used.
+export const businessChannels = [
+  { title: 'Your website', text: 'Embedded on your home, booking or about page.' },
+  { title: 'Booking and enquiry pages', text: 'Placed next to the booking form or enquiry button, where the decision is made.' },
+  { title: 'Google Street View', text: 'Where appropriate and separately authorised, published to Google.' },
+  { title: 'Social and email', text: 'Shared as a link in posts, newsletters and replies to enquiries.' },
+];
+
+// Homepage "Why use 360°": practical, factual benefits.
+export const reasons = [
   {
-    title: 'Explore before visiting',
-    text: 'People can look around a space from wherever they are before they travel.',
+    title: 'Understand a space before visiting',
+    text: 'People can look around properly, in their own time, before they travel or book.',
   },
   {
-    title: 'Layout and atmosphere',
-    text: 'Show how a space is arranged and what it feels like to be there.',
+    title: 'See layout and flow',
+    text: 'Photographs show parts of a space. A tour shows how the parts connect.',
   },
   {
-    title: 'More confidence',
-    text: 'Seeing a space properly helps people decide whether it is right for them.',
+    title: 'More useful websites and listings',
+    text: 'Visitors can check size, layout and access for themselves, on the page where they are already deciding.',
   },
   {
-    title: 'A more interactive website',
-    text: 'Give your website something visitors can actually move around in.',
+    title: 'Present premises professionally',
+    text: 'A considered, accurate record of how your premises look and are arranged.',
   },
   {
-    title: 'Physical spaces, online',
-    text: 'Present your premises as they really are.',
-  },
-  {
-    title: 'Understanding the environment',
-    text: 'Help prospective buyers and visitors see how a space fits together.',
+    title: 'Show a property remotely',
+    text: 'Agents and owners can give a full view of a property to people who cannot attend in person.',
   },
 ];

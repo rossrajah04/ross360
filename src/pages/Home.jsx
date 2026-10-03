@@ -2,13 +2,14 @@ import Seo from '../components/Seo.jsx';
 import CtaBand from '../components/CtaBand.jsx';
 import {
   Hero,
-  ExploreTour,
-  WhatWeDo,
-  WhyThreeSixty,
+  TourExperience,
+  WhatWeProvide,
+  WhyUse,
   WhoItsFor,
   WhatYouReceive,
   HowItWorks,
   PricingPreview,
+  PropertySection,
   PortfolioSection,
   WebsiteAndGoogle,
   FaqSection,
@@ -19,13 +20,14 @@ export default function Home() {
     <>
       <Seo page="home" />
       <Hero />
-      <ExploreTour />
-      <WhatWeDo />
-      <WhyThreeSixty />
+      <TourExperience />
+      <WhatWeProvide />
+      <WhyUse />
       <WhoItsFor />
       <WhatYouReceive />
       <HowItWorks />
       <PricingPreview />
+      <PropertySection />
       <PortfolioSection />
       <WebsiteAndGoogle />
       <FaqSection />

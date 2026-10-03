@@ -8,10 +8,10 @@ export default function StickyQuoteCta() {
   if (pathname === site.quoteLink.to) return null;
 
   return (
-    <div className="sticky-cta">
+    <aside className="sticky-cta" aria-label="Request a quote">
       <Link to={site.quoteLink.to} className="btn btn--primary btn--block">
         {site.cta.primary}
       </Link>
-    </div>
+    </aside>
   );
 }

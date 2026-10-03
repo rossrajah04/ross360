@@ -10,47 +10,47 @@ export const pages = {
     path: '/',
     title: 'ROSS 360 | 360° Virtual Tours for Businesses & Property',
     description:
-      'Professional 360° virtual tours for businesses and property, UK-wide. Let customers, buyers and visitors explore your space online before they visit.',
+      'Professional 360° virtual tours and 360° photography for businesses, estate agents and commercial property. UK-wide. Business tours from £' + lowestPrice + '.',
   },
   virtualTours: {
     path: '/virtual-tours',
     title: '360° Virtual Tour Services | ROSS 360',
     description:
-      'Professional 360° virtual tours: 360° photography, connected viewpoints, interactive navigation and website-ready delivery. Get a quote from ROSS 360.',
+      'What a ROSS 360 virtual tour includes: 360° photography, connected viewpoints, website integration, 12 months of hosting, and how it differs from Google Street View.',
   },
   businesses: {
     path: '/businesses',
     title: '360° Virtual Tours for Businesses | ROSS 360',
-    description: `Virtual tours for restaurants, cafés, gyms, hotels, venues, retail, clinics and offices. Packages from £${lowestPrice}. Get a quote from ROSS 360.`,
+    description: `360° virtual tours for restaurants, cafés, gyms, hotels, venues, retail, clinics and offices, UK-wide. Business packages from £${lowestPrice}.`,
   },
   property: {
     path: '/property',
-    title: '360° Property Tours for Estate Agents | ROSS 360',
+    title: '360° Property Tours for Estate Agents & Developers | ROSS 360',
     description:
-      '360° property tours for estate agents, developers and property professionals, including multi-property agency work. Individually quoted.',
+      '360° property tours for estate agents, developers and commercial property, UK-wide. Single properties or ongoing agency work, individually quoted.',
   },
   portfolio: {
     path: '/portfolio',
     title: 'Our Work | ROSS 360',
     description:
-      'Explore ROSS 360 virtual tours for businesses and property. Filter by business or property projects.',
+      'Completed ROSS 360 virtual tour projects for businesses and property, published with each client\'s permission.',
   },
   pricing: {
     path: '/pricing',
     title: '360° Virtual Tour Pricing | ROSS 360',
-    description: `Business 360° virtual tour packages from £${lowestPrice}, with clear explanations of what affects final pricing. Property tours are individually quoted.`,
+    description: `Business 360° virtual tour packages from £${lowestPrice}, what each package suits, what affects the final price, and how property tours are quoted.`,
   },
   about: {
     path: '/about',
     title: 'About ROSS 360 | Founded by Ross Rajah',
     description:
-      'ROSS 360 was founded by Ross Rajah, who handles communication, planning, capture, tour production, quality control and delivery.',
+      'ROSS 360 is a UK-wide 360° virtual tour service founded and run by Ross Rajah, who handles every project from enquiry to delivery.',
   },
   quote: {
     path: '/get-a-quote',
     title: 'Get a Quote | ROSS 360',
     description:
-      'Request a quote for a 360° virtual tour for your business or property. Tell us about your space and we will get back to you within 1 business day.',
+      'Request a quote for a 360° virtual tour of your business or property. No obligation. We reply within 1 business day.',
   },
   privacy: {
     path: '/privacy',
@@ -70,6 +70,14 @@ export const pages = {
   },
 };
 
+// Social sharing image (1200 × 630), served from /public.
+export const shareImage = {
+  path: '/og-image.png',
+  width: 1200,
+  height: 630,
+  alt: 'ROSS 360: 360° Virtual Tours for Businesses & Property',
+};
+
 export const canonicalFor = (path) => (path === '/' ? `${site.url}/` : `${site.url}${path}`);
 
 const organization = {
@@ -78,7 +86,7 @@ const organization = {
   name: site.brand,
   url: site.url,
   email: site.email,
-  description: '360° virtual tours for businesses and property.',
+  description: '360° virtual tours and 360° photography for businesses and property, UK-wide.',
   founder: { '@type': 'Person', name: site.founder },
   areaServed: { '@type': 'Country', name: 'United Kingdom' },
 };
