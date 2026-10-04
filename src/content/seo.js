@@ -53,7 +53,8 @@ export const pages = {
   privacy: {
     path: '/privacy',
     title: 'Privacy Notice | ROSS 360',
-    description: 'How ROSS 360 collects, uses and protects personal information.',
+    description:
+      'How ROSS 360 collects, uses, stores and shares personal information, including enquiries made through the Get a Quote form, and the rights you have under UK data protection law.',
   },
   terms: {
     path: '/terms',
