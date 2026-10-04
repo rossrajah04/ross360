@@ -7,8 +7,9 @@
 //   - Optional customer acknowledgement email via Resend (only when SEND_ACKNOWLEDGEMENT is "true").
 //   - Optional Cloudflare Turnstile spam check (only when VITE_TURNSTILE_SITE_KEY is set). Always on:
 //     a hidden honeypot field and a timing check, which process no extra personal information.
-//   - An external example tour from Panoee (tour.panoee.com) is embedded. It is click-to-load: nothing is
-//     fetched from Panoee until the visitor presses "Load interactive tour" (TourEmbed.jsx).
+//   - An external example tour from Panoee (tour.panoee.com) is embedded and loads automatically with the
+//     page. ROSS 360 chose automatic loading (4 October 2026) and accepts the third-party embed; keep the
+//     cookies and sharing wording below accurate to that.
 //   - Fonts are self-hosted. No analytics, advertising or tracking code, and the site's own code sets no
 //     cookies and uses no browser storage.
 //   - Hosting: Cloudflare Pages.
@@ -198,7 +199,7 @@ export const privacy = {
             ['Google Workspace', 'Provides our business email, including {email}.'],
             [
               'Panoee',
-              'Hosts interactive 360° tours, including the example tour shown on this website. The example tour loads only when you choose to open it; your browser then connects to Panoee.',
+              'Hosts interactive 360° tours, including the example tour shown on this website. When a page with an embedded tour loads, your browser connects to Panoee.',
             ],
             [
               'Google (Street View)',
@@ -332,7 +333,7 @@ export const privacy = {
           p: 'This website does not use analytics, advertising or tracking cookies.',
         },
         {
-          p: 'Some pages offer an example 360° tour hosted by Panoee. Nothing is loaded from Panoee until you choose to open the tour. Once it is open, Panoee may use cookies or similar technologies in your browser under its own policies. If a spam check appears on the Get a Quote form, it is provided by Cloudflare Turnstile, as described above.',
+          p: 'Some pages show an example 360° tour hosted by Panoee. When it loads, Panoee may use cookies or similar technologies in your browser under its own policies. If a spam check appears on the Get a Quote form, it is provided by Cloudflare Turnstile, as described above.',
         },
         {
           p: 'If we introduce analytics or other non-essential cookies, we will update this notice and ask for your consent first where the law requires it.',
