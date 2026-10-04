@@ -1,0 +1,122 @@
+/* About page. Uses the service pages' hero, stages, deliverables, standards and closing photograph; this
+   file adds the heading-beside-text sections, the objective line and the sector lists. Set in type
+   alone, with the same rules and spacing as the other pages. */
+
+/* ---------- Approach: a line under the heading ---------- */
+
+.vt-how__intro {
+  max-width: 56ch;
+  margin: 14px 0 0;
+  color: var(--ink-soft);
+  font-size: clamp(1.05rem, 1.3vw, 1.15rem);
+  line-height: 1.55;
+}
+
+/* ---------- Heading beside text ---------- */
+
+.ab-split {
+  padding: var(--h-gap) 0 0;
+}
+
+.ab-split__grid {
+  display: grid;
+  gap: 24px;
+}
+
+.ab-split__grid--ruled {
+  padding-top: clamp(28px, 3.5vw, 44px);
+  border-top: 1px solid var(--line-strong);
+}
+
+.ab-split__title {
+  max-width: 18ch;
+}
+
+.ab-text {
+  max-width: 56ch;
+  margin: 0 0 14px;
+  color: var(--ink-soft);
+  font-size: clamp(1.05rem, 1.3vw, 1.15rem);
+  line-height: 1.6;
+}
+
+.ab-text:last-child {
+  margin-bottom: 0;
+}
+
+.ab-objective {
+  margin-top: clamp(24px, 3vw, 36px);
+  padding-top: 20px;
+  border-top: 1px solid var(--line-strong);
+}
+
+.ab-objective__label {
+  margin: 0;
+  color: var(--muted);
+  font-size: 1.05rem;
+}
+
+.ab-objective__text {
+  max-width: 30ch;
+  margin: 8px 0 0;
+  color: var(--ink);
+  font-size: clamp(1.35rem, 2.2vw, 1.75rem);
+  font-weight: 400;
+  line-height: 1.3;
+  letter-spacing: -0.015em;
+}
+
+@media (min-width: 1000px) {
+  .ab-split__grid {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: 0 32px;
+    align-items: start;
+  }
+  .ab-split__title {
+    grid-column: 1 / 6;
+  }
+  .ab-split__body {
+    grid-column: 6 / 13;
+  }
+}
+
+/* ---------- Who we work with ---------- */
+
+.ab-groups {
+  display: grid;
+  gap: 32px;
+}
+
+.ab-group__label {
+  margin: 0 0 10px;
+  color: var(--muted);
+  font-size: 1.05rem;
+  font-weight: 400;
+}
+
+.ab-group__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-bottom: 1px solid var(--line);
+}
+
+.ab-group__list li {
+  padding: 11px 0;
+  border-top: 1px solid var(--line);
+  color: var(--ink);
+  font-size: 1.05rem;
+  line-height: 1.45;
+}
+
+.ab-group__list li:first-child {
+  border-top-color: var(--line-strong);
+}
+
+@media (min-width: 640px) {
+  .ab-groups {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 32px;
+    align-items: start;
+  }
+}

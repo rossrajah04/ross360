@@ -59,13 +59,18 @@ export function Deliverables({ id, title, items, className = '' }) {
 }
 
 // The stages along one line.
-export function Stages({ id, title, steps, className = '' }) {
+export function Stages({ id, title, intro, steps, className = '' }) {
   return (
     <section className={`vt-how ${className}`.trim()} aria-labelledby={id}>
       <div className="h-wrap">
         <h2 id={id} className="h-h2" data-reveal>
           {title}
         </h2>
+        {intro && (
+          <p className="vt-how__intro" data-reveal>
+            {intro}
+          </p>
+        )}
         <ol className="vt-how__steps">
           {steps.map((step, index) => (
             <li key={step.title} className="vt-step" data-reveal>

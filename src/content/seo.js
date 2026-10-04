@@ -41,9 +41,9 @@ export const pages = {
   },
   about: {
     path: '/about',
-    title: 'About ROSS 360',
+    title: 'About | ROSS 360',
     description:
-      'Professional 360° photography and virtual tours for businesses and property.',
+      'ROSS 360 creates professional 360° virtual tours for businesses and property: planned, captured, produced and checked as one service, UK-wide.',
   },
   quote: {
     path: '/get-a-quote',
