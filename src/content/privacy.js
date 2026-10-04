@@ -7,27 +7,29 @@
 //   - Optional customer acknowledgement email via Resend (only when SEND_ACKNOWLEDGEMENT is "true").
 //   - Optional Cloudflare Turnstile spam check (only when VITE_TURNSTILE_SITE_KEY is set). Always on:
 //     a hidden honeypot field and a timing check, which process no extra personal information.
-//   - An external example tour from Panoee (tour.panoee.com) is embedded and loads when the page loads.
+//   - An external example tour from Panoee (tour.panoee.com) is embedded. It is click-to-load: nothing is
+//     fetched from Panoee until the visitor presses "Load interactive tour" (TourEmbed.jsx).
 //   - Fonts are self-hosted. No analytics, advertising or tracking code, and the site's own code sets no
 //     cookies and uses no browser storage.
 //   - Hosting: Cloudflare Pages.
 //
-// Business services named by ROSS 360 but not visible in the website code (confirm before launch):
-//   Google Workspace (email), Google Street View publication, Stripe (card payments), Mettle (banking).
+// Business services named by ROSS 360 and described here: Google Workspace (email) and Google Street View
+// publication.
 //
-// TODO (ROSS 360 to confirm before launch):
-//   1. Stripe and Mettle are in use; remove either from `providers` if not.
-//   2. Retention: decide actual periods for enquiries, project records and imagery (see `retention`).
-//      The accounting-records line deliberately states no period; confirm it with an accountant.
-//   3. International transfers: check each provider's data processing terms for the safeguard it uses
-//      for transfers outside the UK. The notice states no specific mechanism until this is confirmed.
-//   4. Cloudflare: confirm in the dashboard that Web Analytics and any bot-management cookies are off,
-//      or describe them in the cookies section.
-//   5. Panoee: the example tour loads automatically. If Panoee sets non-essential cookies, consent may be
-//      needed before it loads (PECR). Click-to-load is already supported in TourEmbed.jsx.
-//   6. ICO data protection fee: check whether ROSS 360 needs to pay it (ico.org.uk). No registration
-//      number is shown, and none should be added until one exists.
-//   7. Controller identity: the notice names the operator as required by UK GDPR. Confirm the wording.
+// Decisions (ROSS 360, 4 October 2026):
+//   - Stripe (customer payments) and Mettle (business banking) are intended but not yet in use, so they
+//     are not named. Add them to the sharing section when those systems go live.
+//   - Retention: no fixed periods yet. The notice explains the criteria; an internal retention schedule
+//     will be set separately.
+//   - ICO: no registration number until the data protection fee self-assessment is done. Never invent one.
+//   - Controller identity: "a trading name of Ross Rajah … not a limited company" stays on this page only.
+//     Not on marketing pages, and no "sole trader".
+//
+// Still to check before launch:
+//   - International transfers: each provider's safeguard for processing outside the UK. The notice states
+//     no specific mechanism until this is confirmed.
+//   - Cloudflare dashboard: Web Analytics and any bot-management cookies are off, or describe them under
+//     cookies.
 
 import { site } from './site.js';
 
@@ -94,7 +96,7 @@ export const privacy = {
           ],
         },
         {
-          p: 'We do not see or store full payment card details. Card payments are handled by our payment provider.',
+          p: 'We do not store full payment card details.',
         },
         { h: 'When you visit this website' },
         {
@@ -196,18 +198,16 @@ export const privacy = {
             ['Google Workspace', 'Provides our business email, including {email}.'],
             [
               'Panoee',
-              'Hosts interactive 360° tours, including the example tour shown on this website. When a page with an embedded tour loads, your browser connects to Panoee.',
+              'Hosts interactive 360° tours, including the example tour shown on this website. The example tour loads only when you choose to open it; your browser then connects to Panoee.',
             ],
             [
               'Google (Street View)',
               'Receives 360° imagery for publication on Google Maps and Street View, only where you have authorised it.',
             ],
-            ['Stripe', 'Processes card payments after a quotation has been accepted.'],
-            ['Mettle', 'Provides our business bank account, which receives payments.'],
           ],
         },
         {
-          p: 'We may also share information with professional advisers, such as an accountant, where needed, and with public authorities where the law requires it.',
+          p: 'We may also share information with our bank and any payment provider we use to take payments, with professional advisers, such as an accountant, where needed, and with public authorities where the law requires it.',
         },
         { p: 'We do not sell personal information.' },
       ],
@@ -244,7 +244,7 @@ export const privacy = {
       title: 'How long we keep information',
       blocks: [
         {
-          p: 'We keep personal information only for as long as we need it for the purposes in this notice, then delete or anonymise it.',
+          p: 'We keep personal information only for as long as reasonably necessary for the purposes in this notice, taking into account legal, accounting, contractual and operational requirements. After that, we delete or anonymise it.',
         },
         {
           dl: [
@@ -332,7 +332,7 @@ export const privacy = {
           p: 'This website does not use analytics, advertising or tracking cookies.',
         },
         {
-          p: 'Some pages show an example 360° tour hosted by Panoee. When it loads, Panoee may use cookies or similar technologies in your browser under its own policies. If a spam check appears on the Get a Quote form, it is provided by Cloudflare Turnstile, as described above.',
+          p: 'Some pages offer an example 360° tour hosted by Panoee. Nothing is loaded from Panoee until you choose to open the tour. Once it is open, Panoee may use cookies or similar technologies in your browser under its own policies. If a spam check appears on the Get a Quote form, it is provided by Cloudflare Turnstile, as described above.',
         },
         {
           p: 'If we introduce analytics or other non-essential cookies, we will update this notice and ask for your consent first where the law requires it.',
