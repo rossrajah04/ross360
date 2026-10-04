@@ -14,6 +14,7 @@ import { validateQuote, PROJECT_TYPES } from '../../src/lib/quoteSchema.js';
 import { site } from '../../src/content/site.js';
 
 const DEFAULT_TO = site.email;
+const SEND_ERROR = `We couldn't send your enquiry just now. Please try again or email ${DEFAULT_TO} directly.`;
 const MIN_FILL_MS = 3000; // a human cannot complete this form faster than this
 const MAX_BODY_CHARS = 20000;
 
@@ -61,34 +62,37 @@ async function verifyTurnstile(secret, token, ip) {
 
 function buildEnquiry(values) {
   const projectLabel = PROJECT_TYPES.find((t) => t.value === values.projectType)?.label ?? values.projectType;
+  const projectType = values.projectOther ? `${projectLabel}: ${values.projectOther}` : projectLabel;
   const rows = [
     ['Name', values.name],
     ['Business / organisation', values.business],
     ['Email', values.email],
     ['Phone', values.phone || '—'],
-    ['Project type', projectLabel],
-    ['Address', values.address],
-    ['Postcode', values.postcode],
-    ['Premises type', values.premisesType || '—'],
-    ['Approximate size / rooms', values.size || '—'],
-    ['Areas to capture', values.areas || '—'],
-    ['Preferred timeframe', values.timeframe || '—'],
-    ['Website', values.website || '—'],
-    ['Google Maps / Business Profile', values.googleLink || '—'],
-    ['Additional information', values.message || '—'],
+    ['Project type', projectType],
+    ['Business / property type', values.spaceType],
+    ['Address / postcode', values.location],
+    ['Approximate size', values.size || '—'],
+    ['Areas to be photographed', values.areas],
+    ['Anything else', values.message || '—'],
+    ['Preferred date', values.preferredDate || '—'],
+    ['How they heard about ROSS 360', values.source || '—'],
   ];
-  const text = rows.map(([label, value]) => `${label}: ${value}`).join('\n');
+  // Longer answers start on their own line so they read cleanly in a plain-text client.
+  const text = rows
+    .map(([label, value]) => (String(value).includes('\n') ? `${label}:\n${value}\n` : `${label}: ${value}`))
+    .join('\n');
   const html =
-    '<table cellpadding="6" style="border-collapse:collapse;font-family:Arial,sans-serif;font-size:14px">' +
+    '<table cellpadding="8" style="border-collapse:collapse;font-family:Arial,sans-serif;font-size:14px;line-height:1.5">' +
     rows
       .map(
         ([label, value]) =>
-          `<tr><td style="vertical-align:top;color:#555;white-space:nowrap"><strong>${escapeHtml(label)}</strong></td>` +
+          '<tr style="border-bottom:1px solid #e4e2dc">' +
+          `<td style="vertical-align:top;color:#555;white-space:nowrap"><strong>${escapeHtml(label)}</strong></td>` +
           `<td style="white-space:pre-wrap">${escapeHtml(value)}</td></tr>`,
       )
       .join('') +
     '</table>';
-  return { projectLabel, text, html };
+  return { text, html };
 }
 
 async function sendEmail(env, payload) {
@@ -149,49 +153,36 @@ export async function onRequestPost({ request, env }) {
 
   if (!env.RESEND_API_KEY || !env.QUOTE_FROM_EMAIL) {
     console.error('Email is not configured: RESEND_API_KEY and QUOTE_FROM_EMAIL are required.');
-    return json(
-      {
-        ok: false,
-        message: `Enquiries cannot be sent from this page at present. Please email ${DEFAULT_TO}.`,
-      },
-      503,
-    );
+    return json({ ok: false, message: SEND_ERROR }, 503);
   }
 
   const { values } = result;
-  const { projectLabel, text, html } = buildEnquiry(values);
+  const { text, html } = buildEnquiry(values);
 
   const delivered = await sendEmail(env, {
     from: env.QUOTE_FROM_EMAIL,
     to: [env.QUOTE_TO_EMAIL || DEFAULT_TO],
     reply_to: values.email,
-    subject: oneLine(`New quote enquiry: ${values.business} (${projectLabel})`),
+    subject: oneLine(`New ROSS 360 enquiry — ${values.business}`),
     text,
     html,
   });
 
   if (!delivered) {
-    return json(
-      {
-        ok: false,
-        message: `Your enquiry could not be sent. Please try again, or email ${DEFAULT_TO}.`,
-      },
-      502,
-    );
+    return json({ ok: false, message: SEND_ERROR }, 502);
   }
 
-  // Optional acknowledgement. A failure here does not fail the enquiry.
+  // Optional acknowledgement to the customer. A failure here does not fail the enquiry.
   if (env.SEND_ACKNOWLEDGEMENT === 'true') {
     await sendEmail(env, {
       from: env.QUOTE_FROM_EMAIL,
       to: [values.email],
       reply_to: env.QUOTE_TO_EMAIL || DEFAULT_TO,
-      subject: 'Your enquiry to ROSS 360',
+      subject: 'ROSS 360 — Enquiry received',
       text:
-        `Hello ${oneLine(values.name)},\n\n` +
-        'Thank you. Your enquiry has been received.\n\n' +
-        'We will review the details and respond with a quotation or any information we need to prepare one.\n\n' +
-        `${site.brand}\n${site.domain}`,
+        'Thanks for contacting ROSS 360.\n\n' +
+        "We've received your project details and will review the requirements before getting back to you.\n\n" +
+        `${site.brand}\n${DEFAULT_TO}`,
     }).catch(() => false);
   }
 

@@ -47,9 +47,8 @@ export const pages = {
   },
   quote: {
     path: '/get-a-quote',
-    title: 'Request a Quote | ROSS 360',
-    description:
-      'Tell us about the property or premises you would like photographed. There is no obligation to proceed.',
+    title: 'Get a Quote | ROSS 360',
+    description: `Request a quotation for a professional 360° virtual tour. Business tours from £${lowestPrice}; property tours individually quoted. UK-wide service.`,
   },
   privacy: {
     path: '/privacy',

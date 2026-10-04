@@ -1,19 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import {
-  PROJECT_TYPES,
-  PREMISES_TYPES,
-  TIMEFRAMES,
-  TYPE_PARAM_MAP,
-  validateQuote,
-} from '../lib/quoteSchema.js';
+import { PROJECT_TYPES, SPACE_TYPES, SOURCES, TYPE_PARAM_MAP, validateQuote } from '../lib/quoteSchema.js';
 import { site } from '../content/site.js';
+import { quote } from '../content/quote.js';
 import { TextField, TextAreaField, SelectField, RadioGroup } from './FormFields.jsx';
 import TurnstileWidget from './TurnstileWidget.jsx';
-import Button from './Button.jsx';
 
 const TURNSTILE_SITE_KEY = import.meta.env.VITE_TURNSTILE_SITE_KEY || '';
-const GENERIC_ERROR = `Your enquiry could not be sent. Please try again, or email ${site.email}.`;
+const GENERIC_ERROR = `We couldn't send your enquiry just now. Please try again or email ${site.email} directly.`;
 
 // Field order, used to focus the first invalid field.
 const FIELD_ORDER = [
@@ -22,21 +16,21 @@ const FIELD_ORDER = [
   'email',
   'phone',
   'projectType',
-  'address',
-  'postcode',
-  'premisesType',
+  'projectOther',
+  'spaceType',
+  'location',
   'size',
   'areas',
-  'timeframe',
-  'website',
-  'googleLink',
   'message',
+  'preferredDate',
+  'source',
 ];
 
 export default function QuoteForm() {
   const [searchParams] = useSearchParams();
   const initialType = TYPE_PARAM_MAP[searchParams.get('type')] || '';
 
+  const [projectType, setProjectType] = useState(initialType);
   const [errors, setErrors] = useState({});
   const [status, setStatus] = useState('idle'); // idle | submitting | success | error
   const [serverMessage, setServerMessage] = useState('');
@@ -56,6 +50,7 @@ export default function QuoteForm() {
   // nothing changes, so React skips the re-render.
   const handleChange = useCallback((event) => {
     const field = event.target.name;
+    if (field === 'projectType') setProjectType(event.target.value);
     setErrors((previous) => (previous[field] ? { ...previous, [field]: undefined } : previous));
   }, []);
 
@@ -117,14 +112,19 @@ export default function QuoteForm() {
   );
 
   if (status === 'success') {
+    const { success } = quote;
     return (
-      <div className="form-success" role="status" tabIndex={-1} ref={successRef}>
-        <h2>Thank you.</h2>
-        <p>Your enquiry has been received.</p>
-        <p>We’ll review the details and respond with a quotation or any information we need to prepare one.</p>
-        <Button to="/" variant="secondary">
-          Return to the home page
-        </Button>
+      <div className="form-success qt-success" role="status" tabIndex={-1} ref={successRef}>
+        <h2 className="h-h2">{success.title}</h2>
+        <p className="qt-success__text">{success.text}</p>
+        <div className="qt-success__actions">
+          <Link className="h-button" to="/">
+            {success.home}
+          </Link>
+          <Link className="h-button h-button--quiet" to="/virtual-tours">
+            {success.explore}
+          </Link>
+        </div>
       </div>
     );
   }
@@ -132,132 +132,138 @@ export default function QuoteForm() {
   const hasErrors = Object.values(errors).some(Boolean);
 
   return (
-    <form className="form" onSubmit={handleSubmit} onChange={handleChange} noValidate>
+    <form className="form qt-form" onSubmit={handleSubmit} onChange={handleChange} noValidate>
       {hasErrors ? (
         <p className="form-alert" role="alert">
           Please check the highlighted fields and try again.
         </p>
       ) : null}
-      {status === 'error' && serverMessage ? (
+      {status === 'error' && serverMessage && !hasErrors ? (
         <p className="form-alert" role="alert">
           {serverMessage}
         </p>
       ) : null}
 
       <fieldset className="form-group">
-        <legend>Your details</legend>
-        <TextField id="name" label="Name" required autoComplete="name" error={errors.name} />
-        <TextField
-          id="business"
-          label="Business / organisation"
-          required
-          autoComplete="organization"
-          error={errors.business}
-        />
-        <TextField
-          id="email"
-          type="email"
-          label="Email"
-          required
-          autoComplete="email"
-          inputMode="email"
-          error={errors.email}
-        />
-        <TextField
-          id="phone"
-          type="tel"
-          label="Phone"
-          autoComplete="tel"
-          inputMode="tel"
-          error={errors.phone}
-        />
+        <legend>Contact details</legend>
+        <div className="qt-row">
+          <TextField id="name" label="Full name" required autoComplete="name" maxLength={120} error={errors.name} />
+          <TextField
+            id="business"
+            label="Business / organisation"
+            required
+            autoComplete="organization"
+            maxLength={120}
+            hint={quote.businessHint}
+            error={errors.business}
+          />
+        </div>
+        <div className="qt-row">
+          <TextField
+            id="email"
+            type="email"
+            label="Email address"
+            required
+            autoComplete="email"
+            inputMode="email"
+            maxLength={254}
+            error={errors.email}
+          />
+          <TextField
+            id="phone"
+            type="tel"
+            label="Phone number"
+            autoComplete="tel"
+            inputMode="tel"
+            maxLength={20}
+            error={errors.phone}
+          />
+        </div>
       </fieldset>
 
       <fieldset className="form-group">
-        <legend>Project</legend>
+        <legend>The project</legend>
         <RadioGroup
           name="projectType"
-          legend="Project type"
+          legend="What type of project is this?"
           required
           options={PROJECT_TYPES}
           defaultValue={initialType}
           error={errors.projectType}
+          className="qt-radios"
         />
+        {projectType === 'other' ? (
+          <TextField
+            id="projectOther"
+            label="Please tell us briefly what the project is"
+            maxLength={300}
+            error={errors.projectOther}
+          />
+        ) : null}
+        <div className="qt-row">
+          <SelectField
+            id="spaceType"
+            label="Business / property type"
+            required
+            options={SPACE_TYPES}
+            placeholder="Select a type"
+            error={errors.spaceType}
+          />
+          <TextField
+            id="location"
+            label="Property / business address or postcode"
+            required
+            autoComplete="street-address"
+            maxLength={300}
+            error={errors.location}
+          />
+        </div>
+        <p className="form-group__hint qt-note">{quote.locationNote}</p>
       </fieldset>
 
       <fieldset className="form-group">
-        <legend>Location</legend>
-        <p className="form-group__hint">Used to assess travel and plan the visit. ROSS 360 works UK-wide.</p>
-        <TextField
-          id="address"
-          label="Property / business address"
-          required
-          autoComplete="street-address"
-          error={errors.address}
-        />
-        <TextField
-          id="postcode"
-          label="Postcode"
-          required
-          autoComplete="postal-code"
-          autoCapitalize="characters"
-          error={errors.postcode}
-        />
-      </fieldset>
-
-      <fieldset className="form-group">
-        <legend>About the space</legend>
-        <SelectField
-          id="premisesType"
-          label="Type"
-          options={PREMISES_TYPES}
-          placeholder="Select a type"
-          error={errors.premisesType}
-        />
+        <legend>The space</legend>
         <TextField
           id="size"
-          label="Approximate size / rooms"
-          hint="For example: about 120 m², or a 3-bedroom house."
+          label="Approximate size / number of areas"
+          placeholder="e.g. 8 rooms / 1,500 sq ft / 2 floors"
+          maxLength={300}
           error={errors.size}
         />
         <TextAreaField
           id="areas"
-          label="Areas to capture"
-          rows={3}
-          hint="For example: dining room, bar and terrace, or every room plus the garden."
+          label="Areas you'd like photographed"
+          required
+          rows={5}
+          placeholder="Tell us which rooms, areas or parts of the space you'd like included."
+          maxLength={2000}
           error={errors.areas}
-        />
-        <SelectField
-          id="timeframe"
-          label="Preferred timeframe"
-          options={TIMEFRAMES}
-          placeholder="Select a timeframe"
-          error={errors.timeframe}
-        />
-      </fieldset>
-
-      <fieldset className="form-group">
-        <legend>Anything else</legend>
-        <TextField
-          id="website"
-          label="Website"
-          autoComplete="url"
-          inputMode="url"
-          error={errors.website}
-        />
-        <TextField
-          id="googleLink"
-          label="Google Maps / Business Profile link"
-          inputMode="url"
-          error={errors.googleLink}
         />
         <TextAreaField
           id="message"
-          label="Additional information"
+          label="Anything else we should know?"
           rows={4}
-          hint="Access arrangements, deadlines, or anything else that would help us quote accurately."
+          hint="For example: access requirements, multiple floors, an unusual layout or preferred dates."
+          placeholder="Tell us anything else that may help us understand the project."
+          maxLength={2000}
           error={errors.message}
         />
+        <div className="qt-row">
+          <TextField
+            id="preferredDate"
+            label="Preferred date / timing"
+            hint="A preference only, to help us plan. It is not a booking."
+            maxLength={120}
+            error={errors.preferredDate}
+          />
+          <SelectField
+            id="source"
+            label="How did you hear about us?"
+            options={SOURCES}
+            placeholder="Select an option"
+            error={errors.source}
+          />
+        </div>
       </fieldset>
 
       {/* Honeypot: hidden from people and assistive technology. Bots tend to fill it. */}
@@ -268,14 +274,15 @@ export default function QuoteForm() {
 
       {TURNSTILE_SITE_KEY ? <TurnstileWidget siteKey={TURNSTILE_SITE_KEY} onToken={handleToken} /> : null}
 
-      <p className="small">
-        There is no obligation to proceed. Fields marked * are required. See our{' '}
-        <Link to="/privacy">Privacy Notice</Link>.
-      </p>
-
-      <button type="submit" className="btn btn--primary btn--block" disabled={status === 'submitting'}>
-        {status === 'submitting' ? 'Sending…' : 'Request a Quote'}
-      </button>
+      <div className="qt-submit">
+        <p className="qt-consent">
+          {quote.consent} See our <Link to="/privacy">Privacy Notice</Link>.
+        </p>
+        <p className="qt-required">Fields marked * are required.</p>
+        <button type="submit" className="h-button qt-submit__button" disabled={status === 'submitting'}>
+          {status === 'submitting' ? 'Sending…' : 'Request a Quote'}
+        </button>
+      </div>
       <p className="visually-hidden" aria-live="polite">
         {status === 'submitting' ? 'Sending your enquiry' : ''}
       </p>
