@@ -36,8 +36,8 @@ export const pages = {
   },
   pricing: {
     path: '/pricing',
-    title: '360° Virtual Tour Pricing | ROSS 360',
-    description: `Business virtual tours from £${lowestPrice}. Starting prices for commercial premises, pricing factors, and individually quoted property tours.`,
+    title: 'Pricing | ROSS 360',
+    description: `360° virtual tour pricing. Business tours from £${lowestPrice}, confirmed in a quotation once the scope is agreed. Property tours are individually quoted. UK-wide service.`,
   },
   about: {
     path: '/about',

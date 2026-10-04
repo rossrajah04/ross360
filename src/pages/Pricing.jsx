@@ -1,55 +1,137 @@
 import { Link } from 'react-router-dom';
 import Seo from '../components/Seo.jsx';
-import PageHero from '../components/PageHero.jsx';
-import SectionHeading from '../components/SectionHeading.jsx';
-import FeeSchedule from '../components/FeeSchedule.jsx';
-import CtaBand from '../components/CtaBand.jsx';
-import { pricingHeading, pricingIntro, priceFactors, propertyPricingLine } from '../content/pricing.js';
-import { site } from '../content/site.js';
+import { ClosingCta } from '../components/service/ServiceSections.jsx';
+import useReveal from '../lib/useReveal.js';
+import { plans, formatFrom, pricing } from '../content/pricing.js';
+import '../styles/home.css';
+import '../styles/virtual-tours.css';
+import '../styles/service-pages.css';
+import '../styles/pricing.css';
+
+// Pricing: the three business packages side by side, what every business tour includes, what affects
+// the final price, how property is priced, then the enquiry. Built from the service pages' styles.
 
 export default function Pricing() {
-  return (
-    <>
-      <Seo page="pricing" />
-      <PageHero title="Pricing" lead={pricingIntro} />
+  useReveal();
+  const { hero, business, includes, factors, property, closing } = pricing;
 
-      <section className="section" aria-labelledby="packages-heading">
-        <div className="container">
-          <SectionHeading id="packages-heading" title={pricingHeading} />
-          <FeeSchedule />
+  return (
+    <div className="home vt sp pr">
+      <Seo page="pricing" />
+
+      <section className="vt-intro sp-intro" aria-labelledby="pr-title">
+        <div className="h-wrap vt-intro__head">
+          <h1 id="pr-title" className="vt-intro__title sp-intro__title">
+            {hero.title}
+          </h1>
+          <div className="vt-intro__aside">
+            <p>{hero.lead}</p>
+            <ul className="sp-facts">
+              <li>{hero.fact}</li>
+            </ul>
+          </div>
         </div>
       </section>
 
-      <section className="section section--soft" aria-labelledby="factors-heading">
-        <div className="container">
-          <SectionHeading id="factors-heading" title="Pricing factors">
-            <ol className="ruled-list ruled-list--numbered">
-              {priceFactors.map((item) => (
+      <section className="pr-packages" aria-labelledby="pr-business-title">
+        <div className="h-wrap">
+          <div className="pr-head" data-reveal>
+            <h2 id="pr-business-title" className="h-h2">
+              {business.title}
+            </h2>
+            <p className="pr-head__text">{business.intro}</p>
+          </div>
+          <ul className="pr-plans">
+            {plans.map((plan) => (
+              <li key={plan.id} className={`pr-plan${plan.featured ? ' pr-plan--featured' : ''}`} data-reveal>
+                <div className="pr-plan__head">
+                  <h3 className="pr-plan__name">{plan.name}</h3>
+                  {plan.tag && <p className="pr-plan__tag">{plan.tag}</p>}
+                </div>
+                <p className="pr-plan__price">{formatFrom(plan.price)}</p>
+                <p className="pr-plan__best">
+                  <span>{business.bestForLabel}:</span> {plan.bestFor}
+                </p>
+                <p className="pr-plan__text">{plan.description}</p>
+                <ul className="pr-plan__list" aria-label={`${plan.name} includes`}>
+                  {plan.includes.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+                <Link
+                  className={`h-button pr-plan__cta${plan.featured ? '' : ' h-button--quiet'}`}
+                  to={business.to}
+                  aria-label={`${business.cta}: ${plan.name}`}
+                >
+                  {business.cta}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
+
+      <section className="sp-list-section" aria-labelledby="pr-includes-title">
+        <div className="h-wrap">
+          <h2 id="pr-includes-title" className="h-h2" data-reveal>
+            {includes.title}
+          </h2>
+          <ul className="sp-grid sp-grid--three">
+            {includes.items.map((item) => (
+              <li key={item.title} className="sp-cell" data-reveal>
+                <h3 className="sp-cell__title">{item.title}</h3>
+                <p className="sp-cell__text">{item.text}</p>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
+
+      <section className="pr-factors" aria-labelledby="pr-factors-title">
+        <div className="h-wrap pr-factors__grid">
+          <div data-reveal>
+            <h2 id="pr-factors-title" className="h-h2">
+              {factors.title}
+            </h2>
+            <p className="pr-head__text">{factors.text}</p>
+          </div>
+          <div data-reveal>
+            <ul className="pr-factors__list">
+              {factors.items.map((item) => (
                 <li key={item}>{item}</li>
               ))}
-            </ol>
-            <p>
-              {propertyPricingLine} <Link to="/property">Property tours</Link>
-            </p>
-          </SectionHeading>
+            </ul>
+            <p className="pr-factors__note">{factors.note}</p>
+          </div>
         </div>
       </section>
 
-      <section className="section" aria-labelledby="payment-heading">
-        <div className="container">
-          <SectionHeading id="payment-heading" title="Payment">
-            <p>
-              Payment is made in full once the quotation is accepted. Cancellation is free up to{' '}
-              {site.policy.freeCancellationHours} hours before the appointment.
-            </p>
-            <p>
-              Full details are set out in the <Link to="/terms">Terms &amp; Conditions</Link>.
-            </p>
-          </SectionHeading>
+      <section className="sp-price" aria-labelledby="pr-property-title">
+        <div className="h-wrap">
+          <div className="sp-price__inner" data-reveal>
+            <div>
+              <h2 id="pr-property-title" className="sp-price__label">
+                {property.title}
+              </h2>
+              <p className="sp-price__title">{property.price}</p>
+            </div>
+            <div className="sp-price__body">
+              <p className="sp-price__text">{property.text}</p>
+              <p className="pr-property__label">{property.listLabel}</p>
+              <ul className="pr-property__list">
+                {property.items.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+              <Link className="h-button" to={property.to}>
+                {property.cta}
+              </Link>
+            </div>
+          </div>
         </div>
       </section>
 
-      <CtaBand />
-    </>
+      <ClosingCta {...closing} />
+    </div>
   );
 }
