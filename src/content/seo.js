@@ -59,7 +59,8 @@ export const pages = {
   terms: {
     path: '/terms',
     title: 'Terms & Conditions | ROSS 360',
-    description: 'The terms that apply to ROSS 360 virtual tour services.',
+    description:
+      'The terms that apply to ROSS 360 360° photography and virtual tour services: quotations, payment, booking, cancellation, Google Street View, licensing and liability.',
   },
   notFound: {
     path: '/404',
