@@ -3,23 +3,22 @@
 // it updates everywhere it is shown. No hosting, no room or panorama limits, no discounts or offers,
 // and no property packages or prices.
 
-const businessIncludes = [
-  '360° photography',
-  'Interactive virtual tour',
-  'Agreed areas captured',
-  'Website-ready embed',
-  'Shareable tour URL',
-  'Google Street View publication where appropriate and authorised',
-];
-
+// Each package lists the kind of project it suits; what every package includes is set out once, under
+// "Every business tour includes". No room counts, panorama numbers or square-footage limits: the
+// quotation sets the exact scope.
 export const plans = [
   {
     id: 'essential',
     name: 'Essential',
     price: 249,
     bestFor: 'Smaller commercial spaces',
-    description: 'A professional 360° virtual tour for smaller premises with a straightforward layout.',
-    includes: businessIncludes,
+    description: 'A straightforward tour for smaller premises and focused spaces.',
+    suits: [
+      'Smaller premises',
+      'Straightforward layouts',
+      'Focused coverage of key areas',
+      'Ideal for cafés, small studios, boutiques and similar spaces',
+    ],
   },
   {
     id: 'professional',
@@ -28,18 +27,26 @@ export const plans = [
     featured: true,
     tag: 'Most popular',
     bestFor: 'Most businesses',
-    description:
-      'A more comprehensive tour for businesses that want visitors to explore multiple areas of their premises.',
-    includes: businessIncludes,
+    description: 'Our main package for businesses that want a comprehensive tour across multiple areas.',
+    suits: [
+      'Multiple areas or rooms',
+      'More comprehensive coverage',
+      'Designed for visitors to explore more of the premises',
+      'Ideal for restaurants, gyms, studios, showrooms and similar spaces',
+    ],
   },
   {
     id: 'bespoke',
     name: 'Large / Bespoke',
     price: 499,
-    bestFor: 'Large or more complex spaces',
-    description:
-      'A tailored 360° virtual tour for larger premises, multiple areas or projects with additional requirements.',
-    includes: businessIncludes,
+    bestFor: 'Large or complex spaces',
+    description: 'For larger premises, complex layouts or projects requiring a tailored scope.',
+    suits: [
+      'Larger premises',
+      'Multiple connected areas',
+      'More involved layouts or access requirements',
+      'Bespoke scope based on the project',
+    ],
   },
 ];
 

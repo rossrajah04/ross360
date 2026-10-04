@@ -53,8 +53,8 @@ export default function Pricing() {
                   <span>{business.bestForLabel}:</span> {plan.bestFor}
                 </p>
                 <p className="pr-plan__text">{plan.description}</p>
-                <ul className="pr-plan__list" aria-label={`${plan.name} includes`}>
-                  {plan.includes.map((item) => (
+                <ul className="pr-plan__list" aria-label={`${plan.name}: suited to`}>
+                  {plan.suits.map((item) => (
                     <li key={item}>{item}</li>
                   ))}
                 </ul>
