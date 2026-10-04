@@ -6,16 +6,27 @@
 // Not yet in place, so described only as possible or future: Stripe (no website integration yet),
 // the booking system, the admin/CRM.
 //
-// FOR LEGAL REVIEW (also listed in the project's TERMS-2026-10-04.md report):
-//   - Consumer customers: Consumer Contracts Regulations 2013 cancellation rights (normally 14 days for
-//     services contracted at a distance or off premises), the information to give before booking
-//     (including a geographical address), and what happens if a consumer asks for work to start within
-//     the cancellation period. The terms preserve these rights without stating their detail.
-//   - Whether the up-to-50% late cancellation / not-ready charge is fair for consumers (Consumer Rights
-//     Act 2015, Part 2). It is worded as "may" and tied to costs reasonably incurred.
-//   - The business liability cap (the price paid for the project) and the exclusions of indirect loss.
-//   - The licence: no time limit; non-transferable (what happens if a business or property is sold).
-//   - How long ROSS 360 keeps finished tours available on its tour-platform account.
+// Decisions (ROSS 360, 4 October 2026):
+//   - Quotations are valid for 14 days unless the quotation says otherwise. The future quote
+//     template/system must show this validity period (default 14 days) on every quotation.
+//   - No recurring hosting fee and no promise of indefinite third-party hosting: ROSS 360 acts reasonably
+//     to keep a completed tour available as delivered.
+//   - The licence continues for the same agreed purpose if the business or property changes hands.
+//   - The up-to-50% charge is discretionary, reasonable and proportionate; never an automatic penalty.
+//
+// TODO (booking system) — BEFORE ACCEPTING CONSUMER BOOKINGS:
+//   - provide any legally required pre-contract information (Consumer Contracts Regulations 2013)
+//   - provide the appropriate cancellation information and cancellation form where required
+//   - ensure the booking flow handles requests to begin services within any statutory cancellation period
+//   - provide the legally required geographical address and trader details, in the pre-contract
+//     information, quotation or booking flow (not on the marketing pages)
+//   - ensure cancellation and refund handling complies with mandatory consumer law
+//   Consumer and private-property enquiries can still be accepted through the website meanwhile.
+//
+// LEGAL REVIEW BEFORE LAUNCH:
+//   - The business liability cap (the price paid for the project) and the exclusion of indirect loss in
+//     the Liability section must be professionally reviewed.
+//   - Fairness of the up-to-50% charge for consumers (Consumer Rights Act 2015, Part 2).
 
 import { site } from './site.js';
 import { lowestPrice } from './pricing.js';
@@ -92,7 +103,7 @@ export const terms = {
             'An enquiry, including one made through our {quote} form, is not a booking.',
             'Your quotation is based on the information you give us. If the actual project differs materially from that information, for example the space is larger or more complex than described, we may need to revise the quotation. We will tell you before carrying out any additional work.',
             'Any additional travel costs or other requirements will be agreed with you before they are charged.',
-            'A quotation is valid for the period stated on it.',
+            'Each quotation is valid for 14 days from the date it is issued, unless the quotation states a different period.',
           ],
         },
       ],
@@ -160,8 +171,9 @@ export const terms = {
         {
           ul: [
             `You can cancel or reschedule free of charge with at least ${hours} hours’ notice before the appointment.`,
-            `If you cancel or reschedule with less than ${hours} hours’ notice, we may charge up to ${percent}% of the project price, reflecting the time reserved and the costs we have reasonably incurred.`,
-            `If no one is available at the appointment, we are denied access, or we cannot carry out the booked work because the premises are not ready or not safe, we may charge up to ${percent}% of the project price on the same basis.`,
+            `If you cancel or reschedule with less than ${hours} hours’ notice, we may make a charge of up to ${percent}% of the project price.`,
+            `If no one is available at the appointment, we are denied access, or we cannot carry out the booked work because the premises are not ready or not safe, we may make a charge of up to ${percent}% of the project price.`,
+            'These charges are not automatic. Whether we make a charge, and how much, is at our discretion and will be reasonable and proportionate to the circumstances and to the time and costs we have incurred, particularly where consumer law applies.',
             'If we need to cancel or reschedule, you can choose a reasonable alternative date or a full refund of any amount paid for work not carried out.',
           ],
         },
@@ -219,7 +231,11 @@ export const terms = {
           p: 'We rely on third-party services to deliver projects, including Panoee (interactive tour platform), Google (including Street View), Cloudflare (website hosting) and Resend (enquiry emails), a payment provider such as Stripe for online payments when offered, and other services reasonably needed to deliver your project.',
         },
         {
-          p: 'These services have their own terms, privacy policies, availability and limitations, and they may change their features, pricing or terms. We will act reasonably to keep your tour working as delivered, but we cannot guarantee that a third-party platform, or any feature hosted on it, will remain available indefinitely or unchanged.',
+          p: 'These services have their own terms, privacy policies, availability and limitations, and they may change their features, pricing or terms.',
+        },
+        { h: 'Availability of your tour' },
+        {
+          p: 'We do not charge a recurring hosting fee. We will act reasonably to keep your completed tour available as delivered. Where the tour relies on third-party platforms or services, we cannot guarantee that it, or any feature provided through those platforms, will remain available indefinitely or unchanged.',
         },
       ],
     },
@@ -245,14 +261,18 @@ export const terms = {
         },
         { h: 'Your licence' },
         {
-          p: 'Once you have paid in full, you may use the completed tour and its associated imagery for the business or property marketing purposes agreed for your project, with no time limit. This includes using them on your website, in property listings, on social media, in online marketing and on Google or Street View where applicable. The licence is non-exclusive and is for your own use; it cannot be transferred without our agreement.',
+          p: 'Once you have paid in full, you may use the completed tour and its associated imagery for the business or property marketing purposes agreed for your project, with no time limit. This includes using them on your website, in property listings, on social media, in online marketing and on Google or Street View where applicable. The licence is non-exclusive.',
+        },
+        { h: 'If the business or property changes hands' },
+        {
+          p: 'If the business or property shown in the tour is sold or taken over, the new owner or operator may continue to use the completed tour for the same agreed marketing purpose, where appropriate. Any materially different use needs our agreement.',
         },
         { p: 'You must not:' },
         {
           ul: [
             'resell the tour or imagery as your own photography service',
             'redistribute the underlying production files as a standalone commercial product',
-            'sublicense the work to unrelated third parties for resale',
+            'sublicense the work to unrelated third parties, or resell it',
             'remove ROSS 360 attribution where attribution is specifically included in the agreed deliverable',
           ],
         },
@@ -287,6 +307,8 @@ export const terms = {
           p: 'Nothing in these terms excludes or limits liability that cannot legally be excluded or limited, including liability for death or personal injury caused by negligence, for fraud or fraudulent misrepresentation, or under your statutory rights as a consumer.',
         },
         { h: 'Business customers' },
+        // LEGAL REVIEW: the liability cap (the price paid for the project) and the exclusion of indirect
+        // loss must be professionally reviewed before launch.
         {
           p: 'If you are a business, our total liability to you in connection with a project is limited to the price paid for that project. We are not liable for loss of profit, revenue, business, goodwill or opportunity, or for any indirect or consequential loss.',
         },
@@ -321,6 +343,8 @@ export const terms = {
     {
       id: 'consumers',
       title: 'Consumer customers',
+      // TODO (booking system): see "BEFORE ACCEPTING CONSUMER BOOKINGS" at the top of this file. The wording
+      // below preserves statutory rights without hard-coding a cancellation process.
       blocks: [
         {
           p: 'If you are a consumer, you have legal rights in relation to services that are not carried out with reasonable care and skill, and you may have a legal right to cancel certain contracts within a set period after entering into them. Nothing in these terms affects those rights. Where a statutory cancellation right applies to your booking, we will explain it, and how to use it, before you book.',
@@ -351,6 +375,9 @@ export const terms = {
     {
       id: 'contact',
       title: 'Contact',
+      // TODO: the legally required geographical address is not published here or on marketing pages. It
+      // must be given in the pre-contract information, quotation or booking flow before consumer
+      // distance contracts are accepted.
       blocks: [
         {
           p: `ROSS 360 is a trading name of ${site.founder}. For any question about these terms, email {email}.`,
