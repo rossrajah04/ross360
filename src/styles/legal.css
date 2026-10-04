@@ -1,0 +1,168 @@
+/* Legal pages (Privacy Notice, Terms & Conditions). The service pages' hero, then a contents list beside readable text:
+   the same type, rules and colours as the rest of the site, set for reading rather than selling. */
+
+.lg-body {
+  padding: var(--h-gap) 0;
+}
+
+.lg-layout {
+  display: grid;
+  gap: 40px;
+  align-items: start;
+}
+
+/* ---------- Contents ---------- */
+
+.lg-contents {
+  padding-top: 18px;
+  border-top: 1px solid var(--line-strong);
+}
+
+.lg-contents__title {
+  margin: 0 0 12px;
+  color: var(--ink);
+  font-size: 1.05rem;
+  font-weight: 500;
+}
+
+.lg-contents__list {
+  margin: 0;
+  padding: 0 0 0 1.6em;
+  color: var(--muted);
+  font-size: 0.98rem;
+  line-height: 1.45;
+}
+
+.lg-contents__list li {
+  padding: 4px 0;
+}
+
+.lg-contents__list a {
+  color: var(--ink-soft);
+  text-decoration: none;
+}
+
+.lg-contents__list a:hover {
+  color: var(--ink);
+  text-decoration: underline;
+}
+
+@media (min-width: 560px) and (max-width: 999px) {
+  .lg-contents__list {
+    columns: 2;
+    column-gap: 32px;
+  }
+  .lg-contents__list li {
+    break-inside: avoid;
+  }
+}
+
+/* ---------- Text ---------- */
+
+.lg-text {
+  min-width: 0;
+  max-width: 68ch;
+  color: var(--ink-soft);
+  font-size: clamp(1rem, 1.2vw, 1.075rem);
+  line-height: 1.65;
+}
+
+.lg-text p {
+  margin: 0 0 14px;
+}
+
+.lg-text a {
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+.lg-intro p {
+  color: var(--ink);
+  font-size: clamp(1.1rem, 1.5vw, 1.25rem);
+  line-height: 1.55;
+}
+
+.lg-section {
+  margin-top: clamp(36px, 4vw, 52px);
+  padding-top: 20px;
+  border-top: 1px solid var(--line-strong);
+  scroll-margin-top: calc(var(--header-h, 72px) + 24px);
+}
+
+.lg-h2 {
+  margin: 0 0 16px;
+  color: var(--ink);
+  font-size: clamp(1.3rem, 2vw, 1.6rem);
+  font-weight: 400;
+  line-height: 1.2;
+  letter-spacing: -0.015em;
+}
+
+.lg-h2__num {
+  color: var(--muted);
+}
+
+.lg-h3 {
+  margin: 24px 0 8px;
+  color: var(--ink);
+  font-size: 1.05rem;
+  font-weight: 500;
+}
+
+.lg-list {
+  margin: 0 0 16px;
+  padding: 0 0 0 1.2em;
+}
+
+.lg-list li {
+  padding: 3px 0;
+}
+
+.lg-list li::marker {
+  color: var(--muted);
+}
+
+.lg-defs {
+  margin: 4px 0 18px;
+  border-bottom: 1px solid var(--line);
+}
+
+.lg-def {
+  padding: 12px 0;
+  border-top: 1px solid var(--line);
+}
+
+.lg-def dt {
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.lg-def dd {
+  margin: 4px 0 0;
+}
+
+@media (min-width: 760px) {
+  .lg-def {
+    display: grid;
+    grid-template-columns: minmax(0, 13em) minmax(0, 1fr);
+    gap: 24px;
+  }
+  .lg-def dd {
+    margin: 0;
+  }
+}
+
+@media (min-width: 1000px) {
+  .lg-layout {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: 0 32px;
+  }
+  .lg-contents {
+    grid-column: 1 / 4;
+    position: sticky;
+    top: calc(var(--header-h, 72px) + 32px);
+  }
+  .lg-text {
+    grid-column: 5 / 13;
+  }
+}

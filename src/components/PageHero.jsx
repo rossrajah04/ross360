@@ -1,12 +1,15 @@
-// Top-of-page intro for inner pages. Renders the single H1 for the page.
-export default function PageHero({ eyebrow, title, lead, children }) {
+// Top-of-page introduction for inner pages. Renders the single H1 for the page.
+export default function PageHero({ title, lead, children }) {
   return (
     <section className="page-hero">
-      <div className="container">
-        {eyebrow ? <p className="eyebrow">{eyebrow}</p> : null}
-        <h1>{title}</h1>
-        {lead ? <p className="lead">{lead}</p> : null}
-        {children}
+      <div className="container page-hero__inner">
+        <h1 className="page-hero__title">{title}</h1>
+        {lead || children ? (
+          <div className="page-hero__aside">
+            {lead ? <p className="lead">{lead}</p> : null}
+            {children}
+          </div>
+        ) : null}
       </div>
     </section>
   );

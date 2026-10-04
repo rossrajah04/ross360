@@ -1,261 +1,200 @@
 import { Link } from 'react-router-dom';
-import Button from '../Button.jsx';
-import SectionHeading from '../SectionHeading.jsx';
+import Photo from './Photo.jsx';
+import TourStage from './TourStage.jsx';
 import TourEmbed from '../TourEmbed.jsx';
-import PricingCard from '../PricingCard.jsx';
-import PortfolioGallery from '../PortfolioGallery.jsx';
-import FAQItem from '../FAQItem.jsx';
-import ProcessSteps from '../ProcessSteps.jsx';
-import Checklist from '../Checklist.jsx';
+import { home } from '../../content/home.js';
+import { media } from '../../content/media.js';
 import { site } from '../../content/site.js';
-import { plans, pricingNote } from '../../content/pricing.js';
-import { whatYouReceive, whyThreeSixty } from '../../content/services.js';
-import { faqs } from '../../content/faq.js';
 
-// 1. Hero
-export function Hero() {
+// Homepage: the opening photograph and one tour, then why a tour matters, its two uses, what you
+// receive and what it costs, and the enquiry.
+// The Step inside tour is the only example of a space on the page.
+// Wording comes from src/content/home.js and photographs from src/content/media.js.
+
+function Arrow() {
   return (
-    <section className="hero" aria-labelledby="hero-heading">
-      {/* Decorative 360° motif: abstract lines only, not a photograph and not a tour. */}
-      <svg className="hero__backdrop" viewBox="0 0 1200 600" aria-hidden="true" focusable="false">
-        <g fill="none" stroke="currentColor" strokeWidth="1">
-          <ellipse cx="900" cy="300" rx="120" ry="280" />
-          <ellipse cx="900" cy="300" rx="240" ry="280" />
-          <ellipse cx="900" cy="300" rx="360" ry="280" />
-          <ellipse cx="900" cy="300" rx="480" ry="280" />
-          <line x1="420" y1="300" x2="1380" y2="300" />
-          <path d="M470 170 Q900 130 1330 170" />
-          <path d="M470 430 Q900 470 1330 430" />
-        </g>
-      </svg>
-      <div className="container hero__inner">
-        <h1 id="hero-heading">{site.descriptor}</h1>
-        <p className="lead">
-          ROSS 360 captures your space in 360° and turns it into an interactive online tour, so customers, buyers
-          and visitors can explore it before they visit.
-        </p>
-        <div className="btn-row">
-          <Button to="/get-a-quote" variant="inverse">
-            {site.cta.primary}
-          </Button>
-          <Button to="/portfolio" variant="outline-inverse">
-            {site.cta.secondary}
-          </Button>
+    <span className="h-arrow" aria-hidden="true">
+      →
+    </span>
+  );
+}
+
+// The opening photograph, with the heading set quietly over it.
+export function Opening() {
+  const { hero } = home;
+  return (
+    <section className="h-hero" aria-labelledby="h-hero-title">
+      <Photo image={media.hero} className="h-hero__photo" eager />
+      <div className="h-hero__shade" aria-hidden="true" />
+      <div className="h-wrap h-hero__content">
+        <h1 id="h-hero-title" className="h-hero__title">
+          {hero.title}
+        </h1>
+        <p className="h-hero__lead">{hero.lead}</p>
+      </div>
+      <a className="h-hero__scroll" href="#step-inside" aria-label="Scroll to the 360° preview">
+        <span className="h-hero__scroll-line" aria-hidden="true" />
+      </a>
+    </section>
+  );
+}
+
+// Step inside: the one tour on the homepage. The frame holds the Panoee tour set in
+// site.stepInsideTour, and a placeholder if that is empty. An external example is labelled and
+// credited under the frame.
+export function StepInside() {
+  const { tour } = home;
+  const example = site.stepInsideTour;
+  return (
+    <section id="step-inside" className="h-tour" aria-labelledby="h-tour-title">
+      <div className="h-wrap h-tour__head">
+        <div data-reveal>
+          <p className="h-tour__label">{tour.label}</p>
+          <h2 id="h-tour-title" className="h-tour__title">
+            {tour.title}
+          </h2>
+        </div>
+        <div className="h-tour__aside" data-reveal>
+          <p>{tour.text}</p>
+          {example.openUrl ? (
+            <a className="h-link" href={example.openUrl} target="_blank" rel="noopener noreferrer">
+              {tour.open}
+              <Arrow />
+              <span className="visually-hidden"> (opens in a new tab)</span>
+            </a>
+          ) : null}
         </div>
       </div>
-    </section>
-  );
-}
-
-// 2. Explore a Real Tour (labelled as an example until genuine work is added)
-export function ExploreTour() {
-  const real = site.exampleTour.isRealProject;
-  return (
-    <section className="section section--soft" aria-labelledby="explore-heading">
-      <div className="container">
-        <SectionHeading
-          id="explore-heading"
-          eyebrow={real ? 'Interactive tour' : 'Example Tour'}
-          title={real ? 'Explore a real tour' : 'Explore an example tour'}
-          lead={
-            real
-              ? 'Look around and move through the space, just as a visitor would.'
-              : 'This is a demonstration experience, not a client project. Genuine ROSS 360 tours will replace it as projects are completed.'
-          }
+      <div className="h-wrap">
+        <TourStage
+          tour={example}
+          label={tour.placeholderLabel}
+          placeholder={tour.placeholder}
+          className="h-tour__stage"
         />
-        <TourEmbed className="tour-stage--large" />
+        {example.embedUrl && example.external ? (
+          <p className="h-tour__note">
+            <span className="h-tour__note-label">{example.label}</span>
+            <span>{example.credit}</span>
+          </p>
+        ) : example.embedUrl && !example.isRealProject ? (
+          <p className="h-tour__note">{tour.demoNote}</p>
+        ) : null}
       </div>
     </section>
   );
 }
 
-// 3. What ROSS 360 does
-export function WhatWeDo() {
+// Below the tour. One grid and one type scale throughout; the ground changes only where it helps:
+// the point about the tour stays on the tour's dark ground, the service details sit on the light page,
+// and the enquiry closes on the photograph.
+
+// Why a 360° tour: set directly under the tour it describes, beside the same tour running live in a
+// phone-sized frame, so the product stays in view. The phone frame loads only as it nears the screen.
+export function Why() {
+  const { why } = home;
+  const tour = site.stepInsideTour;
   return (
-    <section className="section" aria-labelledby="what-heading">
-      <div className="container split">
-        <SectionHeading
-          id="what-heading"
-          eyebrow="What ROSS 360 does"
-          title="Your space, explorable online"
-          lead="ROSS 360 captures spaces in 360° and turns them into interactive online experiences."
-        />
-        <div>
-          <p>A finished tour can be used in a number of places:</p>
-          <ul className="rule-list">
-            <li>
-              <strong>Your website</strong>
-              <span>Embed the tour where visitors can explore it.</span>
-            </li>
-            <li>
-              <strong>Online marketing</strong>
-              <span>Share a link wherever you promote your space.</span>
-            </li>
-            <li>
-              <strong>Property listings</strong>
-              <span>Where appropriate, alongside a listing.</span>
-            </li>
-            <li>
-              <strong>Google Maps / Street View</strong>
-              <span>Where appropriate, for business tours.</span>
-            </li>
+    <section className="h-why" aria-labelledby="h-why-title">
+      <div className="h-wrap h-why__inner">
+        <div className="h-why__copy" data-reveal>
+          <h2 id="h-why-title" className="h-h2 h-why__title">
+            {why.title}
+          </h2>
+          <p className="h-why__text">{why.text}</p>
+        </div>
+        {tour.embedUrl ? (
+          <figure className="h-phone" data-reveal>
+            <div className="h-phone__frame">
+              <TourEmbed tour={{ ...tour, title: `${tour.title} (phone view)` }} className="h-phone__screen" />
+            </div>
+            <figcaption className="h-phone__caption">
+              {why.phoneCaption} {tour.credit}
+            </figcaption>
+          </figure>
+        ) : null}
+      </div>
+    </section>
+  );
+}
+
+// Business and property: two pathways through the service, side by side.
+export function Uses() {
+  return (
+    <section className="h-uses" aria-label="Business and property">
+      <div className="h-wrap h-uses__grid">
+        {home.uses.map((use) => (
+          <div key={use.label} className="h-use" data-reveal>
+            <p className="h-use__label">{use.label}</p>
+            <h2 className="h-h2 h-use__title">{use.title}</h2>
+            <p className="h-use__text">{use.text}</p>
+            <Link className="h-link" to={use.to}>
+              {use.link}
+              <Arrow />
+            </Link>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+// What you receive, and what it costs, in one band.
+export function Offer() {
+  const { receive, pricing } = home;
+  return (
+    <section className="h-offer" aria-labelledby="h-receive-title">
+      <div className="h-wrap h-offer__grid">
+        <div className="h-receive" data-reveal>
+          <h2 id="h-receive-title" className="h-h2">
+            {receive.title}
+          </h2>
+          <p className="h-offer__text">{receive.text}</p>
+          <ul className="h-receive__list">
+            {receive.items.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
           </ul>
+          <a className="h-link" href="#step-inside">
+            {receive.example}
+            <span className="h-arrow" aria-hidden="true">
+              ↑
+            </span>
+          </a>
+        </div>
+        <div className="h-from" data-reveal>
+          <h2 className="h-h2">{pricing.title}</h2>
+          <p className="h-offer__text">{pricing.text}</p>
+          <div className="h-from__actions">
+            <Link className="h-button" to={site.quoteLink.to}>
+              {pricing.quote}
+            </Link>
+            <Link className="h-button h-button--quiet" to="/pricing">
+              {pricing.view}
+            </Link>
+          </div>
         </div>
       </div>
     </section>
   );
 }
 
-// 4. Why 360°
-export function WhyThreeSixty() {
+// The enquiry, over the closing photograph.
+export function Closing() {
+  const { closing } = home;
   return (
-    <section className="section section--soft" aria-labelledby="why-heading">
-      <div className="container">
-        <SectionHeading id="why-heading" eyebrow="Why 360°" title="A better way to show a space" />
-        <ul className="rule-grid">
-          {whyThreeSixty.map((item) => (
-            <li key={item.title}>
-              <h3>{item.title}</h3>
-              <p>{item.text}</p>
-            </li>
-          ))}
-        </ul>
-      </div>
-    </section>
-  );
-}
-
-// 5. Who it's for
-export function WhoItsFor() {
-  return (
-    <section className="section" aria-labelledby="who-heading">
-      <div className="container">
-        <SectionHeading id="who-heading" eyebrow="Who it’s for" title="Two ways we work" />
-        <div className="audience">
-          <article className="audience__panel">
-            <h3>Businesses</h3>
-            <p>
-              Restaurants, gyms, hotels, venues, retail, showrooms, clinics, offices and other commercial spaces.
-            </p>
-            <Button to="/businesses" variant="secondary">
-              {site.cta.business}
-            </Button>
-          </article>
-          <article className="audience__panel audience__panel--dark">
-            <h3>Property &amp; Estate Agents</h3>
-            <p>Residential property, commercial property, developers and estate agencies.</p>
-            <Button to="/property" variant="inverse">
-              {site.cta.property}
-            </Button>
-          </article>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// 6. What you receive
-export function WhatYouReceive() {
-  return (
-    <section className="section section--soft" aria-labelledby="receive-heading">
-      <div className="container split">
-        <SectionHeading
-          id="receive-heading"
-          eyebrow="What you receive"
-          title="A finished, professional tour"
-          lead="Everything is prepared for you, so you can start using the tour straight away."
-        />
-        <div>
-          <Checklist items={whatYouReceive} />
-          <p className="small">
-            <Link to="/virtual-tours">See what’s included in more detail</Link>
-          </p>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// 7. How it works
-export function HowItWorks() {
-  return (
-    <section className="section" aria-labelledby="how-heading">
-      <div className="container">
-        <SectionHeading id="how-heading" eyebrow="How it works" title="From enquiry to finished tour" />
-        <ProcessSteps />
-      </div>
-    </section>
-  );
-}
-
-// 8. Pricing
-export function PricingPreview() {
-  return (
-    <section className="section section--soft" aria-labelledby="pricing-heading">
-      <div className="container">
-        <SectionHeading
-          id="pricing-heading"
-          eyebrow="Pricing"
-          title="Clear starting prices for business tours"
-          lead={pricingNote}
-        />
-        <div className="plans">
-          {plans.map((plan) => (
-            <PricingCard key={plan.id} plan={plan} />
-          ))}
-        </div>
-        <p className="small">
-          {site.propertyPricingShort} <Link to="/pricing">See pricing details</Link>
-        </p>
-      </div>
-    </section>
-  );
-}
-
-// 9. Portfolio
-export function PortfolioSection() {
-  return (
-    <section className="section" aria-labelledby="work-heading">
-      <div className="container">
-        <SectionHeading id="work-heading" eyebrow="Portfolio" title="Our work" />
-        <PortfolioGallery />
-      </div>
-    </section>
-  );
-}
-
-// 10. Website + Google
-export function WebsiteAndGoogle() {
-  return (
-    <section className="section section--soft" aria-labelledby="google-heading">
-      <div className="container split">
-        <SectionHeading id="google-heading" eyebrow="Website + Google" title="Use your tour where people look" />
-        <div>
-          <p>
-            <strong>On your website.</strong> Tours are prepared so they can be embedded on your website or shared
-            with a link.
-          </p>
-          <p>
-            <strong>On Google, where appropriate.</strong> {site.google.summary}
-          </p>
-          <p className="small">{site.google.disclaimer}</p>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// 11. FAQ
-export function FaqSection() {
-  return (
-    <section className="section" aria-labelledby="faq-heading">
-      <div className="container container--narrow">
-        <SectionHeading id="faq-heading" eyebrow="FAQ" title="Common questions" />
-        <div className="faq">
-          {faqs.map((item) => (
-            <FAQItem key={item.q} question={item.q} answer={item.a} />
-          ))}
-        </div>
+    <section className="h-close" aria-labelledby="h-close-title">
+      <Photo image={media.closing} className="h-close__photo" decorative />
+      <div className="h-close__shade" aria-hidden="true" />
+      <div className="h-wrap h-close__inner" data-reveal>
+        <h2 id="h-close-title" className="h-close__title">
+          {closing.title}
+        </h2>
+        <p className="h-close__text">{closing.text}</p>
+        <Link className="h-close__cta" to={site.quoteLink.to}>
+          {closing.cta}
+          <Arrow />
+        </Link>
       </div>
     </section>
   );

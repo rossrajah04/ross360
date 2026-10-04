@@ -1,16 +1,18 @@
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { site } from '../content/site.js';
 import Wordmark from './Wordmark.jsx';
 
 export default function Footer() {
   const year = new Date().getFullYear();
+  const isHome = useLocation().pathname === '/';
 
   return (
-    <footer className="site-footer">
+    <footer className={`site-footer${isHome ? ' site-footer--home' : ''}`}>
       <div className="container footer__grid">
         <div className="footer__brand">
           <Wordmark light />
           <p className="footer__descriptor">{site.descriptor}</p>
+          <p className="footer__meta">{site.serviceArea} service</p>
           <p>
             <a className="footer__email" href={`mailto:${site.email}`}>
               {site.email}
@@ -47,7 +49,7 @@ export default function Footer() {
 
       <div className="container footer__legal">
         <p>
-          © {year} {site.brand}. {site.legalName}.
+          © {year} {site.brand}.
         </p>
       </div>
     </footer>

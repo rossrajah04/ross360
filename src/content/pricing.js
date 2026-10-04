@@ -1,53 +1,115 @@
-// Business tour packages. Prices are STARTING prices — final pricing is confirmed in the quote.
-// Change a price here and it updates everywhere it is shown.
+// Pricing page wording and business tour packages. Supplied by ROSS 360 (4 October 2026).
+// Prices are STARTING prices; the final price is confirmed in the quotation. Change a price here and
+// it updates everywhere it is shown. No hosting, no room or panorama limits, no discounts or offers,
+// and no property packages or prices.
 
+// Each package lists the kind of project it suits; what every package includes is set out once, under
+// "Every business tour includes". No room counts, panorama numbers or square-footage limits: the
+// quotation sets the exact scope.
 export const plans = [
   {
     id: 'essential',
     name: 'Essential',
     price: 249,
-    summary: 'For smaller, straightforward spaces.',
-    suitableFor: [],
+    bestFor: 'Smaller commercial spaces',
+    description: 'A straightforward tour for smaller premises and focused spaces.',
+    suits: [
+      'Smaller premises',
+      'Straightforward layouts',
+      'Focused coverage of key areas',
+      'Ideal for cafés, small studios, boutiques and similar spaces',
+    ],
   },
   {
     id: 'professional',
     name: 'Professional',
     price: 349,
     featured: true,
-    tag: 'Main package',
-    summary: 'Our main package for most commercial spaces.',
-    suitableFor: [
-      'Restaurants',
-      'Gyms',
-      'Studios',
-      'Showrooms',
-      'Larger retail',
-      'Offices',
-      'Similar premises',
+    tag: 'Most popular',
+    bestFor: 'Most businesses',
+    description: 'Our main package for businesses that want a comprehensive tour across multiple areas.',
+    suits: [
+      'Multiple areas or rooms',
+      'More comprehensive coverage',
+      'Designed for visitors to explore more of the premises',
+      'Ideal for restaurants, gyms, studios, showrooms and similar spaces',
     ],
   },
   {
     id: 'bespoke',
     name: 'Large / Bespoke',
     price: 499,
-    summary: 'For larger or more complex spaces.',
-    suitableFor: [
-      'Larger venues',
-      'Hotels',
-      'Large gyms',
-      'Large showrooms',
-      'Commercial properties',
-      'Complex layouts',
-      'Multiple buildings',
+    bestFor: 'Large or complex spaces',
+    description: 'For larger premises, complex layouts or projects requiring a tailored scope.',
+    suits: [
+      'Larger premises',
+      'Multiple connected areas',
+      'More involved layouts or access requirements',
+      'Bespoke scope based on the project',
     ],
   },
 ];
 
 export const lowestPrice = plans[0].price;
 
-export const pricingNote = `Our packages start from £${lowestPrice}. Final pricing depends on the size and complexity of the space, location and any additional requirements. Your exact price is confirmed before booking.`;
-
-export const travelNote =
-  'ROSS 360 works UK-wide. Travel is assessed before your quote is finalised, and any additional travel charge is confirmed in the quote before you pay.';
-
 export const formatFrom = (price) => `From £${price}`;
+
+export const pricing = {
+  hero: {
+    title: '360° Virtual Tour Pricing',
+    lead: "Straightforward pricing for professional 360° virtual tours. Choose the package that best matches your space, then we'll confirm the final scope and quotation.",
+    fact: 'UK-wide service',
+  },
+
+  business: {
+    title: 'Business 360° Tours',
+    intro:
+      'Our business packages are designed around the size and complexity of your space. All prices are starting prices, with the final quotation confirmed once we understand the premises and areas required.',
+    bestForLabel: 'Best for',
+    cta: 'Get a Quote',
+    to: '/get-a-quote?type=business',
+  },
+
+  includes: {
+    title: 'Every business tour includes',
+    items: [
+      { title: '360° photography', text: 'Professional 360° imagery of the agreed areas.' },
+      { title: 'Interactive virtual tour', text: 'A connected tour visitors can navigate themselves.' },
+      { title: 'Website-ready embed', text: 'Information/code needed to embed the finished tour into a website.' },
+      { title: 'Shareable tour URL', text: 'A direct link that can be shared with customers, clients or prospects.' },
+      { title: 'Quality check', text: 'The finished tour is reviewed before delivery.' },
+      { title: 'Google Street View', text: 'Where appropriate, authorised and technically suitable.' },
+    ],
+  },
+
+  factors: {
+    title: 'What affects the final price?',
+    text: 'Every space is different. The final quotation depends on the size of the premises, number of areas, layout, access, location, travel requirements and any additional project requirements.',
+    items: [
+      'Size of the space',
+      'Number of areas to capture',
+      'Layout and complexity',
+      'Access requirements',
+      'Location and travel',
+      'Additional project requirements',
+    ],
+    note: "We'll confirm any additional travel or project costs before you book.",
+  },
+
+  property: {
+    title: 'Property tours',
+    price: 'Individually quoted',
+    text: 'Property projects vary significantly in size, layout and requirements, so property tours are quoted individually.',
+    listLabel: 'A property quotation may take into account:',
+    items: ['Property size', 'Number of rooms/areas', 'Location', 'Access', 'Required coverage', 'Project requirements'],
+    cta: 'Request a Quote',
+    to: '/get-a-quote?type=property',
+  },
+
+  closing: {
+    title: 'Ready to get a quote?',
+    text: "Tell us about your space and we'll confirm the most suitable option for your project.",
+    cta: 'Get a Quote',
+    to: '/get-a-quote',
+  },
+};

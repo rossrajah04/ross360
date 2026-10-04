@@ -3,63 +3,48 @@
 // (functions/api/quote.js), so the rules cannot drift apart. Keep it dependency-free.
 
 export const PROJECT_TYPES = [
-  { value: 'business', label: 'Business 360° Tour' },
-  { value: 'property', label: 'Property 360° Tour' },
-  { value: 'commercial-property', label: 'Commercial Property' },
-  { value: 'agency', label: 'Estate Agent / Multiple Properties' },
-  { value: 'not-sure', label: 'Not sure' },
+  { value: 'business', label: 'Business' },
+  { value: 'property', label: 'Property' },
+  { value: 'other', label: 'Other' },
 ];
 
-export const PREMISES_TYPES = [
-  'Restaurant or café',
-  'Gym or studio',
+// Examples only: "Other" covers any space not listed.
+export const SPACE_TYPES = [
+  'Restaurant / café',
+  'Gym / studio',
   'Hotel',
-  'Wedding or event venue',
-  'Retail or showroom',
-  'Clinic',
-  'Office',
-  'Residential property',
+  'Wedding / event venue',
+  'Retail / showroom',
+  'Clinic / professional space',
+  'Office / commercial premises',
+  'Estate / letting agency',
+  'Property / residential',
   'Commercial property',
   'Other',
 ];
 
-export const TIMEFRAMES = [
-  'As soon as possible',
-  'Within the next month',
-  'In 1–3 months',
-  'Flexible',
-];
+export const SOURCES = ['Google', 'Referral', 'Social media', 'Website', 'Other'];
 
 // Map of ?type= query values on the quote page to a project type value.
 export const TYPE_PARAM_MAP = {
   business: 'business',
   property: 'property',
-  agency: 'agency',
+  agency: 'property',
 };
 
 export const LIMITS = {
   short: 120,
-  address: 300,
+  medium: 300,
   long: 2000,
 };
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const PHONE_RE = /^[0-9+()\-.\s]{7,20}$/;
-// Lenient UK postcode check (format only — we are not verifying it exists).
-const POSTCODE_RE = /^[A-Za-z]{1,2}\d[A-Za-z\d]?\s*\d[A-Za-z]{2}$/;
 
 const clean = (value) => (typeof value === 'string' ? value.trim() : '');
 
-function normaliseUrl(value) {
-  if (!value) return { ok: true, value: '' };
-  const withScheme = /^https?:\/\//i.test(value) ? value : `https://${value}`;
-  try {
-    const url = new URL(withScheme);
-    if (!url.hostname.includes('.')) return { ok: false, value };
-    return { ok: true, value: url.toString() };
-  } catch {
-    return { ok: false, value };
-  }
+function checkLength(errors, values, key, max, message = 'Please shorten this answer.') {
+  if (values[key].length > max) errors[key] = message;
 }
 
 /**
@@ -74,22 +59,21 @@ export function validateQuote(input = {}) {
     email: clean(input.email),
     phone: clean(input.phone),
     projectType: clean(input.projectType),
-    address: clean(input.address),
-    postcode: clean(input.postcode).toUpperCase(),
-    premisesType: clean(input.premisesType),
+    projectOther: clean(input.projectOther),
+    spaceType: clean(input.spaceType),
+    location: clean(input.location),
     size: clean(input.size),
     areas: clean(input.areas),
-    timeframe: clean(input.timeframe),
-    website: clean(input.website),
-    googleLink: clean(input.googleLink),
     message: clean(input.message),
+    preferredDate: clean(input.preferredDate),
+    source: clean(input.source),
   };
 
-  if (!values.name) errors.name = 'Please enter your name.';
-  else if (values.name.length > LIMITS.short) errors.name = 'Please use a shorter name.';
+  if (!values.name) errors.name = 'Please enter your full name.';
+  else checkLength(errors, values, 'name', LIMITS.short, 'Please use a shorter name.');
 
   if (!values.business) errors.business = 'Please enter your business or organisation.';
-  else if (values.business.length > LIMITS.short) errors.business = 'Please use a shorter name.';
+  else checkLength(errors, values, 'business', LIMITS.short, 'Please use a shorter name.');
 
   if (!values.email) errors.email = 'Please enter your email address.';
   else if (!EMAIL_RE.test(values.email) || values.email.length > 254)
@@ -101,32 +85,27 @@ export function validateQuote(input = {}) {
   if (!PROJECT_TYPES.some((t) => t.value === values.projectType))
     errors.projectType = 'Please choose the type of project.';
 
-  if (!values.address) errors.address = 'Please enter the property or business address.';
-  else if (values.address.length > LIMITS.address) errors.address = 'Please shorten the address.';
+  // The explanation only applies to "Other"; it is dropped for the other project types.
+  if (values.projectType !== 'other') values.projectOther = '';
+  checkLength(errors, values, 'projectOther', LIMITS.medium);
 
-  if (!values.postcode) errors.postcode = 'Please enter the postcode.';
-  else if (!POSTCODE_RE.test(values.postcode))
-    errors.postcode = 'Please enter a valid UK postcode, like M1 1AA.';
+  if (!values.spaceType) errors.spaceType = 'Please choose the type of business or property.';
+  else if (!SPACE_TYPES.includes(values.spaceType)) errors.spaceType = 'Please choose one of the listed types.';
 
-  if (values.premisesType && !PREMISES_TYPES.includes(values.premisesType))
-    errors.premisesType = 'Please choose one of the listed types.';
+  if (!values.location) errors.location = 'Please enter the address or postcode.';
+  else checkLength(errors, values, 'location', LIMITS.medium, 'Please shorten the address.');
 
-  if (values.timeframe && !TIMEFRAMES.includes(values.timeframe))
-    errors.timeframe = 'Please choose one of the listed timeframes.';
+  // Any approximate description will do: rooms, square footage, floors or a few words.
+  if (!values.size) errors.size = 'Please give an approximate size or number of areas.';
+  else checkLength(errors, values, 'size', LIMITS.medium);
 
-  for (const key of ['size', 'areas']) {
-    if (values[key].length > LIMITS.long) errors[key] = 'Please shorten this answer.';
-  }
+  if (!values.areas) errors.areas = 'Please tell us which areas you’d like photographed.';
+  else checkLength(errors, values, 'areas', LIMITS.long);
 
-  const site = normaliseUrl(values.website);
-  if (!site.ok) errors.website = 'Please enter a valid website address, like example.co.uk.';
-  else values.website = site.value;
+  checkLength(errors, values, 'message', LIMITS.long);
+  checkLength(errors, values, 'preferredDate', LIMITS.short);
 
-  const google = normaliseUrl(values.googleLink);
-  if (!google.ok) errors.googleLink = 'Please enter a valid link.';
-  else values.googleLink = google.value;
-
-  if (values.message.length > LIMITS.long) errors.message = 'Please shorten your message.';
+  if (values.source && !SOURCES.includes(values.source)) errors.source = 'Please choose one of the listed options.';
 
   return { valid: Object.keys(errors).length === 0, errors, values };
 }

@@ -6,8 +6,8 @@ RESEND_API_KEY=
 # Must be an address on a domain verified in Resend, e.g. "ROSS 360 <enquiries@ross360.co.uk>"
 QUOTE_FROM_EMAIL=
 
-# Optional (defaults to ross@ross360.co.uk)
-QUOTE_TO_EMAIL=ross@ross360.co.uk
+# Optional (defaults to contact@ross360.co.uk)
+QUOTE_TO_EMAIL=contact@ross360.co.uk
 # Optional: set to "true" to also send the customer an acknowledgement email
 SEND_ACKNOWLEDGEMENT=false
 # Optional: Cloudflare Turnstile *secret key* (pair with VITE_TURNSTILE_SITE_KEY)

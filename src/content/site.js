@@ -6,19 +6,24 @@ export const site = {
   descriptor: '360° Virtual Tours for Businesses & Property',
   url: 'https://ross360.co.uk',
   domain: 'ross360.co.uk',
-  email: 'ross@ross360.co.uk',
+  // Public contact address. Also the default destination for quote enquiries (functions/api/quote.js),
+  // unless QUOTE_TO_EMAIL is set in Cloudflare.
+  email: 'contact@ross360.co.uk',
+  // Used only where the operator's identity is needed: the Privacy Notice and Terms & Conditions.
+  // Not shown in the footer or marketing pages.
   founder: 'Ross Rajah',
-  legalName: 'Ross Rajah — sole trader trading as ROSS 360',
+  legalName: 'Ross Rajah, sole trader trading as ROSS 360',
+  serviceArea: 'UK-wide',
   responseTime: 'within 1 business day',
 
   // Call-to-action wording
   cta: {
     primary: 'Get a Quote',
-    secondary: 'View Our Work',
-    business: 'Explore Business Tours',
-    property: 'Explore Property Tours',
-    agency: 'Enquire about agency requirements',
-    finalHeading: 'Ready to give people a better way to explore your space?',
+    quote: 'Request a Quote',
+    work: 'View Our Work',
+    example: 'Open Example Tour',
+    property: 'Request a Property Quote',
+    finalHeading: 'Tell us about the property or premises you would like photographed.',
   },
 
   // Main navigation (the quote link is rendered separately as the prominent button)
@@ -33,44 +38,49 @@ export const site = {
   ],
   quoteLink: { label: 'Get a Quote', to: '/get-a-quote' },
 
-  // Show a "draft for review" notice on the Privacy Notice and Terms pages.
-  // Set to false once the final legal wording has been reviewed and approved.
-  legalDraft: true,
-  legalDraftDate: '3 October 2026',
-
-  // Example / demo tour. Nothing here is a client project.
-  // When a real Panoee tour is ready: paste its embed URL into `embedUrl`,
-  // set `isRealProject` to true ONLY if it is genuine ROSS 360 work you have permission to show,
-  // and update `title` / `openUrl`.
+  // Example tour. While `isRealProject` is false it is labelled as a demonstration.
+  // `embedUrl`: the Panoee embed address (the src="…" of Panoee's iframe code), e.g.
+  //   https://tour.panoee.net/…  It fills the homepage "Step inside" frame, which shows a placeholder
+  //   until this is set, and the "Explore a 360° Tour" section on the Portfolio page.
+  // `openUrl`: the tour's own page, opened in a new tab.
+  // While both are empty the Portfolio section is not shown, so nothing links to a tour that does not exist.
   exampleTour: {
     isRealProject: false,
-    embedUrl: '', // e.g. the Panoee embed/share URL
-    openUrl: '', // optional: link to open the tour in a new tab
-    title: 'Example Tour',
+    embedUrl: '',
+    openUrl: '',
+    title: 'Example tour',
   },
 
-  // Hosting wording — the model after the initial period is still under review,
-  // so no renewal price is hard-coded anywhere.
-  hosting: {
-    includedMonths: 12,
-    afterwards: 'Hosting options after the initial 12 months are confirmed in your quote.',
+  // The homepage "Step inside" tour. An external example used with its creator's permission; it is not
+  // ROSS 360's work, so it is labelled as such and credited under the frame. It is not used on any other
+  // page. Replace it with a ROSS 360 tour once one exists.
+  stepInsideTour: {
+    isRealProject: false,
+    external: true,
+    embedUrl: 'https://tour.panoee.com/avalon-hotel/',
+    openUrl: 'https://tour.panoee.com/avalon-hotel/',
+    title: 'Avalon Hotel',
+    label: 'External example',
+    credit: 'Example tour by OCEAN.LV / Avalon Hotel.',
+  },
+
+  // Genuine photography only, for the inner pages. Each slot shows a reserved image area until a real
+  // image is added. Put files in /public/images/ and set
+  // { src: '/images/name.jpg', alt: 'What the photo shows', width: 1600, height: 1000 }.
+  // Homepage images are set in src/content/home.js.
+  images: {
+    business: null,
+    property: null,
+    founder: null,
   },
 
   // Google wording
   google: {
-    summary:
-      'Where appropriate, imagery from your tour can also be published to Google Street View, which is a separate third-party Google platform.',
     disclaimer:
-      'Google controls approval, processing time, placement and availability, so none of these can be guaranteed, and publishing does not guarantee any change in search rankings.',
+      'Google decides whether imagery is accepted and controls processing time, placement and availability. Publication cannot be guaranteed and does not guarantee any change in search rankings.',
   },
 
-  // Property pricing wording (property prices are not final)
-  propertyPricingNote:
-    'Property tours are individually quoted based on the size, layout and requirements of each property.',
-  propertyPricingShort:
-    'Property tours are individually quoted based on the property, size, layout and requirements.',
-
-  // Working policy — exact legal wording is finalised separately in the Terms
+  // Working policy — reflected in the Terms & Conditions
   policy: {
     freeCancellationHours: 48,
     lateCancellationMaxPercent: 50,
@@ -81,4 +91,3 @@ export const site = {
   },
 };
 
-export const hostingIncludedLine = `${site.hosting.includedMonths} months of ROSS 360 interactive-tour hosting included.`;

@@ -1,10 +1,17 @@
 import { useCallback, useEffect, useState } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import { site } from '../content/site.js';
 import Wordmark from './Wordmark.jsx';
+import useScrolledPast from '../lib/useScrolledPast.js';
 
 export default function Header() {
   const [open, setOpen] = useState(false);
+
+  // On the homepage the header sits transparently over the opening photograph, and turns solid once
+  // the page scrolls past it or the mobile menu opens. Every other page keeps the solid header.
+  const isHome = useLocation().pathname === '/';
+  const pastOpening = useScrolledPast(isHome, 0.9);
+  const overlay = isHome && !pastOpening && !open;
 
   // Stable callbacks; state is only changed from event handlers, never during render.
   const toggle = useCallback(() => setOpen((value) => !value), []);
@@ -21,7 +28,7 @@ export default function Header() {
   }, [open]);
 
   return (
-    <header className="site-header">
+    <header className={`site-header${isHome ? ' site-header--home' : ''}${overlay ? ' site-header--overlay' : ''}`}>
       <div className="container header-inner">
         <Wordmark />
 

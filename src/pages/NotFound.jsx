@@ -8,12 +8,11 @@ export default function NotFound() {
     <>
       <Seo page="notFound" />
       <PageHero
-        eyebrow="404"
-        title="We couldn’t find that page"
-        lead="The page may have moved, or the link may be incorrect."
+        title="Page not found"
+        lead="The page you requested does not exist or has moved."
       >
         <div className="btn-row">
-          <Button to="/">Back to home</Button>
+          <Button to="/">Home page</Button>
           <Button to="/get-a-quote" variant="secondary">
             Get a Quote
           </Button>

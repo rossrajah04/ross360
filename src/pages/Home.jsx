@@ -1,35 +1,26 @@
 import Seo from '../components/Seo.jsx';
-import CtaBand from '../components/CtaBand.jsx';
+import useReveal from '../lib/useReveal.js';
 import {
-  Hero,
-  ExploreTour,
-  WhatWeDo,
-  WhyThreeSixty,
-  WhoItsFor,
-  WhatYouReceive,
-  HowItWorks,
-  PricingPreview,
-  PortfolioSection,
-  WebsiteAndGoogle,
-  FaqSection,
+  Opening,
+  StepInside,
+  Why,
+  Uses,
+  Offer,
+  Closing,
 } from '../components/home/HomeSections.jsx';
+import '../styles/home.css';
 
 export default function Home() {
+  useReveal();
   return (
-    <>
+    <div className="home">
       <Seo page="home" />
-      <Hero />
-      <ExploreTour />
-      <WhatWeDo />
-      <WhyThreeSixty />
-      <WhoItsFor />
-      <WhatYouReceive />
-      <HowItWorks />
-      <PricingPreview />
-      <PortfolioSection />
-      <WebsiteAndGoogle />
-      <FaqSection />
-      <CtaBand />
-    </>
+      <Opening />
+      <StepInside />
+      <Why />
+      <Uses />
+      <Offer />
+      <Closing />
+    </div>
   );
 }

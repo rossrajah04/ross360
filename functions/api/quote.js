@@ -1,10 +1,10 @@
 // Cloudflare Pages Function: POST /api/quote
-// Website form -> validate -> Resend -> ross@ross360.co.uk (+ optional customer acknowledgement).
+// Website form -> validate -> Resend -> contact@ross360.co.uk (+ optional customer acknowledgement).
 //
 // Secrets are read from environment variables (Cloudflare Pages -> Settings -> Variables and Secrets):
 //   RESEND_API_KEY        (secret, required)
 //   QUOTE_FROM_EMAIL      (required; an address on a domain verified in Resend)
-//   QUOTE_TO_EMAIL        (optional; defaults to ross@ross360.co.uk)
+//   QUOTE_TO_EMAIL        (optional; defaults to contact@ross360.co.uk)
 //   SEND_ACKNOWLEDGEMENT  (optional; "true" sends the customer an acknowledgement email)
 //   TURNSTILE_SECRET_KEY  (optional; enables Cloudflare Turnstile verification)
 //
@@ -14,6 +14,7 @@ import { validateQuote, PROJECT_TYPES } from '../../src/lib/quoteSchema.js';
 import { site } from '../../src/content/site.js';
 
 const DEFAULT_TO = site.email;
+const SEND_ERROR = `We couldn't send your enquiry just now. Please try again or email ${DEFAULT_TO} directly.`;
 const MIN_FILL_MS = 3000; // a human cannot complete this form faster than this
 const MAX_BODY_CHARS = 20000;
 
@@ -61,34 +62,37 @@ async function verifyTurnstile(secret, token, ip) {
 
 function buildEnquiry(values) {
   const projectLabel = PROJECT_TYPES.find((t) => t.value === values.projectType)?.label ?? values.projectType;
+  const projectType = values.projectOther ? `${projectLabel}: ${values.projectOther}` : projectLabel;
   const rows = [
     ['Name', values.name],
     ['Business / organisation', values.business],
     ['Email', values.email],
     ['Phone', values.phone || '—'],
-    ['Project type', projectLabel],
-    ['Address', values.address],
-    ['Postcode', values.postcode],
-    ['Premises type', values.premisesType || '—'],
-    ['Approximate size / rooms', values.size || '—'],
-    ['Areas to capture', values.areas || '—'],
-    ['Preferred timeframe', values.timeframe || '—'],
-    ['Website', values.website || '—'],
-    ['Google Maps / Business Profile', values.googleLink || '—'],
-    ['Additional information', values.message || '—'],
+    ['Project type', projectType],
+    ['Business / property type', values.spaceType],
+    ['Address / postcode', values.location],
+    ['Approximate size', values.size],
+    ['Areas to be photographed', values.areas],
+    ['Anything else', values.message || '—'],
+    ['Preferred date', values.preferredDate || '—'],
+    ['How they heard about ROSS 360', values.source || '—'],
   ];
-  const text = rows.map(([label, value]) => `${label}: ${value}`).join('\n');
+  // Longer answers start on their own line so they read cleanly in a plain-text client.
+  const text = rows
+    .map(([label, value]) => (String(value).includes('\n') ? `${label}:\n${value}\n` : `${label}: ${value}`))
+    .join('\n');
   const html =
-    '<table cellpadding="6" style="border-collapse:collapse;font-family:Arial,sans-serif;font-size:14px">' +
+    '<table cellpadding="8" style="border-collapse:collapse;font-family:Arial,sans-serif;font-size:14px;line-height:1.5">' +
     rows
       .map(
         ([label, value]) =>
-          `<tr><td style="vertical-align:top;color:#555;white-space:nowrap"><strong>${escapeHtml(label)}</strong></td>` +
+          '<tr style="border-bottom:1px solid #e4e2dc">' +
+          `<td style="vertical-align:top;color:#555;white-space:nowrap"><strong>${escapeHtml(label)}</strong></td>` +
           `<td style="white-space:pre-wrap">${escapeHtml(value)}</td></tr>`,
       )
       .join('') +
     '</table>';
-  return { projectLabel, text, html };
+  return { text, html };
 }
 
 async function sendEmail(env, payload) {
@@ -130,7 +134,7 @@ export async function onRequestPost({ request, env }) {
   // Timing check
   const elapsed = Date.now() - Number(body.startedAt);
   if (!Number.isFinite(elapsed) || elapsed < MIN_FILL_MS) {
-    return json({ ok: false, message: 'That was very quick. Please check your details and send again.' }, 400);
+    return json({ ok: false, message: 'Please check your details and send the form again.' }, 400);
   }
 
   // Optional Turnstile
@@ -149,49 +153,36 @@ export async function onRequestPost({ request, env }) {
 
   if (!env.RESEND_API_KEY || !env.QUOTE_FROM_EMAIL) {
     console.error('Email is not configured: RESEND_API_KEY and QUOTE_FROM_EMAIL are required.');
-    return json(
-      {
-        ok: false,
-        message: `Sorry, enquiries can't be sent from this page right now. Please email ${DEFAULT_TO} directly.`,
-      },
-      503,
-    );
+    return json({ ok: false, message: SEND_ERROR }, 503);
   }
 
   const { values } = result;
-  const { projectLabel, text, html } = buildEnquiry(values);
+  const { text, html } = buildEnquiry(values);
 
   const delivered = await sendEmail(env, {
     from: env.QUOTE_FROM_EMAIL,
     to: [env.QUOTE_TO_EMAIL || DEFAULT_TO],
     reply_to: values.email,
-    subject: oneLine(`New quote enquiry: ${values.business} (${projectLabel})`),
+    subject: oneLine(`New ROSS 360 enquiry — ${values.business}`),
     text,
     html,
   });
 
   if (!delivered) {
-    return json(
-      {
-        ok: false,
-        message: `Sorry, something went wrong sending your enquiry. Please try again, or email ${DEFAULT_TO} directly.`,
-      },
-      502,
-    );
+    return json({ ok: false, message: SEND_ERROR }, 502);
   }
 
-  // Optional acknowledgement. A failure here does not fail the enquiry.
+  // Optional acknowledgement to the customer. A failure here does not fail the enquiry.
   if (env.SEND_ACKNOWLEDGEMENT === 'true') {
     await sendEmail(env, {
       from: env.QUOTE_FROM_EMAIL,
       to: [values.email],
       reply_to: env.QUOTE_TO_EMAIL || DEFAULT_TO,
-      subject: 'We have received your enquiry — ROSS 360',
+      subject: 'ROSS 360 — Enquiry received',
       text:
-        `Hello ${oneLine(values.name)},\n\n` +
-        'Thanks — your enquiry has been received. We will review the details and get back to you ' +
-        `${site.responseTime}.\n\n` +
-        `${site.brand}\n${site.domain}`,
+        'Thanks for contacting ROSS 360.\n\n' +
+        "We've received your project details and will review the requirements before getting back to you.\n\n" +
+        `${site.brand}\n${DEFAULT_TO}`,
     }).catch(() => false);
   }
 

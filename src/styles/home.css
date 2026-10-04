@@ -1,0 +1,643 @@
+/* ROSS 360 homepage.
+   One opening photograph, one interactive tour, and the service set as type. Near-black and warm
+   off-white carry the page; colour comes from the photographs.
+   Motion: slow image settling, gentle reveals and a few hover states. All of it stops for visitors who
+   prefer reduced motion. */
+
+.home {
+  --paper: #f2f0eb;
+  --deep: #0f0f0e;
+  --ink-on-photo: #ffffff;
+  --h-max: 1520px;
+  --h-space: clamp(88px, 11vw, 176px);
+  --ease: cubic-bezier(0.2, 0.65, 0.2, 1);
+  background: var(--paper);
+}
+
+.h-wrap {
+  width: min(100% - 2 * var(--gutter), var(--h-max));
+  margin-inline: auto;
+}
+
+/* ---------- Shared type and controls ---------- */
+
+
+.h-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 0;
+  border-bottom: 1px solid currentColor;
+  color: var(--ink);
+  font-size: 0.76rem;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  text-decoration: none;
+}
+
+.h-arrow {
+  display: inline-block;
+  font-size: 1.1em;
+  letter-spacing: 0;
+  transition: transform 0.35s var(--ease);
+}
+
+.h-link:hover .h-arrow,
+.h-close__cta:hover .h-arrow {
+  transform: translateX(6px);
+}
+
+/* ---------- Photographs ---------- */
+
+.photo {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  background: #1c1b19;
+}
+
+.photo__img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.photo--empty {
+  background: #24221f;
+}
+
+/* ---------- Opening ---------- */
+
+.h-hero {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  min-height: 100vh;
+  min-height: 100svh;
+  margin-top: calc(-1 * var(--header-h));
+  padding: calc(var(--header-h) + 64px) 0 clamp(40px, 8vh, 96px);
+  overflow: hidden;
+  background: var(--deep);
+  color: #ffffff;
+}
+
+.h-hero__photo {
+  position: absolute;
+  inset: 0;
+}
+
+.h-hero__photo .photo__img {
+  animation: h-settle 3s var(--ease) both;
+}
+
+/* Overlay for legibility: darkens the top for the navigation and the lower left for the type. */
+.h-hero__shade {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(to bottom, rgba(10, 10, 9, 0.5), rgba(10, 10, 9, 0) 22%),
+    linear-gradient(to top, rgba(10, 10, 9, 0.66), rgba(10, 10, 9, 0) 58%);
+}
+
+.h-hero__content {
+  position: relative;
+  z-index: 1;
+}
+
+.h-hero__title {
+  max-width: 15ch;
+  margin: 0;
+  color: #ffffff;
+  font-size: clamp(2.1rem, 5.4vw, 5.6rem);
+  font-weight: 300;
+  line-height: 0.98;
+  letter-spacing: -0.03em;
+  text-transform: uppercase;
+}
+
+.h-hero__lead {
+  max-width: 34ch;
+  margin: clamp(18px, 2.4vw, 28px) 0 0;
+  color: rgba(255, 255, 255, 0.86);
+  font-size: clamp(1rem, 1.25vw, 1.15rem);
+  line-height: 1.5;
+}
+
+.h-hero__scroll {
+  display: none;
+}
+
+@media (min-width: 700px) {
+  .h-hero__scroll {
+    position: absolute;
+    right: var(--gutter);
+    bottom: clamp(40px, 8vh, 96px);
+    z-index: 1;
+    display: block;
+    padding: 8px;
+  }
+  .h-hero__scroll-line {
+    position: relative;
+    display: block;
+    width: 1px;
+    height: 72px;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.3);
+  }
+  .h-hero__scroll-line::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: #ffffff;
+    animation: h-scroll-line 2.8s var(--ease) infinite;
+  }
+}
+
+.h-hero :focus-visible {
+  outline-color: #ffffff;
+}
+
+/* ---------- Step inside ---------- */
+
+/* No space of its own below: the point about the tour follows straight on, on the same ground. */
+.h-tour {
+  padding: clamp(48px, 6vw, 96px) 0 0;
+  background: var(--deep);
+  color: var(--on-dark);
+}
+
+.h-tour__head {
+  display: grid;
+  gap: 16px;
+  margin-bottom: clamp(24px, 3vw, 40px);
+}
+
+.h-tour__label {
+  margin: 0 0 12px;
+  color: var(--muted-on-dark);
+  font-size: 0.85rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.h-tour__title {
+  max-width: 18ch;
+  margin: 0;
+  color: #ffffff;
+  font-size: clamp(1.75rem, 3.4vw, 2.9rem);
+  font-weight: 400;
+  line-height: 1.1;
+  letter-spacing: -0.025em;
+}
+
+/* The tour itself: a fine frame, and on wide screens never taller than the window, so the whole
+   tour and its controls are in view at once. Portrait-leaning on phones so it is large enough to use. */
+.h-tour__stage.tour-frame--live {
+  aspect-ratio: 4 / 5;
+  outline: 1px solid rgba(255, 255, 255, 0.16);
+  outline-offset: 0;
+  background: #161615;
+}
+
+@media (min-width: 700px) {
+  .h-tour__stage.tour-frame--live {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    max-height: calc(100vh - 120px);
+    max-height: calc(100svh - 120px);
+  }
+}
+
+.h-tour__aside {
+  max-width: 44ch;
+}
+
+.h-tour__aside p {
+  margin: 0 0 20px;
+  color: rgba(255, 255, 255, 0.78);
+  font-size: clamp(1.05rem, 1.3vw, 1.15rem);
+  line-height: 1.55;
+}
+
+.h-tour .h-link {
+  color: #ffffff;
+}
+
+.h-tour__note {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 16px;
+  margin: 14px 0 0;
+  color: var(--muted-on-dark);
+  font-size: 0.85rem;
+}
+
+.h-tour__note-label {
+  color: #ffffff;
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.h-tour .tour-stage__facade .btn {
+  min-height: 60px;
+  padding: 0 28px;
+  font-size: 0.8rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.h-tour :focus-visible {
+  outline-color: #ffffff;
+}
+
+@media (min-width: 1000px) {
+  .h-tour__head {
+    grid-template-columns: 7fr 5fr;
+    gap: 0 48px;
+    align-items: end;
+  }
+  .h-tour__aside p {
+    margin-bottom: 16px;
+  }
+}
+
+/* ---------- Below the tour ----------
+   Mobile first. One grid, one heading size and one text size for everything below the tour. The
+   point about the tour stays on the tour's dark ground; the service details share one light band,
+   divided by rules; the enquiry closes on the photograph. */
+
+.home {
+  --h-gap: clamp(56px, 7vw, 104px);
+}
+
+.h-h2 {
+  margin: 0;
+  color: var(--ink);
+  font-size: clamp(1.5rem, 2.4vw, 2.1rem);
+  font-weight: 400;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+
+/* Why a 360° tour, beside the tour on a phone */
+
+.h-why {
+  padding: clamp(40px, 5vw, 72px) 0 var(--h-gap);
+  background: var(--deep);
+  color: var(--on-dark);
+}
+
+.h-why__inner {
+  display: grid;
+  gap: 40px;
+}
+
+.h-why__title {
+  color: #ffffff;
+}
+
+.h-why__text {
+  max-width: 46ch;
+  margin: 16px 0 0;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: clamp(1.1rem, 1.4vw, 1.25rem);
+  line-height: 1.55;
+}
+
+/* A plain phone outline around the live tour: the product as people will see it on a phone. Shown
+   only where the text and phone sit side by side; on a phone or small tablet the visitor is already
+   looking at the site on a phone, so it is hidden (and, being hidden, the iframe is not loaded). */
+.h-phone {
+  display: none;
+  margin: 0;
+}
+
+.h-phone__frame {
+  padding: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 34px;
+  background: #050505;
+}
+
+.h-phone .h-phone__screen {
+  aspect-ratio: 9 / 19;
+  border-radius: 25px;
+}
+
+.h-phone__caption {
+  margin-top: 14px;
+  color: var(--muted-on-dark);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+@media (min-width: 900px) {
+  .h-why__inner {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: 0 32px;
+    align-items: center;
+  }
+  .h-why__copy {
+    grid-column: 1 / 7;
+  }
+  .h-phone {
+    display: block;
+    grid-column: 8 / 13;
+    justify-self: center;
+    width: min(100%, 300px);
+  }
+}
+
+/* Business and property: two pathways */
+
+.h-uses {
+  padding: var(--h-gap) 0 0;
+}
+
+.h-uses__grid {
+  display: grid;
+}
+
+.h-use {
+  padding: 28px 0 32px;
+  border-top: 1px solid var(--line);
+}
+
+.h-use:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.h-use__label {
+  margin: 0 0 12px;
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.h-use__title {
+  max-width: 24ch;
+  font-size: clamp(1.4rem, 2.2vw, 1.9rem);
+}
+
+.h-use__text {
+  max-width: 40ch;
+  margin: 12px 0 20px;
+  color: var(--ink-soft);
+  font-size: clamp(1.05rem, 1.3vw, 1.15rem);
+  line-height: 1.55;
+}
+
+@media (min-width: 760px) {
+  .h-uses__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .h-use,
+  .h-use:first-child {
+    padding: 0 0 8px;
+    border-top: 0;
+  }
+  .h-use + .h-use {
+    padding-left: 32px;
+    border-left: 1px solid var(--line);
+  }
+  .h-use:first-child {
+    padding-right: 32px;
+  }
+}
+
+/* What you receive, and the starting price */
+
+.h-offer {
+  padding: var(--h-gap) 0;
+}
+
+.h-offer__grid {
+  display: grid;
+  gap: 40px;
+  padding-top: var(--h-gap);
+  border-top: 1px solid var(--line);
+}
+
+.h-offer__text {
+  max-width: 40ch;
+  margin: 12px 0 0;
+  color: var(--ink-soft);
+  font-size: clamp(1.05rem, 1.3vw, 1.15rem);
+  line-height: 1.55;
+}
+
+.h-receive__list {
+  display: grid;
+  margin: 24px 0 24px;
+  padding: 0;
+  list-style: none;
+}
+
+.h-receive__list li {
+  padding: 12px 0;
+  border-top: 1px solid var(--line);
+  color: var(--ink);
+  font-size: 1.05rem;
+}
+
+.h-from {
+  padding-top: 32px;
+  border-top: 1px solid var(--line);
+}
+
+.h-from__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.h-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 52px;
+  padding: 0 24px;
+  border: 1px solid var(--ink);
+  background: var(--ink);
+  color: #ffffff;
+  font-size: 0.85rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition: background-color 0.3s var(--ease), color 0.3s var(--ease);
+}
+
+.h-button:hover {
+  background: #2c2b28;
+}
+
+.h-button--quiet {
+  background: transparent;
+  color: var(--ink);
+}
+
+.h-button--quiet:hover {
+  background: var(--ink);
+  color: #ffffff;
+}
+
+/* Links below the tour are set a little larger than the one beside it. */
+.h-uses .h-link,
+.h-offer .h-link {
+  font-size: 0.85rem;
+  letter-spacing: 0.12em;
+}
+
+@media (min-width: 600px) {
+  .h-receive__list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 32px;
+  }
+}
+
+@media (min-width: 1000px) {
+  .h-offer__grid {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: 0 32px;
+  }
+  .h-receive {
+    grid-column: 1 / 8;
+  }
+  .h-from {
+    grid-column: 9 / 13;
+    padding-top: 0;
+    border-top: 0;
+  }
+}
+
+/* ---------- Closing ---------- */
+
+.h-close {
+  position: relative;
+  padding: clamp(72px, 10vw, 144px) 0;
+  overflow: hidden;
+  background: var(--deep);
+  color: var(--on-dark);
+}
+
+.h-close__photo {
+  position: absolute;
+  inset: 0;
+}
+
+.h-close__shade {
+  position: absolute;
+  inset: 0;
+  background: rgba(10, 10, 9, 0.66);
+}
+
+.h-close__inner {
+  position: relative;
+  z-index: 1;
+}
+
+.h-close__title {
+  max-width: 22ch;
+  margin: 0;
+  color: #ffffff;
+  font-size: clamp(1.75rem, 3.4vw, 2.8rem);
+  font-weight: 400;
+  line-height: 1.12;
+  letter-spacing: -0.02em;
+}
+
+.h-close__text {
+  max-width: 40ch;
+  margin: 14px 0 28px;
+  color: rgba(255, 255, 255, 0.84);
+  font-size: clamp(1.05rem, 1.3vw, 1.15rem);
+}
+
+.h-close__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 20px;
+  min-height: 52px;
+  padding: 0 24px;
+  background: #ffffff;
+  color: var(--ink);
+  font-size: 0.85rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition: background-color 0.3s var(--ease);
+}
+
+.h-close__cta:hover {
+  background: var(--bg-tone);
+}
+
+.h-close :focus-visible {
+  outline-color: #ffffff;
+}
+
+/* ---------- Motion ---------- */
+
+.has-reveal .home [data-reveal] {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 1s var(--ease), transform 1.2s var(--ease);
+}
+
+.has-reveal .home [data-reveal].is-revealed {
+  opacity: 1;
+  transform: none;
+}
+
+/* Photographs open from the lower edge while the image settles. */
+.has-reveal .home [data-reveal='image'] {
+  opacity: 1;
+  transform: none;
+  clip-path: inset(0 0 10% 0);
+  transition: clip-path 1.5s var(--ease);
+}
+
+.has-reveal .home [data-reveal='image'] .photo__img {
+  transform: scale(1.08);
+  transition: transform 2.2s var(--ease);
+}
+
+.has-reveal .home [data-reveal='image'].is-revealed {
+  clip-path: inset(0);
+}
+
+.has-reveal .home [data-reveal='image'].is-revealed .photo__img {
+  transform: none;
+}
+
+@keyframes h-settle {
+  from {
+    transform: scale(1.07);
+  }
+  to {
+    transform: none;
+  }
+}
+
+@keyframes h-scroll-line {
+  0% {
+    transform: translateY(-100%);
+  }
+  60%,
+  100% {
+    transform: translateY(100%);
+  }
+}

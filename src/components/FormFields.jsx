@@ -99,11 +99,11 @@ export function SelectField({ id, name = id, label, required, hint, error, optio
   );
 }
 
-export function RadioGroup({ name, legend, required, error, options, defaultValue }) {
+export function RadioGroup({ name, legend, required, error, options, defaultValue, className = '' }) {
   const errorId = `${name}-error`;
   return (
     <fieldset
-      className={`field fieldset${error ? ' field--error' : ''}`}
+      className={`field fieldset${error ? ' field--error' : ''} ${className}`.trim()}
       aria-describedby={error ? errorId : undefined}
     >
       <legend className="field__label">
