@@ -71,7 +71,7 @@ function buildEnquiry(values) {
     ['Project type', projectType],
     ['Business / property type', values.spaceType],
     ['Address / postcode', values.location],
-    ['Approximate size', values.size || '—'],
+    ['Approximate size', values.size],
     ['Areas to be photographed', values.areas],
     ['Anything else', values.message || '—'],
     ['Preferred date', values.preferredDate || '—'],

@@ -95,7 +95,9 @@ export function validateQuote(input = {}) {
   if (!values.location) errors.location = 'Please enter the address or postcode.';
   else checkLength(errors, values, 'location', LIMITS.medium, 'Please shorten the address.');
 
-  checkLength(errors, values, 'size', LIMITS.medium);
+  // Any approximate description will do: rooms, square footage, floors or a few words.
+  if (!values.size) errors.size = 'Please give an approximate size or number of areas.';
+  else checkLength(errors, values, 'size', LIMITS.medium);
 
   if (!values.areas) errors.areas = 'Please tell us which areas you’d like photographed.';
   else checkLength(errors, values, 'areas', LIMITS.long);

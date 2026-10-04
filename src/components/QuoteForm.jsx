@@ -226,6 +226,7 @@ export default function QuoteForm() {
         <TextField
           id="size"
           label="Approximate size / number of areas"
+          required
           placeholder="e.g. 8 rooms / 1,500 sq ft / 2 floors"
           maxLength={300}
           error={errors.size}
