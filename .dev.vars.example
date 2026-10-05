@@ -3,12 +3,12 @@
 
 # Required for enquiry emails
 RESEND_API_KEY=
-# Must be an address on a domain verified in Resend, e.g. "ROSS 360 <enquiries@ross360.co.uk>"
+# Sender of the internal enquiry email. Must be on a domain verified in Resend, e.g. "ROSS 360 <enquiries@ross360.co.uk>"
 QUOTE_FROM_EMAIL=
 
-# Optional (defaults to contact@ross360.co.uk)
-QUOTE_TO_EMAIL=contact@ross360.co.uk
-# Optional: set to "true" to also send the customer an acknowledgement email
+# Optional. Leave unset: enquiries go to newquote@ross360.co.uk. Setting it overrides that address.
+QUOTE_TO_EMAIL=
+# Optional: set to "true" to also send the customer an acknowledgement email (sent from contact@ross360.co.uk)
 SEND_ACKNOWLEDGEMENT=false
 # Optional: Cloudflare Turnstile *secret key* (pair with VITE_TURNSTILE_SITE_KEY)
 TURNSTILE_SECRET_KEY=

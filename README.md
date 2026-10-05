@@ -37,9 +37,9 @@ Set in Cloudflare Pages → Settings → Variables and Secrets. **Never commit r
 | Name | Where | Required | Purpose |
 | --- | --- | --- | --- |
 | `RESEND_API_KEY` | Secret | Yes | Sends enquiry emails |
-| `QUOTE_FROM_EMAIL` | Variable | Yes | Sender, e.g. `ROSS 360 <enquiries@ross360.co.uk>` (domain must be verified in Resend) |
-| `QUOTE_TO_EMAIL` | Variable | No | Defaults to `contact@ross360.co.uk` |
-| `SEND_ACKNOWLEDGEMENT` | Variable | No | `true` also emails the customer an acknowledgement |
+| `QUOTE_FROM_EMAIL` | Variable | Yes | Sender of the internal enquiry email, e.g. `ROSS 360 <enquiries@ross360.co.uk>` (domain must be verified in Resend) |
+| `QUOTE_TO_EMAIL` | Variable | No | Leave unset: enquiries go to `newquote@ross360.co.uk`. Setting it overrides that address |
+| `SEND_ACKNOWLEDGEMENT` | Variable | No | `true` also emails the customer an acknowledgement, sent from `contact@ross360.co.uk` |
 | `TURNSTILE_SECRET_KEY` | Secret | No | Enables server-side Turnstile check |
 | `VITE_TURNSTILE_SITE_KEY` | Build variable | No | Public Turnstile site key (pairs with the secret) |
 

@@ -1,10 +1,11 @@
 // Cloudflare Pages Function: POST /api/quote
-// Website form -> validate -> Resend -> contact@ross360.co.uk (+ optional customer acknowledgement).
+// Website form -> validate -> Resend -> newquote@ross360.co.uk (+ optional customer acknowledgement
+// from contact@ross360.co.uk).
 //
 // Secrets are read from environment variables (Cloudflare Pages -> Settings -> Variables and Secrets):
 //   RESEND_API_KEY        (secret, required)
-//   QUOTE_FROM_EMAIL      (required; an address on a domain verified in Resend)
-//   QUOTE_TO_EMAIL        (optional; defaults to contact@ross360.co.uk)
+//   QUOTE_FROM_EMAIL      (required; sender of the internal enquiry email, on a domain verified in Resend)
+//   QUOTE_TO_EMAIL        (optional; overrides the internal recipient, newquote@ross360.co.uk)
 //   SEND_ACKNOWLEDGEMENT  (optional; "true" sends the customer an acknowledgement email)
 //   TURNSTILE_SECRET_KEY  (optional; enables Cloudflare Turnstile verification)
 //
@@ -13,8 +14,13 @@
 import { validateQuote, PROJECT_TYPES } from '../../src/lib/quoteSchema.js';
 import { site } from '../../src/content/site.js';
 
-const DEFAULT_TO = site.email;
-const SEND_ERROR = `We couldn't send your enquiry just now. Please try again or email ${DEFAULT_TO} directly.`;
+// Internal enquiries go to a dedicated mailbox. The public address (site.email, contact@) is what
+// customers see: the acknowledgement is sent from it and replies to it, and the error message shows it.
+const INTERNAL_TO = 'newquote@ross360.co.uk';
+const ACK_FROM = `${site.brand} <${site.email}>`;
+const ACK_TEXT =
+  'Thanks for getting in touch with ROSS 360. We’ve received your enquiry and will review the details you’ve provided. We’ll be back in touch within 1 working day with your quotation. If we need any additional information before preparing your quote, we’ll let you know.';
+const SEND_ERROR = `We couldn't send your enquiry just now. Please try again or email ${site.email} directly.`;
 const MIN_FILL_MS = 3000; // a human cannot complete this form faster than this
 const MAX_BODY_CHARS = 20000;
 
@@ -161,7 +167,7 @@ export async function onRequestPost({ request, env }) {
 
   const delivered = await sendEmail(env, {
     from: env.QUOTE_FROM_EMAIL,
-    to: [env.QUOTE_TO_EMAIL || DEFAULT_TO],
+    to: [env.QUOTE_TO_EMAIL || INTERNAL_TO],
     reply_to: values.email,
     subject: oneLine(`New ROSS 360 enquiry — ${values.business}`),
     text,
@@ -175,14 +181,11 @@ export async function onRequestPost({ request, env }) {
   // Optional acknowledgement to the customer. A failure here does not fail the enquiry.
   if (env.SEND_ACKNOWLEDGEMENT === 'true') {
     await sendEmail(env, {
-      from: env.QUOTE_FROM_EMAIL,
+      from: ACK_FROM,
       to: [values.email],
-      reply_to: env.QUOTE_TO_EMAIL || DEFAULT_TO,
+      reply_to: site.email,
       subject: 'ROSS 360 — Enquiry received',
-      text:
-        'Thanks for contacting ROSS 360.\n\n' +
-        "We've received your project details and will review the requirements before getting back to you.\n\n" +
-        `${site.brand}\n${DEFAULT_TO}`,
+      text: `${ACK_TEXT}\n\n${site.brand}\n${site.email}`,
     }).catch(() => false);
   }
 
