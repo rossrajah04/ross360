@@ -8,7 +8,7 @@
 // Sign-in gives the browser a random 32-byte token in an HttpOnly, Secure, SameSite=Strict cookie.
 // Only the token's SHA-256 hash is stored, so the session table cannot be used to sign in.
 
-import { ensureSchema } from './schema.js';
+import { requireSchema } from './schema.js';
 
 export const COOKIE_NAME = 'ross360_admin';
 export const SESSION_MS = 12 * 60 * 60 * 1000; // 12 hours
@@ -91,7 +91,7 @@ async function tooManyFailures(db, key, at) {
 export async function signIn(env, request, { email, password }) {
   if (!isConfigured(env)) return { ok: false, reason: 'unconfigured' };
   const db = env.DB;
-  await ensureSchema(db);
+  await requireSchema(db);
   const at = Date.now();
   const key = clientKey(request);
   if (await tooManyFailures(db, key, at)) return { ok: false, reason: 'locked' };
@@ -120,7 +120,7 @@ export async function currentSession(env, request) {
   if (!isConfigured(env)) return null;
   const token = cookieToken(request);
   if (!token) return null;
-  await ensureSchema(env.DB);
+  await requireSchema(env.DB);
   const row = await env.DB.prepare(`SELECT email, expires_at FROM admin_sessions WHERE token_hash = ?`)
     .bind(await sha256Base64(token))
     .first();
@@ -132,6 +132,6 @@ export async function signOut(env, request) {
   if (!env.DB) return;
   const token = cookieToken(request);
   if (!token) return;
-  await ensureSchema(env.DB);
+  await requireSchema(env.DB);
   await env.DB.prepare(`DELETE FROM admin_sessions WHERE token_hash = ?`).bind(await sha256Base64(token)).run();
 }

@@ -7,7 +7,7 @@ import {
   DASHBOARD_GROUPS,
   statusLabel,
 } from '../../src/lib/admin/model.js';
-import { ensureSchema } from './schema.js';
+import { requireSchema } from './schema.js';
 
 const now = () => new Date().toISOString();
 
@@ -63,7 +63,7 @@ const eventToApi = (row) => ({
  * Returns { id, reference }.
  */
 export async function createEnquiry(db, values, { origin, actor }) {
-  await ensureSchema(db);
+  await requireSchema(db);
   const at = now();
   const data = {};
   const source = origin === 'website' ? FORM_FIELDS : Object.keys(COLUMNS);
@@ -115,7 +115,7 @@ async function findRow(db, reference) {
 }
 
 export async function getEnquiry(db, reference) {
-  await ensureSchema(db);
+  await requireSchema(db);
   const row = await findRow(db, reference);
   if (!row) return null;
   const { results } = await db
@@ -133,7 +133,7 @@ const likeTerm = (q) => `%${q.replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
  * Newest first.
  */
 export async function listEnquiries(db, { q = '', status = '', limit = 200 } = {}) {
-  await ensureSchema(db);
+  await requireSchema(db);
   const where = [];
   const params = [];
   if (status) {
@@ -159,7 +159,7 @@ export async function listEnquiries(db, { q = '', status = '', limit = 200 } = {
 /** Change the status. Returns the updated record, or null if the reference does not exist. */
 export async function changeStatus(db, reference, status, actor) {
   if (!STATUS_VALUES.includes(status)) throw new RangeError('Unknown status');
-  await ensureSchema(db);
+  await requireSchema(db);
   const row = await findRow(db, reference);
   if (!row) return null;
   if (row.status !== status) {
@@ -181,7 +181,7 @@ export async function changeStatus(db, reference, status, actor) {
  * Only fields whose value actually changes are written and listed in the timeline.
  */
 export async function updateEnquiry(db, reference, values, actor) {
-  await ensureSchema(db);
+  await requireSchema(db);
   const row = await findRow(db, reference);
   if (!row) return null;
   const changed = Object.keys(values).filter((key) => (row[COLUMNS[key]] ?? null) !== (values[key] ?? null));
@@ -202,7 +202,7 @@ export async function updateEnquiry(db, reference, values, actor) {
 }
 
 export async function addNote(db, reference, text, actor) {
-  await ensureSchema(db);
+  await requireSchema(db);
   const row = await findRow(db, reference);
   if (!row) return null;
   await addEvent(db, row.id, actor, 'note', { text });
@@ -222,7 +222,7 @@ export function ukMonth(date = new Date()) {
  * and "Date received" fields until payments are taken through the website.
  */
 export async function dashboard(db, { month = ukMonth() } = {}) {
-  await ensureSchema(db);
+  await requireSchema(db);
   const counts = {};
   const { results: byStatus } = await db
     .prepare(`SELECT status, COUNT(*) AS n FROM enquiries GROUP BY status`)

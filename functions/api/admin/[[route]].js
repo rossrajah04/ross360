@@ -21,6 +21,7 @@ import {
   addNote,
   updateEnquiry,
 } from '../../../server/admin/enquiries.js';
+import { SchemaNotReady, requireSchema } from '../../../server/admin/schema.js';
 import { STATUS_VALUES, REFERENCE_RE, validateEnquiryPatch, validateManualEnquiry } from '../../../src/lib/admin/model.js';
 
 const UNCONFIGURED = 'The Admin is not set up yet. Set ADMIN_EMAIL, ADMIN_PASSWORD_HASH and the DB binding in Cloudflare.';
@@ -31,6 +32,19 @@ const SIGN_IN_FAILED = 'Email address or password not recognised.';
 const notFound = () => json({ ok: false, message: 'Not found.' }, 404);
 
 export async function onRequest(context) {
+  try {
+    return await handle(context);
+  } catch (error) {
+    // The database exists but its migrations have not been applied. Nothing is created here.
+    if (error instanceof SchemaNotReady) {
+      console.error(error.message);
+      return json({ ok: false, message: error.message }, 503);
+    }
+    throw error;
+  }
+}
+
+async function handle(context) {
   const { request, env, params } = context;
   const segments = [].concat(params.route || []).filter(Boolean);
   const method = request.method.toUpperCase();
@@ -52,6 +66,9 @@ export async function onRequest(context) {
       return json({ ok: false, message: 'Invalid request.' }, 400);
     }
   }
+
+  // Every route, signed in or not, needs the database at the expected schema version.
+  if (isConfigured(env)) await requireSchema(env.DB);
 
   // --- Session: the only routes that work without one ----------------------------------------
   if (segments[0] === 'session' && segments.length === 1) {

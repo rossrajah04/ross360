@@ -14,7 +14,8 @@ export default function App() {
 
   const check = useCallback(async () => {
     const result = await api.session();
-    if (result.configured === false) {
+    // 503: the Admin is not set up yet (missing settings, or the database migration not applied).
+    if (result.configured === false || result.status === 503) {
       setState({ phase: 'unconfigured', message: result.message });
     } else if (result.ok) {
       setState({ phase: 'signed-in', email: result.email });

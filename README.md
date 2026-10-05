@@ -16,10 +16,12 @@ npm run build:admin  # the private Admin only -> dist/admin
 npm run preview   # serve /dist locally
 npm test          # Node test suite in tests/
 npm run admin:hash   # generate ADMIN_PASSWORD_HASH for the Admin
+npm run admin:smoke  # end-to-end check of a deployed Admin (see README: Admin)
 ```
 
 To test the quote form function locally, use Wrangler (`npx wrangler pages dev dist`) with a `.dev.vars` file
-copied from `.dev.vars.example`. Add `--d1 DB=admin-local` to try the Admin against a local database.
+copied from `.dev.vars.example`. Add `--d1 DB=admin-local` to try the Admin against a local database, then apply
+`migrations/` to it.
 
 ## Cloudflare Pages settings
 
@@ -52,14 +54,25 @@ Without Resend configured, the form shows a friendly error with the direct email
 
 The private Admin is at `/admin`. It is a separate app in `admin/`, built by `npm run build:admin`
 into `dist/admin`, so the public site's build output is unaffected. Its API is the Pages Function in
-`functions/api/admin`, and its records live in Cloudflare D1.
+`functions/api/admin`, and its records live in Cloudflare D1, with the schema in `migrations/`.
 
 Setting it up in Cloudflare Pages:
 
 1. **Create the database.** Workers & Pages -> D1 -> Create database (for example `ross360-admin`).
-2. **Bind it.** Pages project -> Settings -> Bindings -> add a D1 binding named `DB` for both
-   Production and Preview. The tables are created automatically the first time the Admin is used.
-3. **Set the account.** Settings -> Variables and Secrets:
+2. **Bind it.** Pages project -> Settings -> Bindings -> add a D1 binding named `DB` (Preview and,
+   when ready, Production, each with its own database).
+3. **Apply the schema.** The schema is versioned in `migrations/` and applied by hand; the website
+   never creates or changes tables. For each database, run every file in order:
+
+   ```bash
+   npx wrangler d1 execute <database-name> --remote --file=migrations/0001_admin_phase_a.sql
+   ```
+
+   or paste the file into the database's Console in the Cloudflare dashboard. Each file records its
+   version in `schema_migrations`, and the Admin refuses to run (and the quote form stores nothing)
+   until the database is at the version set in `server/admin/schema.js`. Every statement is safe to
+   run twice. A future change goes in a new numbered file, with `LATEST_SCHEMA_VERSION` raised to match.
+4. **Set the account.** Settings -> Variables and Secrets:
 
 | Name | Where | Purpose |
 | --- | --- | --- |
@@ -68,6 +81,16 @@ Setting it up in Cloudflare Pages:
 
 Run `npm run admin:hash`, enter a password of at least 12 characters, and paste the printed
 `pbkdf2$...` value in as the secret. The password itself is never stored or printed.
+
+To check a deployed Admin end to end, run against a preview with a fresh, migrated database:
+
+```bash
+ADMIN_SMOKE_URL=https://<branch>.ross360.pages.dev ADMIN_SMOKE_EMAIL=... ADMIN_SMOKE_PASSWORD=... npm run admin:smoke
+```
+
+It signs in, tries a wrong password, reads the dashboard, creates two enquiries through the Admin
+(not the public form, so no email is sent), changes a status, saves scheduling fields, adds a note,
+searches, signs out, and checks that signed-out API requests are refused.
 
 Sessions last 12 hours and are held in an HttpOnly, Secure, SameSite=Strict cookie; only a hash of
 the token is stored. Eight failed sign-ins from one address lock it out for 15 minutes.
@@ -129,6 +152,6 @@ For extra protection add a Cloudflare WAF rate-limiting rule on `/api/quote`.
 
 ## Tests
 
-`npm test` runs the Node test suite in `tests/`: Admin authentication, enquiry creation, sequential
-reference generation and the quote form handler. `tests/helpers/d1.js` stands in for a Cloudflare D1
+`npm test` runs the Node test suite in `tests/`: Admin authentication, the migrations and schema
+check, enquiry creation, sequential reference generation and the quote form handler. `tests/helpers/d1.js` stands in for a Cloudflare D1
 binding using an in-memory SQLite database, so no Cloudflare account is needed to run them.

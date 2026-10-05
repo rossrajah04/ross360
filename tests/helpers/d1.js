@@ -3,6 +3,18 @@
 // and batch() inside a transaction — so the real server code can be tested without Cloudflare.
 
 import { DatabaseSync } from 'node:sqlite';
+import { readdirSync, readFileSync } from 'node:fs';
+import { join, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const MIGRATIONS = join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'migrations');
+
+/** Apply every file in migrations/, in order, exactly as they would be applied to D1. */
+export function applyMigrations(fake) {
+  for (const file of readdirSync(MIGRATIONS).filter((f) => f.endsWith('.sql')).sort()) {
+    fake.db.exec(readFileSync(join(MIGRATIONS, file), 'utf8'));
+  }
+}
 
 class Statement {
   constructor(db, sql, params = []) {
@@ -43,9 +55,18 @@ class Statement {
 }
 
 export class FakeD1 {
-  constructor() {
+  // Migrated by default, as a set-up database would be. Pass { migrated: false } for an empty one.
+  constructor({ migrated = true } = {}) {
     this.db = new DatabaseSync(':memory:');
     this.db.exec('PRAGMA foreign_keys = ON');
+    if (migrated) applyMigrations(this);
+  }
+
+  tables() {
+    return this.db
+      .prepare(`SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name`)
+      .all()
+      .map((row) => row.name);
   }
 
   prepare(sql) {

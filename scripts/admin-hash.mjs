@@ -10,7 +10,9 @@
 import { createInterface } from 'node:readline';
 import { derive } from '../server/admin/auth.js';
 
-const ITERATIONS = 310000; // OWASP guidance for PBKDF2-HMAC-SHA256
+// 100,000 is the most the Cloudflare Workers runtime is documented to accept for PBKDF2, so a
+// higher count could make sign-in fail once deployed.
+const ITERATIONS = 100000;
 
 function ask(question) {
   const rl = createInterface({ input: process.stdin, output: process.stdout, terminal: true });
