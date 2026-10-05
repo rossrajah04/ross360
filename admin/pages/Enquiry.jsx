@@ -40,7 +40,7 @@ function toForm(enquiry) {
   return values;
 }
 
-export default function Enquiry({ onSignedOut }) {
+export default function Enquiry() {
   const { reference } = useParams();
   const [enquiry, setEnquiry] = useState(null);
   const [form, setForm] = useState({});
@@ -51,10 +51,8 @@ export default function Enquiry({ onSignedOut }) {
   const [busy, setBusy] = useState(false);
 
   const take = (result) => {
-    if (result.status === 401) {
-      onSignedOut();
-      return false;
-    }
+    // An ended session returns to sign-in (see api.js).
+    if (result.status === 401) return false;
     if (result.ok) {
       setEnquiry(result.enquiry);
       setForm(toForm(result.enquiry));
@@ -273,6 +271,7 @@ function describe(event) {
   if (type === 'status') return `Status changed from ${statusLabel(detail.from)} to ${statusLabel(detail.to)}`;
   if (type === 'updated') return `Updated ${detail.fields?.join(', ') || 'details'}`;
   if (type === 'note') return detail.text;
+  if (type === 'notification_failed') return 'Internal email notification failed';
   return type;
 }
 

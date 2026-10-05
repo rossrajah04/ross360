@@ -22,7 +22,7 @@ import {
   updateEnquiry,
 } from '../../../server/admin/enquiries.js';
 import { SchemaNotReady, requireSchema } from '../../../server/admin/schema.js';
-import { STATUS_VALUES, REFERENCE_RE, validateEnquiryPatch, validateManualEnquiry } from '../../../src/lib/admin/model.js';
+import { STATUS_VALUES, REFERENCE_RE, parseStatusFilter, validateEnquiryPatch, validateManualEnquiry } from '../../../src/lib/admin/model.js';
 
 const UNCONFIGURED = 'The Admin is not set up yet. Set ADMIN_EMAIL, ADMIN_PASSWORD_HASH and the DB binding in Cloudflare.';
 
@@ -113,8 +113,8 @@ async function handle(context) {
   if (segments[0] === 'enquiries') {
     if (segments.length === 1) {
       if (method === 'GET') {
-        const status = url.searchParams.get('status') || '';
-        if (status && !STATUS_VALUES.includes(status)) return json({ ok: false, message: 'Unknown status.' }, 400);
+        const status = parseStatusFilter(url.searchParams.get('status'));
+        if (!status) return json({ ok: false, message: 'Unknown status.' }, 400);
         const enquiries = await listEnquiries(db, { q: url.searchParams.get('q') || '', status });
         return json({ ok: true, enquiries });
       }

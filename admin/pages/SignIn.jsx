@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { api } from '../api.js';
 
-export default function SignIn({ onSignedIn }) {
+export default function SignIn({ onSignedIn, ended = false }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -25,7 +25,7 @@ export default function SignIn({ onSignedIn }) {
     <main className="ad-centre">
       <form className="ad-panel" onSubmit={submit} noValidate>
         <h1 className="ad-h1">ROSS 360 Admin</h1>
-        <p className="ad-muted">Sign in to continue.</p>
+        <p className="ad-muted">{ended ? 'Your session has ended. Please sign in again.' : 'Sign in to continue.'}</p>
         {error ? (
           <p className="ad-error" role="alert">
             {error}

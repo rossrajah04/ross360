@@ -271,3 +271,26 @@ test('the dashboard counts the right statuses and totals the money', async () =>
   assert.equal(data.lists.newEnquiries.length, 2);
   db.close();
 });
+
+test('each dashboard figure and the list it opens use the same statuses', async () => {
+  const { DASHBOARD_GROUPS, statusFilter } = await import('../src/lib/admin/model.js');
+  const db = new FakeD1();
+  const { env, email, password } = await adminEnv(db);
+  for (const status of ['new', 'quoted', 'booked', 'captured', 'in_production', 'quality_check', 'quality_check', 'complete']) {
+    const { reference } = await createEnquiry(db, formValues(), website);
+    await changeStatus(db, reference, status, 'test');
+  }
+  const signIn = await callAdmin(env, '/api/admin/session', { method: 'POST', body: { email, password } });
+  const cookie = cookieFrom(signIn.headers);
+  const { counts } = await dashboard(db);
+  assert.equal(counts.inProduction, 4);
+  for (const group of ['newEnquiries', 'quotesAwaiting', 'upcomingBookings', 'inProduction']) {
+    const filter = statusFilter(DASHBOARD_GROUPS[group]);
+    const list = await callAdmin(env, `/api/admin/enquiries?status=${encodeURIComponent(filter)}`, { cookie });
+    assert.equal(list.status, 200);
+    assert.equal(list.data.enquiries.length, counts[group], group);
+  }
+  const unknown = await callAdmin(env, '/api/admin/enquiries?status=booked,nonsense', { cookie });
+  assert.equal(unknown.status, 400);
+  db.close();
+});

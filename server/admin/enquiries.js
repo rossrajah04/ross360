@@ -110,6 +110,15 @@ export async function addEvent(db, enquiryId, actor, type, detail = {}) {
     .run();
 }
 
+/** Add a timeline entry to an enquiry by its reference. Returns false if the reference does not exist. */
+export async function recordEvent(db, reference, actor, type, detail = {}) {
+  await requireSchema(db);
+  const row = await findRow(db, reference);
+  if (!row) return false;
+  await addEvent(db, row.id, actor, type, detail);
+  return true;
+}
+
 async function findRow(db, reference) {
   return db.prepare(`SELECT * FROM enquiries WHERE reference = ?`).bind(reference).first();
 }
@@ -129,16 +138,17 @@ export async function getEnquiry(db, reference) {
 const likeTerm = (q) => `%${q.replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
 
 /**
- * Search by reference, customer name, business, email and address, optionally filtered by status.
- * Newest first.
+ * Search by reference, customer name, business, email and address, optionally filtered by one
+ * status or a list of statuses (a dashboard group). Newest first.
  */
 export async function listEnquiries(db, { q = '', status = '', limit = 200 } = {}) {
   await requireSchema(db);
   const where = [];
   const params = [];
-  if (status) {
-    where.push('status = ?');
-    params.push(status);
+  const statuses = [].concat(status || []).filter(Boolean);
+  if (statuses.length) {
+    where.push(`status IN (${statuses.map(() => '?').join(', ')})`);
+    params.push(...statuses);
   }
   const term = q.trim();
   if (term) {

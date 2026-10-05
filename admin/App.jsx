@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { NavLink, Navigate, Route, Routes, useLocation } from 'react-router-dom';
-import { api } from './api.js';
+import { api, SESSION_ENDED } from './api.js';
 import SignIn from './pages/SignIn.jsx';
 import Dashboard from './pages/Dashboard.jsx';
 import Enquiries from './pages/Enquiries.jsx';
@@ -27,6 +27,14 @@ export default function App() {
   useEffect(() => {
     check();
   }, [check]);
+
+  // An expired session on any screen returns to sign-in. The address is kept, so signing in again
+  // goes back to the same screen.
+  useEffect(() => {
+    const ended = () => setState({ phase: 'signed-out', ended: true });
+    window.addEventListener(SESSION_ENDED, ended);
+    return () => window.removeEventListener(SESSION_ENDED, ended);
+  }, []);
 
   const signOut = async () => {
     await api.signOut();
@@ -55,7 +63,7 @@ export default function App() {
   }
 
   if (state.phase !== 'signed-in') {
-    return <SignIn onSignedIn={check} />;
+    return <SignIn onSignedIn={check} ended={state.ended} />;
   }
 
   return (
@@ -66,7 +74,7 @@ export default function App() {
           <Route path="/" element={<Dashboard />} />
           <Route path="/enquiries" element={<Enquiries />} />
           <Route path="/enquiries/new" element={<NewEnquiry />} />
-          <Route path="/enquiries/:reference" element={<Enquiry onSignedOut={check} />} />
+          <Route path="/enquiries/:reference" element={<Enquiry />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>

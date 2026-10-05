@@ -1,13 +1,15 @@
 import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { api } from '../api.js';
-import { STATUSES } from '../../src/lib/admin/model.js';
+import { STATUSES, parseStatusFilter, statusLabel } from '../../src/lib/admin/model.js';
 import { EnquiryRows } from '../components/Bits.jsx';
 
 export default function Enquiries() {
   const [params, setParams] = useSearchParams();
   const q = params.get('q') || '';
   const status = params.get('status') || '';
+  // A dashboard figure can link to several statuses at once; show that filter as its own option.
+  const group = (parseStatusFilter(status) || []).length > 1 ? parseStatusFilter(status) : null;
   const [term, setTerm] = useState(q);
   const [enquiries, setEnquiries] = useState(null);
   const [error, setError] = useState('');
@@ -60,6 +62,7 @@ export default function Enquiries() {
           <span className="ad-label">Status</span>
           <select className="ad-input" value={status} onChange={(event) => update({ status: event.target.value })}>
             <option value="">All statuses</option>
+            {group ? <option value={status}>{group.map(statusLabel).join(', ')}</option> : null}
             {STATUSES.map((option) => (
               <option key={option.value} value={option.value}>
                 {option.label}

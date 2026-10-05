@@ -32,6 +32,17 @@ export const DASHBOARD_GROUPS = {
   paymentsOutstanding: ['accepted', 'payment_pending'],
 };
 
+// The status filter in a URL: one status, or a comma-separated dashboard group such as
+// "captured,in_production,quality_check". Returns the list of statuses, or null if any is unknown.
+export const statusFilter = (statuses) => statuses.join(',');
+export function parseStatusFilter(value) {
+  const statuses = String(value || '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+  return statuses.every((s) => STATUS_VALUES.includes(s)) ? statuses : null;
+}
+
 export const PREMISES_CONDITIONS = [
   { value: 'operating', label: 'Operating' },
   { value: 'quiet', label: 'Quiet period' },

@@ -3,6 +3,10 @@
 
 const BASE = '/api/admin';
 
+// Fired when the server says the session has ended (it expired, or was signed out elsewhere).
+// App listens for it and returns to the sign-in screen.
+export const SESSION_ENDED = 'ross360-admin:session-ended';
+
 async function call(path, { method = 'GET', body } = {}) {
   const response = await fetch(`${BASE}${path}`, {
     method,
@@ -16,6 +20,8 @@ async function call(path, { method = 'GET', body } = {}) {
   } catch {
     data = { ok: false, message: 'The server sent an unexpected response.' };
   }
+  // Any 401 except from the session check and sign-in themselves means the session has ended.
+  if (response.status === 401 && path !== '/session') window.dispatchEvent(new Event(SESSION_ENDED));
   return { status: response.status, ...data };
 }
 

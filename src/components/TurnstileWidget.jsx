@@ -3,9 +3,12 @@ import { useEffect, useRef } from 'react';
 // Optional Cloudflare Turnstile spam check. Only rendered when VITE_TURNSTILE_SITE_KEY is set.
 // - `onToken` is kept in a ref, so a new function identity never re-runs the effect.
 // - The effect depends only on `siteKey` (a string) and cleans up after itself.
-export default function TurnstileWidget({ siteKey, onToken }) {
+// - A token can only be used once, so when `resetSignal` changes (after a submission that did not
+//   succeed) the widget is reset and issues a new one.
+export default function TurnstileWidget({ siteKey, onToken, resetSignal = 0 }) {
   const containerRef = useRef(null);
   const onTokenRef = useRef(onToken);
+  const widgetRef = useRef(null);
 
   useEffect(() => {
     onTokenRef.current = onToken;
@@ -18,7 +21,7 @@ export default function TurnstileWidget({ siteKey, onToken }) {
 
     const render = () => {
       if (cancelled || !containerRef.current || !window.turnstile || widgetId !== null) return;
-      widgetId = window.turnstile.render(containerRef.current, {
+      widgetId = widgetRef.current = window.turnstile.render(containerRef.current, {
         sitekey: siteKey,
         callback: (token) => onTokenRef.current(token),
         'expired-callback': () => onTokenRef.current(''),
@@ -44,8 +47,15 @@ export default function TurnstileWidget({ siteKey, onToken }) {
       cancelled = true;
       if (script) script.removeEventListener('load', render);
       if (widgetId !== null && window.turnstile) window.turnstile.remove(widgetId);
+      widgetRef.current = null;
     };
   }, [siteKey]);
+
+  useEffect(() => {
+    if (!resetSignal || widgetRef.current === null || !window.turnstile) return;
+    onTokenRef.current('');
+    window.turnstile.reset(widgetRef.current);
+  }, [resetSignal]);
 
   return <div ref={containerRef} className="turnstile" />;
 }

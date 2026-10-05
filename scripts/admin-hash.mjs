@@ -8,7 +8,7 @@
 // Do not commit it.
 
 import { createInterface } from 'node:readline';
-import { derive } from '../server/admin/auth.js';
+import { derive, normalisePassword } from '../server/admin/auth.js';
 
 // 100,000 is the most the Cloudflare Workers runtime is documented to accept for PBKDF2, so a
 // higher count could make sign-in fail once deployed.
@@ -32,12 +32,12 @@ function ask(question) {
   });
 }
 
-const password = (await ask('New admin password: ')).trim();
+const password = normalisePassword(await ask('New admin password: '));
 if (password.length < 12) {
   console.error('Please use at least 12 characters.');
   process.exit(1);
 }
-const again = (await ask('Repeat the password: ')).trim();
+const again = normalisePassword(await ask('Repeat the password: '));
 if (password !== again) {
   console.error('The passwords did not match.');
   process.exit(1);

@@ -167,3 +167,36 @@ test('password hashes are verified, and a malformed hash never matches', async (
     assert.equal(await verifyPassword('a real password', bad), false, bad);
   }
 });
+
+test('a request body that is not a JSON object is refused with 400, not a server error', async () => {
+  const { env, email, password } = await setUp();
+  for (const body of [null, [], 'text', 5]) {
+    const result = await callAdmin(env, '/api/admin/session', { method: 'POST', body });
+    assert.equal(result.status, 400, `sign-in with ${JSON.stringify(body)}`);
+  }
+  const cookie = cookieFrom((await signIn(env, email, password)).headers);
+  for (const [method, path] of [
+    ['POST', '/api/admin/enquiries'],
+    ['PATCH', '/api/admin/enquiries/ROSS-0001'],
+    ['POST', '/api/admin/enquiries/ROSS-0001/status'],
+    ['POST', '/api/admin/enquiries/ROSS-0001/notes'],
+  ]) {
+    const result = await callAdmin(env, path, { method, body: null, cookie });
+    assert.equal(result.status, 400, `${method} ${path}`);
+  }
+});
+
+test('the password is checked exactly as `npm run admin:hash` hashed it', async () => {
+  const { normalisePassword } = await import('../server/admin/auth.js');
+  // admin:hash hashes normalisePassword(typed); sign-in verifies normalisePassword(typed).
+  const db = new FakeD1();
+  const { env, email } = await adminEnv(db, { password: normalisePassword('  correct horse battery  ') });
+  assert.equal((await signIn(env, email, 'correct horse battery')).status, 200);
+  assert.equal((await signIn(env, email, '  correct horse battery  ')).status, 200);
+  assert.equal((await signIn(env, email, 'correct horse batter')).status, 401);
+  // A password without surrounding spaces, like the current one, verifies exactly as before.
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const hash = await derive('existing password', salt, 1000);
+  const stored = `pbkdf2$1000$${Buffer.from(salt).toString('base64')}$${Buffer.from(hash).toString('base64')}`;
+  assert.equal(await verifyPassword(normalisePassword('existing password'), stored), true);
+});

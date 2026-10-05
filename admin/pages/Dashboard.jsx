@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../api.js';
-import { formatMoney } from '../../src/lib/admin/model.js';
+import { DASHBOARD_GROUPS, formatMoney, statusFilter } from '../../src/lib/admin/model.js';
 import { EnquiryRows } from '../components/Bits.jsx';
 
 export default function Dashboard() {
@@ -21,11 +21,13 @@ export default function Dashboard() {
     year: 'numeric',
   });
 
+  // Each figure links to the list of exactly the statuses it counts (DASHBOARD_GROUPS).
+  const list = (group) => `/enquiries?status=${statusFilter(DASHBOARD_GROUPS[group])}`;
   const figures = [
-    { label: 'New enquiries', value: counts.newEnquiries, to: '/enquiries?status=new' },
-    { label: 'Quotes awaiting response', value: counts.quotesAwaiting, to: '/enquiries?status=quoted' },
-    { label: 'Upcoming bookings', value: counts.upcomingBookings, to: '/enquiries?status=booked' },
-    { label: 'Jobs in production', value: counts.inProduction, to: '/enquiries?status=in_production' },
+    { label: 'New enquiries', value: counts.newEnquiries, to: list('newEnquiries') },
+    { label: 'Quotes awaiting response', value: counts.quotesAwaiting, to: list('quotesAwaiting') },
+    { label: 'Upcoming bookings', value: counts.upcomingBookings, to: list('upcomingBookings') },
+    { label: 'Jobs in production', value: counts.inProduction, to: list('inProduction') },
     { label: 'Payments outstanding', value: formatMoney(data.paymentsOutstandingPence) },
     { label: `Revenue, ${monthName}`, value: formatMoney(data.monthlyRevenuePence) },
   ];

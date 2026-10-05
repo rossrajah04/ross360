@@ -102,7 +102,17 @@ Access -> Applications) so the Admin is protected before any of this code runs.
 
 Without the `DB` binding the website behaves exactly as before: quote enquiries are emailed and
 nothing is stored. With it, each enquiry is also saved and given its next reference
-(`ROSS-0001`, `ROSS-0002`, …), which appears as the first line of the internal email.
+(`ROSS-0001`, `ROSS-0002`, …), which appears as the first line of the internal email. If a saved
+enquiry's internal email fails, the customer is still told it was received (it has been stored),
+and "Internal email notification failed" is added to its timeline. If it could not be saved either,
+the customer is asked to try again, as before.
+
+Passwords are compared with any spaces at the start or end removed, the same way `npm run admin:hash`
+hashes them. Changing the password does not end existing sessions; to end them at once, run
+`DELETE FROM admin_sessions;` on the database.
+
+**Before binding `DB` in Production, set up Turnstile** (see Spam protection on the form), so
+automated submissions cannot fill the database.
 
 Not built yet: quotes, booking, payments, Stripe and any customer-facing booking page.
 
@@ -134,7 +144,12 @@ entirely. If a hosted checkout is wanted later, it would be a new Pages Function
 
 ## Spam protection on the form
 
-Honeypot field, minimum-fill-time check, same-origin check, server-side validation, and optional Turnstile.
+Honeypot field, minimum-fill-time check, same-origin check, server-side validation, and Cloudflare
+Turnstile once it is set up. To set it up, create a Turnstile widget for the site's hostnames
+(Cloudflare -> Turnstile), then in the Pages project set, for the same environment and together:
+`VITE_TURNSTILE_SITE_KEY` (build variable, public) and `TURNSTILE_SECRET_KEY` (secret), and redeploy.
+With the secret set, every submission needs a token Cloudflare confirms before anything is saved or
+emailed, so setting the secret without the site key would block every enquiry.
 For extra protection add a Cloudflare WAF rate-limiting rule on `/api/quote`.
 
 ## First things to test (once npm works)

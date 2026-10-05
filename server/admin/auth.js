@@ -40,6 +40,10 @@ function equalBytes(a, b) {
   return diff === 0;
 }
 
+// Passwords are compared with surrounding spaces removed, exactly as `npm run admin:hash` removes them
+// before hashing, so the password that was hashed is always the one that signs in.
+export const normalisePassword = (password) => String(password ?? '').trim();
+
 export async function verifyPassword(password, stored) {
   const parts = String(stored || '').split('$');
   if (parts.length !== 4 || parts[0] !== 'pbkdf2') return false;
@@ -98,7 +102,7 @@ export async function signIn(env, request, { email, password }) {
 
   const emailMatches = String(email || '').trim().toLowerCase() === env.ADMIN_EMAIL.trim().toLowerCase();
   // Check the password even when the email is wrong, so a wrong email is not quicker to detect.
-  const passwordMatches = await verifyPassword(String(password || ''), env.ADMIN_PASSWORD_HASH);
+  const passwordMatches = await verifyPassword(normalisePassword(password), env.ADMIN_PASSWORD_HASH);
   if (!emailMatches || !passwordMatches) {
     await db.prepare(`INSERT INTO admin_login_failures (client_key, at) VALUES (?, ?)`).bind(key, at).run();
     return { ok: false, reason: 'invalid' };
