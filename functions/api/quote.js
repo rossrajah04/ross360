@@ -8,11 +8,13 @@
 //   QUOTE_TO_EMAIL        (optional; overrides the internal recipient, newquote@ross360.co.uk)
 //   SEND_ACKNOWLEDGEMENT  (optional; "true" sends the customer an acknowledgement email)
 //   TURNSTILE_SECRET_KEY  (optional; enables Cloudflare Turnstile verification)
+//   DB                    (optional D1 binding; when present the enquiry is also saved for the Admin)
 //
 // No key is ever sent to the browser or committed to the repository.
 
 import { validateQuote, PROJECT_TYPES } from '../../src/lib/quoteSchema.js';
 import { site } from '../../src/content/site.js';
+import { createEnquiry } from '../../server/admin/enquiries.js';
 
 // Internal enquiries go to a dedicated mailbox. The public address (site.email, contact@) is what
 // customers see: the acknowledgement is sent from it and replies to it, and the error message shows it.
@@ -66,10 +68,11 @@ async function verifyTurnstile(secret, token, ip) {
   }
 }
 
-function buildEnquiry(values) {
+function buildEnquiry(values, reference = '') {
   const projectLabel = PROJECT_TYPES.find((t) => t.value === values.projectType)?.label ?? values.projectType;
   const projectType = values.projectOther ? `${projectLabel}: ${values.projectOther}` : projectLabel;
   const rows = [
+    ...(reference ? [['Reference', reference]] : []),
     ['Name', values.name],
     ['Business / organisation', values.business],
     ['Email', values.email],
@@ -163,7 +166,20 @@ export async function onRequestPost({ request, env }) {
   }
 
   const { values } = result;
-  const { text, html } = buildEnquiry(values);
+
+  // Save the enquiry for the Admin and give it its ROSS reference. Without the D1 binding the form
+  // behaves exactly as before: the enquiry is emailed and nothing is stored.
+  let reference = '';
+  if (env.DB) {
+    try {
+      ({ reference } = await createEnquiry(env.DB, values, { origin: 'website', actor: 'website' }));
+    } catch (error) {
+      // Never lose an enquiry because the database is unavailable; the email still goes out.
+      console.error(`Could not save the enquiry: ${error.message}`);
+    }
+  }
+
+  const { text, html } = buildEnquiry(values, reference);
 
   const delivered = await sendEmail(env, {
     from: env.QUOTE_FROM_EMAIL,

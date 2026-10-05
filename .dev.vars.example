@@ -15,3 +15,7 @@ TURNSTILE_SECRET_KEY=
 
 # Reserved for later. Not used by any code yet (see README: Stripe).
 # STRIPE_SECRET_KEY=
+
+# Admin (see README: Admin). Generate the hash with `npm run admin:hash` — never commit a real one.
+ADMIN_EMAIL=
+ADMIN_PASSWORD_HASH=

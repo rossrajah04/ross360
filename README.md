@@ -11,12 +11,15 @@ quote enquiries through **Resend**.
 ```bash
 npm install
 npm run dev       # local dev server
-npm run build     # vite build + scripts/prerender.mjs (per-page meta, 404.html, sitemap.xml)
+npm run build     # public site (vite + scripts/prerender.mjs) then the Admin
+npm run build:admin  # the private Admin only -> dist/admin
 npm run preview   # serve /dist locally
+npm test          # Node test suite in tests/
+npm run admin:hash   # generate ADMIN_PASSWORD_HASH for the Admin
 ```
 
 To test the quote form function locally, use Wrangler (`npx wrangler pages dev dist`) with a `.dev.vars` file
-copied from `.dev.vars.example`.
+copied from `.dev.vars.example`. Add `--d1 DB=admin-local` to try the Admin against a local database.
 
 ## Cloudflare Pages settings
 
@@ -44,6 +47,41 @@ Set in Cloudflare Pages → Settings → Variables and Secrets. **Never commit r
 | `VITE_TURNSTILE_SITE_KEY` | Build variable | No | Public Turnstile site key (pairs with the secret) |
 
 Without Resend configured, the form shows a friendly error with the direct email address.
+
+## Admin (private, Phase A)
+
+The private Admin is at `/admin`. It is a separate app in `admin/`, built by `npm run build:admin`
+into `dist/admin`, so the public site's build output is unaffected. Its API is the Pages Function in
+`functions/api/admin`, and its records live in Cloudflare D1.
+
+Setting it up in Cloudflare Pages:
+
+1. **Create the database.** Workers & Pages -> D1 -> Create database (for example `ross360-admin`).
+2. **Bind it.** Pages project -> Settings -> Bindings -> add a D1 binding named `DB` for both
+   Production and Preview. The tables are created automatically the first time the Admin is used.
+3. **Set the account.** Settings -> Variables and Secrets:
+
+| Name | Where | Purpose |
+| --- | --- | --- |
+| `ADMIN_EMAIL` | Variable | The sign-in email address |
+| `ADMIN_PASSWORD_HASH` | Secret | Output of `npm run admin:hash`. Never commit it |
+
+Run `npm run admin:hash`, enter a password of at least 12 characters, and paste the printed
+`pbkdf2$...` value in as the secret. The password itself is never stored or printed.
+
+Sessions last 12 hours and are held in an HttpOnly, Secure, SameSite=Strict cookie; only a hash of
+the token is stored. Eight failed sign-ins from one address lock it out for 15 minutes.
+`/admin` is `noindex` and disallowed in `robots.txt`, and every `/api/admin` route except sign-in
+refuses requests without a valid session.
+
+**Also recommended:** put Cloudflare Access in front of `/admin` and `/api/admin` (Zero Trust ->
+Access -> Applications) so the Admin is protected before any of this code runs.
+
+Without the `DB` binding the website behaves exactly as before: quote enquiries are emailed and
+nothing is stored. With it, each enquiry is also saved and given its next reference
+(`ROSS-0001`, `ROSS-0002`, …), which appears as the first line of the internal email.
+
+Not built yet: quotes, booking, payments, Stripe and any customer-facing booking page.
 
 ## Where to edit content
 
@@ -88,3 +126,9 @@ For extra protection add a Cloudflare WAF rate-limiting rule on `/api/quote`.
 7. Visit an unknown URL and confirm the 404 page appears with a 404 status.
 8. Real devices: iPhone Safari/Chrome, Android Chrome, desktop Safari/Chrome, tablet.
 9. Lighthouse/axe pass for performance and accessibility.
+
+## Tests
+
+`npm test` runs the Node test suite in `tests/`: Admin authentication, enquiry creation, sequential
+reference generation and the quote form handler. `tests/helpers/d1.js` stands in for a Cloudflare D1
+binding using an in-memory SQLite database, so no Cloudflare account is needed to run them.

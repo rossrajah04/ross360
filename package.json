@@ -5,9 +5,12 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build && node scripts/prerender.mjs",
+    "build": "vite build && node scripts/prerender.mjs && npm run build:admin",
     "preview": "vite preview",
-    "images": "node scripts/images.mjs"
+    "images": "node scripts/images.mjs",
+    "build:admin": "vite build --config vite.config.admin.js && node scripts/admin-postbuild.mjs",
+    "admin:hash": "node scripts/admin-hash.mjs",
+    "test": "node --test \"tests/**/*.test.js\""
   },
   "dependencies": {
     "react": "^18.3.1",

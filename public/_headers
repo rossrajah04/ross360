@@ -11,3 +11,12 @@
 
 /fonts/*
   Cache-Control: public, max-age=31536000, immutable
+
+/admin
+  X-Robots-Tag: noindex, nofollow, noarchive
+  Cache-Control: no-store
+  Referrer-Policy: no-referrer
+
+/admin/*
+  X-Robots-Tag: noindex, nofollow, noarchive
+  Referrer-Policy: no-referrer
