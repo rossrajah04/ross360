@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { api } from '../api.js';
 import {
   DAYLIGHT_OPTIONS,
@@ -7,12 +7,13 @@ import {
   FLEXIBLE_OPTIONS,
   PREMISES_CONDITIONS,
   STATUSES,
+  formatMoney,
   optionLabel,
   penceToPounds,
   statusLabel,
 } from '../../src/lib/admin/model.js';
 import { PROJECT_TYPES, SPACE_TYPES, SOURCES } from '../../src/lib/quoteSchema.js';
-import { StatusTag, when } from '../components/Bits.jsx';
+import { QuoteTag, StatusTag, when } from '../components/Bits.jsx';
 
 const CUSTOMER_FIELDS = ['name', 'business', 'email', 'phone'];
 const PROJECT_FIELDS = ['projectType', 'projectOther', 'spaceType', 'location', 'size', 'areas', 'message', 'source'];
@@ -42,7 +43,9 @@ function toForm(enquiry) {
 
 export default function Enquiry() {
   const { reference } = useParams();
+  const navigate = useNavigate();
   const [enquiry, setEnquiry] = useState(null);
+  const [quotes, setQuotes] = useState(null);
   const [form, setForm] = useState({});
   const [errors, setErrors] = useState({});
   const [message, setMessage] = useState('');
@@ -67,6 +70,9 @@ export default function Enquiry() {
     api.enquiry(reference).then((result) => {
       if (result.status === 404) setError('That reference does not exist.');
       else take(result);
+    });
+    api.quotes(reference).then((result) => {
+      if (result.ok) setQuotes(result.quotes);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reference]);
@@ -95,6 +101,16 @@ export default function Enquiry() {
     const ok = take(result);
     if (ok) setMessage(note);
     return ok;
+  };
+
+  const createQuote = async () => {
+    setBusy(true);
+    setError('');
+    const result = await api.createQuote(reference);
+    setBusy(false);
+    if (result.status === 401) return;
+    if (result.ok) navigate(`/quotes/${result.quote.reference}`);
+    else setError(result.message || 'The quote could not be created.');
   };
 
   const save = (keys) => {
@@ -215,6 +231,38 @@ export default function Enquiry() {
         <p className="ad-note">Last changed {when(enquiry.statusChangedAt, true)}.</p>
       </section>
 
+      <section className="ad-section">
+        <h2 className="ad-h2">Quotes</h2>
+        {quotes === null ? (
+          <p className="ad-muted">Loading…</p>
+        ) : quotes.length ? (
+          <ul className="ad-rows ad-quote-rows">
+            {quotes.map((quote) => (
+              <li key={quote.reference} className="ad-row">
+                <Link className="ad-row__link ad-quote-row" to={`/quotes/${quote.reference}`}>
+                  <span className="ad-row__ref">{quote.reference}</span>
+                  <span>
+                    {formatMoney(quote.totalPence)}
+                    {quote.revisionOf ? <span className="ad-muted"> · revises {quote.revisionOf}</span> : null}
+                  </span>
+                  <QuoteTag status={quote.status} />
+                  <span className="ad-row__date ad-muted">
+                    {quote.sentAt ? `Sent ${when(quote.sentAt)}` : `Created ${when(quote.createdAt)}`}
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="ad-muted">No quotes yet.</p>
+        )}
+        <p className="ad-actions">
+          <button type="button" className="ad-button" onClick={createQuote} disabled={busy}>
+            Create quote
+          </button>
+        </p>
+      </section>
+
       {group('Customer', CUSTOMER_FIELDS)}
       {group('Project', PROJECT_FIELDS)}
       {group(
@@ -277,6 +325,18 @@ function describe(event) {
   if (type === 'updated') return `Updated ${detail.fields?.join(', ') || 'details'}`;
   if (type === 'note') return detail.text;
   if (type === 'notification_failed') return 'Internal email notification failed';
+  if (type === 'quote_created') return `Quote ${detail.quote} created`;
+  if (type === 'quote_updated') {
+    return `Quote ${detail.quote} updated: ${detail.fields?.join(', ') || 'details'} (total ${formatMoney(detail.totalPence)})`;
+  }
+  if (type === 'quote_previewed') return `Quote ${detail.quote} previewed`;
+  if (type === 'quote_sent') {
+    const supersedes = detail.supersedes ? `, replacing ${detail.supersedes}` : '';
+    return `Quote ${detail.quote} sent to ${detail.to} for ${formatMoney(detail.totalPence)}${supersedes}`;
+  }
+  if (type === 'quote_send_failed') return `Quote ${detail.quote} could not be sent (email service status ${detail.status})`;
+  if (type === 'quote_revised') return `Quote ${detail.from} revised as ${detail.to}`;
+  if (type === 'quote_discarded') return `Quote ${detail.quote} discarded`;
   return type;
 }
 

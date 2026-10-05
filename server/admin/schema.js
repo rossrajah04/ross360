@@ -5,15 +5,16 @@
 // the schema version this code expects, and refuses to run against anything older.
 
 // Raise this when a new migration file is added, to the version that file records.
-export const LATEST_SCHEMA_VERSION = 1;
-export const LATEST_MIGRATION = 'migrations/0001_admin_phase_a.sql';
+export const LATEST_SCHEMA_VERSION = 2;
+export const FIRST_MIGRATION = 'migrations/0001_admin_phase_a.sql';
+export const LATEST_MIGRATION = 'migrations/0002_quotes.sql';
 
 export class SchemaNotReady extends Error {
   constructor(found) {
     super(
       found === null
-        ? `The Admin database has no schema yet. Apply ${LATEST_MIGRATION} to it.`
-        : `The Admin database is at schema version ${found}; this code needs version ${LATEST_SCHEMA_VERSION}. Apply the newer files in migrations/.`,
+        ? `The Admin database has no schema yet. Apply every file in migrations/, in order, from ${FIRST_MIGRATION} to ${LATEST_MIGRATION}.`
+        : `The Admin database is at schema version ${found}; this code needs version ${LATEST_SCHEMA_VERSION}. Apply the newer files in migrations/, up to ${LATEST_MIGRATION}.`,
     );
     this.name = 'SchemaNotReady';
     this.found = found;

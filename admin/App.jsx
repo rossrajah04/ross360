@@ -6,6 +6,8 @@ import Dashboard from './pages/Dashboard.jsx';
 import Enquiries from './pages/Enquiries.jsx';
 import Enquiry from './pages/Enquiry.jsx';
 import NewEnquiry from './pages/NewEnquiry.jsx';
+import Quote from './pages/Quote.jsx';
+import QuotePreview from './pages/QuotePreview.jsx';
 
 // Authentication state for the whole Admin. The server decides: this only reflects what
 // /api/admin/session says, and any API call answering 401 sends the user back to sign in.
@@ -75,6 +77,8 @@ export default function App() {
           <Route path="/enquiries" element={<Enquiries />} />
           <Route path="/enquiries/new" element={<NewEnquiry />} />
           <Route path="/enquiries/:reference" element={<Enquiry />} />
+          <Route path="/quotes/:reference" element={<Quote />} />
+          <Route path="/quotes/:reference/preview" element={<QuotePreview />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
