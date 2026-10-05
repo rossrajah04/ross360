@@ -5,6 +5,7 @@ import assert from 'node:assert/strict';
 import { FakeD1 } from './helpers/d1.js';
 import { onRequestPost } from '../functions/api/quote.js';
 import { getEnquiry, listEnquiries } from '../server/admin/enquiries.js';
+import { TEST_TURNSTILE_SECRET, TEST_TURNSTILE_TOKEN, withTurnstile } from './helpers/turnstile.js';
 
 const FORM = {
   name: 'Alex Customer',
@@ -26,23 +27,25 @@ const request = (overrides = {}) =>
   new Request('https://ross360.test/api/quote', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Origin: 'https://ross360.test' },
-    body: JSON.stringify({ ...FORM, startedAt: Date.now() - 10000, ...overrides }),
+    body: JSON.stringify({ ...FORM, startedAt: Date.now() - 10000, turnstileToken: TEST_TURNSTILE_TOKEN, ...overrides }),
   });
 
 // Captures what would have been sent to Resend.
 function stubResend({ fail = false } = {}) {
   const sent = [];
   const original = globalThis.fetch;
-  globalThis.fetch = async (url, init) => {
+  globalThis.fetch = withTurnstile(async (url, init) => {
     sent.push(JSON.parse(init.body));
     return new Response('{}', { status: fail ? 500 : 200 });
-  };
+  });
   return { sent, restore: () => (globalThis.fetch = original) };
 }
 
+// With the database bound, Turnstile is required, so a (fake) secret is set too.
 const env = (extra = {}) => ({
   RESEND_API_KEY: 'test-key-not-real',
   QUOTE_FROM_EMAIL: 'ROSS 360 <enquiries@ross360.test>',
+  ...(extra.DB ? { TURNSTILE_SECRET_KEY: TEST_TURNSTILE_SECRET } : {}),
   ...extra,
 });
 
@@ -155,10 +158,10 @@ async function submitWithResend(respond, { db = new FakeD1(), extraEnv = {} } = 
   const originalFetch = globalThis.fetch;
   let calls = 0;
   console.error = (...args) => logs.push(args.join(' '));
-  globalThis.fetch = async (url, init) => {
+  globalThis.fetch = withTurnstile(async (url, init) => {
     calls += 1;
     return respond(url, init);
-  };
+  });
   try {
     const response = await onRequestPost({
       request: request({ name: 'Private Person', email: 'private.person@example.test' }),
@@ -319,10 +322,10 @@ test('a successful submission saves once, emails the team, acknowledges the cust
   const db = new FakeD1();
   const sent = [];
   const original = globalThis.fetch;
-  globalThis.fetch = async (url, init) => {
+  globalThis.fetch = withTurnstile(async (url, init) => {
     sent.push({ url, body: JSON.parse(init.body) });
     return new Response('{"id":"ok"}', { status: 200 });
-  };
+  });
   try {
     const response = await onRequestPost({
       request: request(),
@@ -434,19 +437,105 @@ test('with Turnstile set up, a submission without a token is neither saved nor e
   db.close();
 });
 
-test('saving to the database without Turnstile set up is flagged in the logs', async () => {
-  const db = new FakeD1();
-  const resend = stubResend();
-  const warnings = [];
-  const originalWarn = console.warn;
-  console.warn = (...args) => warnings.push(args.join(' '));
+// --- Turnstile is required whenever enquiries are stored ----------------------------------------
+
+// Runs one submission, recording every outgoing request and every console.error line.
+async function submitWith({ env: extraEnv, respond = () => new Response('{"id":"ok"}', { status: 200 }) }) {
+  const requests = [];
+  const errors = [];
+  const original = globalThis.fetch;
+  const originalError = console.error;
+  globalThis.fetch = async (url, init) => {
+    requests.push(String(url));
+    return respond(url, init);
+  };
+  console.error = (...args) => errors.push(args.join(' '));
   try {
-    const response = await onRequestPost({ request: request(), env: env({ DB: db }) });
-    assert.equal(response.status, 200);
-    assert.match(warnings.join('\n'), /Turnstile is not configured/);
+    const response = await onRequestPost({ request: request(), env: env(extraEnv) });
+    return { response, body: await response.json(), requests, errors: errors.join('\n') };
   } finally {
-    console.warn = originalWarn;
-    resend.restore();
-    db.close();
+    globalThis.fetch = original;
+    console.error = originalError;
   }
+}
+
+test('D1 with the Turnstile secret: the enquiry is checked, saved and emailed', async () => {
+  const db = new FakeD1();
+  const { response, requests } = await submitWith({
+    env: { DB: db, TURNSTILE_SECRET_KEY: TEST_TURNSTILE_SECRET },
+    respond: withTurnstile(() => new Response('{"id":"ok"}', { status: 200 })),
+  });
+  assert.equal(response.status, 200);
+  assert.deepEqual(requests, [
+    'https://challenges.cloudflare.com/turnstile/v0/siteverify',
+    'https://api.resend.com/emails',
+  ]);
+  assert.equal((await listEnquiries(db)).length, 1);
+  db.close();
+});
+
+test('D1 without the Turnstile secret: refused, nothing saved, counted or emailed', async () => {
+  const db = new FakeD1();
+  const { response, body, requests, errors } = await submitWith({
+    env: { DB: db, TURNSTILE_SECRET_KEY: undefined, SEND_ACKNOWLEDGEMENT: 'true' },
+  });
+  assert.equal(response.status, 503);
+  assert.deepEqual(body, SEND_ERROR_BODY);
+  assert.deepEqual(requests, [], 'no Turnstile, internal or acknowledgement request');
+  assert.deepEqual(await listEnquiries(db), []);
+  assert.equal(db.db.prepare(`SELECT value FROM counters WHERE name = 'enquiry'`).get().value, 0, 'counter unchanged');
+  assert.match(errors, /DB binding is set but TURNSTILE_SECRET_KEY is not/);
+  assert.ok(!errors.includes('alex@example.test'));
+  db.close();
+});
+
+test('no D1 and no Turnstile secret: the form emails the enquiry as before', async () => {
+  const { response, body, requests } = await submitWith({ env: {} });
+  assert.equal(response.status, 200);
+  assert.deepEqual(body, { ok: true });
+  assert.deepEqual(requests, ['https://api.resend.com/emails']);
+});
+
+test('a Turnstile rejection logs only Cloudflare’s error codes', async () => {
+  const db = new FakeD1();
+  const { response, requests, errors } = await submitWith({
+    env: { DB: db, TURNSTILE_SECRET_KEY: TEST_TURNSTILE_SECRET },
+    respond: withTurnstile(() => new Response('{}'), { success: false }),
+  });
+  assert.equal(response.status, 400);
+  assert.equal(requests.length, 1, 'only siteverify; no email');
+  assert.deepEqual(await listEnquiries(db), []);
+  assert.match(errors, /Turnstile verification failed \(status 200\); error codes: invalid-input-response/);
+  for (const secret of [TEST_TURNSTILE_SECRET, TEST_TURNSTILE_TOKEN, 'alex@example.test', 'Alex Customer']) {
+    assert.ok(!errors.includes(secret), `${secret} must not be logged`);
+  }
+  db.close();
+});
+
+test('unexpected Turnstile error codes are not logged as given', async () => {
+  const db = new FakeD1();
+  const { response, errors } = await submitWith({
+    env: { DB: db, TURNSTILE_SECRET_KEY: TEST_TURNSTILE_SECRET },
+    respond: () =>
+      new Response(JSON.stringify({ success: false, 'error-codes': ['bad <script>', 'alex@example.test', 'timeout-or-duplicate'] })),
+  });
+  assert.equal(response.status, 400);
+  assert.match(errors, /error codes: timeout-or-duplicate$/m);
+  assert.ok(!errors.includes('alex@example.test') && !errors.includes('<script>'));
+  db.close();
+});
+
+test('if Cloudflare cannot be reached, the submission is refused and the failure logged', async () => {
+  const db = new FakeD1();
+  const { response, requests, errors } = await submitWith({
+    env: { DB: db, TURNSTILE_SECRET_KEY: TEST_TURNSTILE_SECRET },
+    respond: () => {
+      throw new TypeError('Network connection lost.');
+    },
+  });
+  assert.equal(response.status, 400);
+  assert.equal(requests.length, 1);
+  assert.deepEqual(await listEnquiries(db), []);
+  assert.match(errors, /Turnstile verification could not be completed: TypeError/);
+  db.close();
 });

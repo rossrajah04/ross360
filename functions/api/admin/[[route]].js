@@ -73,6 +73,8 @@ async function handle(context) {
   // --- Session: the only routes that work without one ----------------------------------------
   if (segments[0] === 'session' && segments.length === 1) {
     if (method === 'POST') {
+      const notText = (value) => value !== undefined && typeof value !== 'string';
+      if (notText(body.email) || notText(body.password)) return json({ ok: false, message: 'Invalid request.' }, 400);
       const result = await signIn(env, request, body);
       if (result.ok) {
         return json({ ok: true, email: env.ADMIN_EMAIL }, 200, { 'Set-Cookie': sessionCookie(result.token) });
@@ -120,6 +122,7 @@ async function handle(context) {
       }
       if (method === 'POST') {
         const result = validateManualEnquiry(body);
+        if (result.badType) return json({ ok: false, message: 'Invalid request.', errors: result.errors }, 400);
         if (!result.valid) {
           return json({ ok: false, message: 'Please check the highlighted fields.', errors: result.errors }, 422);
         }
@@ -139,6 +142,7 @@ async function handle(context) {
       }
       if (method === 'PATCH') {
         const result = validateEnquiryPatch(body);
+        if (result.badType) return json({ ok: false, message: 'Invalid request.', errors: result.errors }, 400);
         if (!result.valid) {
           return json({ ok: false, message: 'Please check the highlighted fields.', errors: result.errors }, 422);
         }
@@ -151,13 +155,14 @@ async function handle(context) {
 
     if (segments.length === 3 && method === 'POST') {
       if (segments[2] === 'status') {
-        const status = String(body.status || '');
-        if (!STATUS_VALUES.includes(status)) return json({ ok: false, message: 'Unknown status.' }, 400);
+        const status = body.status;
+        if (typeof status !== 'string' || !STATUS_VALUES.includes(status)) return json({ ok: false, message: 'Unknown status.' }, 400);
         const enquiry = await changeStatus(db, reference, status, actor);
         return enquiry ? json({ ok: true, enquiry }) : notFound();
       }
       if (segments[2] === 'notes') {
-        const text = String(body.text || '').trim();
+        if (typeof body.text !== 'string') return json({ ok: false, message: 'Invalid request.' }, 400);
+        const text = body.text.trim();
         if (!text) return json({ ok: false, message: 'Please enter a note.' }, 422);
         if (text.length > 2000) return json({ ok: false, message: 'Please shorten the note.' }, 422);
         const enquiry = await addNote(db, reference, text, actor);

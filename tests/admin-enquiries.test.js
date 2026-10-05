@@ -294,3 +294,71 @@ test('each dashboard figure and the list it opens use the same statuses', async 
   assert.equal(unknown.status, 400);
   db.close();
 });
+
+test('values of the wrong type are refused with 400, not stored as text', async () => {
+  const db = new FakeD1();
+  const { env, email, password } = await adminEnv(db);
+  const cookie = cookieFrom((await callAdmin(env, '/api/admin/session', { method: 'POST', body: { email, password } })).headers);
+  const { reference } = await createEnquiry(db, formValues(), website);
+
+  for (const body of [
+    { name: { a: 1 } },
+    { business: ['a', 'b'] },
+    { phone: 7000000000 },
+    { daylight: true },
+    { schedulingNotes: { text: 'x' } },
+    { paidOn: 20260101 },
+  ]) {
+    const patch = await callAdmin(env, `/api/admin/enquiries/${reference}`, { method: 'PATCH', body, cookie });
+    assert.equal(patch.status, 400, `PATCH ${JSON.stringify(body)}`);
+  }
+  const create = await callAdmin(env, '/api/admin/enquiries', {
+    method: 'POST',
+    body: { name: { first: 'A' }, phone: '0161' },
+    cookie,
+  });
+  assert.equal(create.status, 400);
+  const note = await callAdmin(env, `/api/admin/enquiries/${reference}/notes`, { method: 'POST', body: { text: ['x'] }, cookie });
+  assert.equal(note.status, 400);
+  const signIn = await callAdmin(env, '/api/admin/session', { method: 'POST', body: { email: { $ne: '' }, password } });
+  assert.equal(signIn.status, 400);
+
+  // Nothing was changed by the refused requests.
+  const stored = await getEnquiry(db, reference);
+  assert.equal(stored.name, 'Alex Customer');
+  assert.equal(stored.events.filter((e) => e.type === 'updated' || e.type === 'note').length, 0);
+  assert.equal((await listEnquiries(db)).length, 1);
+
+  // Valid requests still work, including a money amount sent as a number.
+  const ok = await callAdmin(env, `/api/admin/enquiries/${reference}`, {
+    method: 'PATCH',
+    body: { phone: '0161 111 1111', projectValue: 349, amountPaid: '100.50', daylight: 'essential', flexibleTiming: null },
+    cookie,
+  });
+  assert.equal(ok.status, 200);
+  assert.equal(ok.data.enquiry.phone, '0161 111 1111');
+  assert.equal(ok.data.enquiry.projectValue, 34900);
+  assert.equal(ok.data.enquiry.amountPaid, 10050);
+  db.close();
+});
+
+test('impossible calendar dates are refused', async () => {
+  const { isCalendarDate } = await import('../src/lib/admin/model.js');
+  for (const bad of ['2026-02-30', '2026-13-01', '2025-02-29', '2026-04-31', '2026-00-10', '2026-1-1', 'tomorrow']) {
+    assert.equal(isCalendarDate(bad), false, bad);
+    assert.equal(validateEnquiryPatch({ paidOn: bad }).errors.paidOn, 'Please enter a valid date.', bad);
+  }
+  for (const good of ['2026-02-28', '2024-02-29', '2026-12-31']) {
+    assert.equal(isCalendarDate(good), true, good);
+    assert.equal(validateEnquiryPatch({ paidOn: good }).values.paidOn, good);
+  }
+
+  const db = new FakeD1();
+  const { env, email, password } = await adminEnv(db);
+  const cookie = cookieFrom((await callAdmin(env, '/api/admin/session', { method: 'POST', body: { email, password } })).headers);
+  const { reference } = await createEnquiry(db, formValues(), website);
+  const bad = await callAdmin(env, `/api/admin/enquiries/${reference}`, { method: 'PATCH', body: { paidOn: '2026-02-30' }, cookie });
+  assert.equal(bad.status, 422);
+  assert.equal((await getEnquiry(db, reference)).paidOn, null);
+  db.close();
+});

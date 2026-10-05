@@ -2,11 +2,16 @@
 // workflow actually do. It is a working draft for the business to approve, not legal advice.
 //
 // What this notice is based on (checked in the code on 4 October 2026):
-//   - Get a Quote form -> Cloudflare Pages Function (functions/api/quote.js) -> Resend -> contact@ross360.co.uk.
-//     Nothing from the form is stored on the website; it is sent by email only.
-//   - Optional customer acknowledgement email via Resend (only when SEND_ACKNOWLEDGEMENT is "true").
-//   - Optional Cloudflare Turnstile spam check (only when VITE_TURNSTILE_SITE_KEY is set). Always on:
-//     a hidden honeypot field and a timing check, which process no extra personal information.
+//   - Get a Quote form -> Cloudflare Pages Function (functions/api/quote.js) -> Resend -> newquote@ross360.co.uk.
+//     (Updated 5 October 2026.) Where the Admin records system is enabled (the D1 binding `DB` is set
+//     for that environment), each enquiry is also stored in a Cloudflare D1 database and managed in the
+//     private Admin. The notice says this "where our enquiry records system is in use", so it is accurate
+//     both before and after Production D1 is connected. Stored enquiries are erased by hand; see README.
+//   - Optional customer acknowledgement email via Resend (only when SEND_ACKNOWLEDGEMENT is "true"),
+//     sent from contact@ross360.co.uk.
+//   - Cloudflare Turnstile spam check (when VITE_TURNSTILE_SITE_KEY and TURNSTILE_SECRET_KEY are set;
+//     required wherever enquiries are stored). Always on: a hidden honeypot field and a timing check,
+//     which process no extra personal information.
 //   - An external example tour from Panoee (tour.panoee.com) is embedded and loads automatically with the
 //     page. ROSS 360 chose automatic loading (4 October 2026) and accepts the third-party embed; keep the
 //     cookies and sharing wording below accurate to that.
@@ -38,7 +43,7 @@ import { site } from './site.js';
 export const privacy = {
   title: 'Privacy Notice',
   lead: 'How ROSS 360 collects, uses, stores and shares personal information.',
-  updated: '4 October 2026',
+  updated: '5 October 2026',
 
   sections: [
     {
@@ -83,6 +88,9 @@ export const privacy = {
             'anything else you choose to tell us',
             'how you heard about us, if you tell us',
           ],
+        },
+        {
+          p: 'We use these details to respond to your enquiry, prepare a quotation, arrange the project and keep business records. Your enquiry is sent to us by email and, where our enquiry records system is in use, is also stored in that system, which is hosted by Cloudflare.',
         },
         { h: 'When you work with us' },
         { p: 'If you go on to book, we may also hold:' },
@@ -190,7 +198,7 @@ export const privacy = {
           dl: [
             [
               'Cloudflare',
-              'Hosts this website and runs the code that receives quote form submissions. If a spam check appears on the form, it is Cloudflare Turnstile, which processes technical information from your browser to tell people and automated software apart.',
+              'Hosts this website, runs the code that receives quote form submissions and provides the database for our enquiry records system, where enquiries are stored. If a spam check appears on the form, it is Cloudflare Turnstile, which processes technical information from your browser to tell people and automated software apart.',
             ],
             [
               'Resend',

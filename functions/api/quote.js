@@ -7,9 +7,10 @@
 //   QUOTE_FROM_EMAIL      (required; sender of the internal enquiry email, on a domain verified in Resend)
 //   QUOTE_TO_EMAIL        (optional; overrides the internal recipient, newquote@ross360.co.uk)
 //   SEND_ACKNOWLEDGEMENT  (optional; "true" sends the customer an acknowledgement email)
-//   TURNSTILE_SECRET_KEY  (optional; enables Cloudflare Turnstile verification. Set it, with the build
-//                          variable VITE_TURNSTILE_SITE_KEY, before the DB binding is used in production)
-//   DB                    (optional D1 binding; when present the enquiry is also saved for the Admin)
+//   TURNSTILE_SECRET_KEY  (enables Cloudflare Turnstile verification, with the build variable
+//                          VITE_TURNSTILE_SITE_KEY; required whenever DB is bound)
+//   DB                    (optional D1 binding; when present the enquiry is also saved for the Admin,
+//                          and submissions are refused unless TURNSTILE_SECRET_KEY is also set)
 //
 // No key is ever sent to the browser or committed to the repository.
 
@@ -53,6 +54,14 @@ function sameOrigin(request) {
   }
 }
 
+// Cloudflare's error codes are short fixed strings (e.g. "invalid-input-response"). Only those are
+// logged: never the secret, the token or anything about the visitor.
+const turnstileCodes = (codes) =>
+  (Array.isArray(codes) ? codes : [])
+    .filter((code) => typeof code === 'string' && /^[a-z0-9-]{1,64}$/.test(code))
+    .slice(0, 5)
+    .join(', ') || 'none given';
+
 async function verifyTurnstile(secret, token, ip) {
   if (!token) return false;
   const body = new URLSearchParams({ secret, response: token });
@@ -63,8 +72,12 @@ async function verifyTurnstile(secret, token, ip) {
       body,
     });
     const data = await res.json();
-    return data.success === true;
-  } catch {
+    if (data.success === true) return true;
+    console.error(`Turnstile verification failed (status ${res.status}); error codes: ${turnstileCodes(data['error-codes'])}`);
+    return false;
+  } catch (error) {
+    // Cloudflare could not be reached or did not answer with JSON. Fail closed.
+    console.error(`Turnstile verification could not be completed: ${error?.name || 'Error'}`);
     return false;
   }
 }
@@ -191,6 +204,14 @@ export async function onRequestPost({ request, env }) {
     return json({ ok: false, message: 'Please check your details and send the form again.' }, 400);
   }
 
+  // Enquiries are only stored with Turnstile in place. With the database bound and no secret, the
+  // submission is refused before anything is saved, counted or emailed. Without the database (as on
+  // a site that does not store enquiries) the form works as before, with or without Turnstile.
+  if (env.DB && !env.TURNSTILE_SECRET_KEY) {
+    console.error('Configuration error: the DB binding is set but TURNSTILE_SECRET_KEY is not. Enquiries are refused until Turnstile is configured.');
+    return json({ ok: false, message: SEND_ERROR }, 503);
+  }
+
   // Cloudflare Turnstile. When TURNSTILE_SECRET_KEY is set, every submission must carry a token that
   // Cloudflare confirms, before anything is validated, saved or emailed. The form shows the widget
   // when the build has VITE_TURNSTILE_SITE_KEY, so the two must be set together.
@@ -203,9 +224,6 @@ export async function onRequestPost({ request, env }) {
     if (!passed) {
       return json({ ok: false, message: 'The spam check did not pass. Please try again.' }, 400);
     }
-  } else if (env.DB) {
-    // Enquiries are being saved with no spam check. Set up Turnstile before production uses the database.
-    console.warn('Turnstile is not configured: enquiries are saved to the database without a spam check.');
   }
 
   const result = validateQuote(body);

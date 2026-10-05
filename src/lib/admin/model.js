@@ -117,6 +117,13 @@ export const FIELDS = {
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+// A real calendar date in YYYY-MM-DD form: "2026-02-30" and "2026-13-01" are refused.
+export const isCalendarDate = (value) => {
+  if (!DATE_RE.test(value)) return false;
+  const date = new Date(`${value}T00:00:00Z`);
+  return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
+};
 const MONEY_RE = /^\d{1,7}(\.\d{1,2})?$/;
 
 // "1,249.50" or "£249" -> 124950 pence. Returns NaN when it is not a valid amount.
@@ -135,15 +142,26 @@ export const formatMoney = (pence) =>
 
 /**
  * Validate a partial update from the Admin. Only keys present in `input` are checked.
- * Empty strings clear a field (null in the database for choice, money and date fields).
- * Returns { valid, errors, values } where `values` maps API field name -> database value.
+ * Empty strings (or null) clear a field (null in the database for choice, money and date fields).
+ * Every field takes a string; money fields also take a number. Any other type (an object, array or
+ * boolean, or a number for a text field) is refused rather than turned into text, and `badType` is
+ * set so the API answers 400.
+ * Returns { valid, errors, values, badType } where `values` maps API field name -> database value.
  */
 export function validateEnquiryPatch(input = {}) {
   const errors = {};
   const values = {};
+  let badType = false;
   for (const [key, raw] of Object.entries(input)) {
     const field = FIELDS[key];
     if (!field) continue;
+    const acceptable =
+      raw === null || raw === undefined || typeof raw === 'string' || (field.type === 'money' && Number.isFinite(raw));
+    if (!acceptable) {
+      errors[key] = 'Invalid value.';
+      badType = true;
+      continue;
+    }
     const value = typeof raw === 'string' ? raw.trim() : raw === null || raw === undefined ? '' : String(raw);
     switch (field.type) {
       case 'text':
@@ -168,7 +186,7 @@ export function validateEnquiryPatch(input = {}) {
         break;
       }
       case 'date':
-        if (value && (!DATE_RE.test(value) || Number.isNaN(Date.parse(value)))) errors[key] = 'Please enter a valid date.';
+        if (value && !isCalendarDate(value)) errors[key] = 'Please enter a valid date.';
         else values[key] = value || null;
         break;
       default:
@@ -177,7 +195,7 @@ export function validateEnquiryPatch(input = {}) {
   }
   // Fields from the original enquiry that the record cannot be without.
   if ('name' in values && !values.name) errors.name = 'Please enter a name.';
-  return { valid: Object.keys(errors).length === 0, errors, values };
+  return { valid: Object.keys(errors).length === 0, errors, values, badType };
 }
 
 /**
@@ -187,7 +205,9 @@ export function validateEnquiryPatch(input = {}) {
 export function validateManualEnquiry(input = {}) {
   const known = Object.fromEntries(Object.entries(input).filter(([key]) => key in FIELDS));
   const result = validateEnquiryPatch({ name: '', ...known });
-  const { values, errors } = result;
-  if (!values.email && !values.phone && !errors.email) errors.email = 'Please enter an email address or phone number.';
-  return { valid: Object.keys(errors).length === 0, errors, values };
+  const { values, errors, badType } = result;
+  if (!values.email && !values.phone && !errors.email && !errors.phone) {
+    errors.email = 'Please enter an email address or phone number.';
+  }
+  return { valid: Object.keys(errors).length === 0, errors, values, badType };
 }

@@ -92,7 +92,9 @@ export default function Enquiry() {
     setMessage('');
     const result = await run();
     setBusy(false);
-    if (take(result)) setMessage(note);
+    const ok = take(result);
+    if (ok) setMessage(note);
+    return ok;
   };
 
   const save = (keys) => {
@@ -231,7 +233,10 @@ export default function Enquiry() {
           onSubmit={(event) => {
             event.preventDefault();
             if (!note.trim()) return;
-            act(() => api.addNote(reference, note.trim()), 'Note added.').then(() => setNote(''));
+            // The typed note is kept if saving fails, and cleared only once it has been added.
+            act(() => api.addNote(reference, note.trim()), 'Note added.').then((added) => {
+              if (added) setNote('');
+            });
           }}
         >
           <div className="ad-field">

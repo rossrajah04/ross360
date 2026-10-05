@@ -111,8 +111,33 @@ Passwords are compared with any spaces at the start or end removed, the same way
 hashes them. Changing the password does not end existing sessions; to end them at once, run
 `DELETE FROM admin_sessions;` on the database.
 
-**Before binding `DB` in Production, set up Turnstile** (see Spam protection on the form), so
-automated submissions cannot fill the database.
+**Turnstile is required wherever enquiries are stored.** With `DB` bound and no
+`TURNSTILE_SECRET_KEY`, the quote form refuses every submission (503, with the usual "please email
+us" message) before anything is saved, counted or emailed, and logs a configuration error. So set up
+Turnstile (see Spam protection on the form) before binding `DB` in any environment. Without `DB` the
+form works as before, with or without Turnstile.
+
+### Erasing an enquiry (manual procedure)
+
+There is no delete button or delete endpoint. When an enquiry must be removed (an erasure request,
+spam, or a test record), an authorised administrator deletes it directly in D1, in the Cloudflare
+dashboard (Workers & Pages -> D1 -> the database -> Console) or with
+`npx wrangler d1 execute <database-name> --remote --command "..."`. Its timeline entries must be
+deleted first, because `enquiry_events` refers to `enquiries`:
+
+```sql
+-- 1. Check it is the right record.
+SELECT id, reference, name, business, email FROM enquiries WHERE reference = 'ROSS-0007';
+
+-- 2. Delete its timeline entries, then the enquiry itself.
+DELETE FROM enquiry_events WHERE enquiry_id = (SELECT id FROM enquiries WHERE reference = 'ROSS-0007');
+DELETE FROM enquiries WHERE reference = 'ROSS-0007';
+```
+
+Use the reference of the enquiry being erased, and run against the correct database (Preview and
+Production are separate). The reference number is not reused: the counter is left as it is. Copies
+outside D1, such as the internal notification email and any acknowledgement, must be deleted
+separately from the mailbox.
 
 Not built yet: quotes, booking, payments, Stripe and any customer-facing booking page.
 
@@ -149,7 +174,8 @@ Turnstile once it is set up. To set it up, create a Turnstile widget for the sit
 (Cloudflare -> Turnstile), then in the Pages project set, for the same environment and together:
 `VITE_TURNSTILE_SITE_KEY` (build variable, public) and `TURNSTILE_SECRET_KEY` (secret), and redeploy.
 With the secret set, every submission needs a token Cloudflare confirms before anything is saved or
-emailed, so setting the secret without the site key would block every enquiry.
+emailed, so setting the secret without the site key would block every enquiry. Where `DB` is bound,
+the secret is required (see Admin). A failed check logs only Cloudflare's error codes.
 For extra protection add a Cloudflare WAF rate-limiting rule on `/api/quote`.
 
 ## First things to test (once npm works)

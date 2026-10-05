@@ -5,6 +5,7 @@ import assert from 'node:assert/strict';
 import { FakeD1, adminEnv, applyMigrations, callAdmin } from './helpers/d1.js';
 import { LATEST_SCHEMA_VERSION, schemaVersion } from '../server/admin/schema.js';
 import { onRequestPost } from '../functions/api/quote.js';
+import { TEST_TURNSTILE_SECRET, TEST_TURNSTILE_TOKEN, withTurnstile } from './helpers/turnstile.js';
 
 test('the migrations bring an empty database to the latest schema version', async () => {
   const db = new FakeD1();
@@ -66,10 +67,10 @@ test('the quote form still emails when the database has not been migrated, and c
   const db = new FakeD1({ migrated: false });
   const sent = [];
   const original = globalThis.fetch;
-  globalThis.fetch = async (url, init) => {
+  globalThis.fetch = withTurnstile(async (url, init) => {
     sent.push(JSON.parse(init.body));
     return new Response('{}', { status: 200 });
-  };
+  });
   try {
     const request = new Request('https://ross360.test/api/quote', {
       method: 'POST',
@@ -85,11 +86,17 @@ test('the quote form still emails when the database has not been migrated, and c
         areas: 'Lobby',
         hp: '',
         startedAt: Date.now() - 10000,
+        turnstileToken: TEST_TURNSTILE_TOKEN,
       }),
     });
     const response = await onRequestPost({
       request,
-      env: { DB: db, RESEND_API_KEY: 'test-key-not-real', QUOTE_FROM_EMAIL: 'ROSS 360 <enquiries@ross360.test>' },
+      env: {
+        DB: db,
+        TURNSTILE_SECRET_KEY: TEST_TURNSTILE_SECRET,
+        RESEND_API_KEY: 'test-key-not-real',
+        QUOTE_FROM_EMAIL: 'ROSS 360 <enquiries@ross360.test>',
+      },
     });
     assert.equal(response.status, 200);
     assert.equal(sent.length, 1);
@@ -99,4 +106,27 @@ test('the quote form still emails when the database has not been migrated, and c
     globalThis.fetch = original;
     db.close();
   }
+});
+
+test('the README erasure procedure removes one enquiry and its timeline, and references are not reused', async () => {
+  const { createEnquiry, listEnquiries } = await import('../server/admin/enquiries.js');
+  const db = new FakeD1();
+  for (const name of ['One', 'Two', 'Three']) {
+    await createEnquiry(db, { name, email: 'a@example.test' }, { origin: 'admin', actor: 'test' });
+  }
+  // The foreign key stops the enquiry being deleted before its timeline.
+  assert.throws(() => db.db.exec(`DELETE FROM enquiries WHERE reference = 'ROSS-0002'`), /FOREIGN KEY/);
+
+  // The two statements documented in the README, in order.
+  db.db.exec(`DELETE FROM enquiry_events WHERE enquiry_id = (SELECT id FROM enquiries WHERE reference = 'ROSS-0002');`);
+  db.db.exec(`DELETE FROM enquiries WHERE reference = 'ROSS-0002';`);
+
+  assert.deepEqual(
+    (await listEnquiries(db)).map((e) => e.reference),
+    ['ROSS-0003', 'ROSS-0001'],
+  );
+  assert.equal(db.db.prepare('SELECT COUNT(*) AS n FROM enquiry_events').get().n, 2);
+  const { reference } = await createEnquiry(db, { name: 'Four', email: 'a@example.test' }, { origin: 'admin', actor: 'test' });
+  assert.equal(reference, 'ROSS-0004');
+  db.close();
 });
