@@ -6,8 +6,8 @@ export const site = {
   descriptor: '360° Virtual Tours for Businesses & Property',
   url: 'https://ross360.co.uk',
   domain: 'ross360.co.uk',
-  // Public contact address. Also the default destination for quote enquiries (functions/api/quote.js),
-  // unless QUOTE_TO_EMAIL is set in Cloudflare.
+  // Public contact address. Customer acknowledgements are sent from it; internal quote enquiries go to
+  // newquote@ross360.co.uk (functions/api/quote.js).
   email: 'contact@ross360.co.uk',
   // Used only where the operator's identity is needed: the Privacy Notice and Terms & Conditions.
   // Not shown in the footer or marketing pages.
