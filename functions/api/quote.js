@@ -104,18 +104,57 @@ function buildEnquiry(values, reference = '') {
   return { text, html };
 }
 
-async function sendEmail(env, payload) {
-  const res = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${env.RESEND_API_KEY}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(payload),
-  });
+// Text from Resend's error response, made safe for the logs: customer email addresses are masked
+// (ROSS 360's own addresses are kept, because they show which sender or recipient was refused),
+// anything shaped like an API key is removed, and the length is capped.
+export function safeResendDetail(text) {
+  let detail = String(text || '').trim();
+  try {
+    const parsed = JSON.parse(detail);
+    detail = [parsed.name, parsed.message || parsed.error].filter(Boolean).join(': ') || detail;
+  } catch {
+    // Not JSON: use the raw text.
+  }
+  return detail
+    .replace(/[^\s@<>"'`(),;:]+@([A-Za-z0-9.-]+\.[A-Za-z]{2,})/g, (match, domain) =>
+      domain.toLowerCase() === 'ross360.co.uk' ? match : '[email]',
+    )
+    .replace(/re_[A-Za-z0-9_]{8,}/g, '[key]')
+    .replace(/\s+/g, ' ')
+    .slice(0, 300);
+}
+
+// The sending domain only, for the logs.
+const fromDomain = (from) => (String(from || '').match(/@([A-Za-z0-9.-]+)/)?.[1] || 'not set').toLowerCase();
+
+// `label` says which email this is ('internal' or 'acknowledgement') so a failure log is unambiguous.
+async function sendEmail(env, payload, label) {
+  let res;
+  try {
+    res = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${env.RESEND_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+  } catch (error) {
+    // The request never reached Resend (network or runtime error).
+    console.error(`Resend request (${label}) could not be sent: ${safeResendDetail(`${error?.name}: ${error?.message}`)}`);
+    return false;
+  }
   if (!res.ok) {
-    // Log the status only — never the key or the customer's details.
-    console.error(`Resend request failed with status ${res.status}`);
+    // Status plus Resend's own error name and message. Never the API key or the customer's details.
+    let detail = '';
+    try {
+      detail = safeResendDetail(await res.text());
+    } catch {
+      detail = '(no response body)';
+    }
+    console.error(
+      `Resend request (${label}) failed with status ${res.status}; from domain ${fromDomain(payload.from)}; ${detail || '(empty response body)'}`,
+    );
   }
   return res.ok;
 }
@@ -188,7 +227,7 @@ export async function onRequestPost({ request, env }) {
     subject: oneLine(`New ROSS 360 enquiry — ${values.business}`),
     text,
     html,
-  });
+  }, 'internal');
 
   if (!delivered) {
     return json({ ok: false, message: SEND_ERROR }, 502);
@@ -202,7 +241,7 @@ export async function onRequestPost({ request, env }) {
       reply_to: site.email,
       subject: 'ROSS 360 — Enquiry received',
       text: `${ACK_TEXT}\n\n${site.brand}\n${site.email}`,
-    }).catch(() => false);
+    }, 'acknowledgement').catch(() => false);
   }
 
   return json({ ok: true });
