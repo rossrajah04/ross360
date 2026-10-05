@@ -7,12 +7,16 @@
 //   QUOTE_FROM_EMAIL      (required; sender of the internal enquiry email, on a domain verified in Resend)
 //   QUOTE_TO_EMAIL        (optional; overrides the internal recipient, newquote@ross360.co.uk)
 //   SEND_ACKNOWLEDGEMENT  (optional; "true" sends the customer an acknowledgement email)
-//   TURNSTILE_SECRET_KEY  (optional; enables Cloudflare Turnstile verification)
+//   TURNSTILE_SECRET_KEY  (enables Cloudflare Turnstile verification, with the build variable
+//                          VITE_TURNSTILE_SITE_KEY; required whenever DB is bound)
+//   DB                    (optional D1 binding; when present the enquiry is also saved for the Admin,
+//                          and submissions are refused unless TURNSTILE_SECRET_KEY is also set)
 //
 // No key is ever sent to the browser or committed to the repository.
 
 import { validateQuote, PROJECT_TYPES } from '../../src/lib/quoteSchema.js';
 import { site } from '../../src/content/site.js';
+import { createEnquiry, recordEvent } from '../../server/admin/enquiries.js';
 
 // Internal enquiries go to a dedicated mailbox. The public address (site.email, contact@) is what
 // customers see: the acknowledgement is sent from it and replies to it, and the error message shows it.
@@ -50,6 +54,14 @@ function sameOrigin(request) {
   }
 }
 
+// Cloudflare's error codes are short fixed strings (e.g. "invalid-input-response"). Only those are
+// logged: never the secret, the token or anything about the visitor.
+const turnstileCodes = (codes) =>
+  (Array.isArray(codes) ? codes : [])
+    .filter((code) => typeof code === 'string' && /^[a-z0-9-]{1,64}$/.test(code))
+    .slice(0, 5)
+    .join(', ') || 'none given';
+
 async function verifyTurnstile(secret, token, ip) {
   if (!token) return false;
   const body = new URLSearchParams({ secret, response: token });
@@ -60,16 +72,21 @@ async function verifyTurnstile(secret, token, ip) {
       body,
     });
     const data = await res.json();
-    return data.success === true;
-  } catch {
+    if (data.success === true) return true;
+    console.error(`Turnstile verification failed (status ${res.status}); error codes: ${turnstileCodes(data['error-codes'])}`);
+    return false;
+  } catch (error) {
+    // Cloudflare could not be reached or did not answer with JSON. Fail closed.
+    console.error(`Turnstile verification could not be completed: ${error?.name || 'Error'}`);
     return false;
   }
 }
 
-function buildEnquiry(values) {
+function buildEnquiry(values, reference = '') {
   const projectLabel = PROJECT_TYPES.find((t) => t.value === values.projectType)?.label ?? values.projectType;
   const projectType = values.projectOther ? `${projectLabel}: ${values.projectOther}` : projectLabel;
   const rows = [
+    ...(reference ? [['Reference', reference]] : []),
     ['Name', values.name],
     ['Business / organisation', values.business],
     ['Email', values.email],
@@ -101,20 +118,60 @@ function buildEnquiry(values) {
   return { text, html };
 }
 
-async function sendEmail(env, payload) {
-  const res = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${env.RESEND_API_KEY}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(payload),
-  });
-  if (!res.ok) {
-    // Log the status only — never the key or the customer's details.
-    console.error(`Resend request failed with status ${res.status}`);
+// Text from Resend's error response, made safe for the logs: customer email addresses are masked
+// (ROSS 360's own addresses are kept, because they show which sender or recipient was refused),
+// anything shaped like an API key is removed, and the length is capped.
+export function safeResendDetail(text) {
+  let detail = String(text || '').trim();
+  try {
+    const parsed = JSON.parse(detail);
+    detail = [parsed.name, parsed.message || parsed.error].filter(Boolean).join(': ') || detail;
+  } catch {
+    // Not JSON: use the raw text.
   }
-  return res.ok;
+  return detail
+    .replace(/[^\s@<>"'`(),;:]+@([A-Za-z0-9.-]+\.[A-Za-z]{2,})/g, (match, domain) =>
+      domain.toLowerCase() === 'ross360.co.uk' ? match : '[email]',
+    )
+    .replace(/re_[A-Za-z0-9_]{8,}/g, '[key]')
+    .replace(/\s+/g, ' ')
+    .slice(0, 300);
+}
+
+// The sending domain only, for the logs.
+const fromDomain = (from) => (String(from || '').match(/@([A-Za-z0-9.-]+)/)?.[1] || 'not set').toLowerCase();
+
+// `label` says which email this is ('internal' or 'acknowledgement') so a failure log is unambiguous.
+// Returns { ok, status }: status is Resend's HTTP status, or 'not sent' if the request never got there.
+async function sendEmail(env, payload, label) {
+  let res;
+  try {
+    res = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${env.RESEND_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+  } catch (error) {
+    // The request never reached Resend (network or runtime error).
+    console.error(`Resend request (${label}) could not be sent: ${safeResendDetail(`${error?.name}: ${error?.message}`)}`);
+    return { ok: false, status: 'not sent' };
+  }
+  if (!res.ok) {
+    // Status plus Resend's own error name and message. Never the API key or the customer's details.
+    let detail = '';
+    try {
+      detail = safeResendDetail(await res.text());
+    } catch {
+      detail = '(no response body)';
+    }
+    console.error(
+      `Resend request (${label}) failed with status ${res.status}; from domain ${fromDomain(payload.from)}; ${detail || '(empty response body)'}`,
+    );
+  }
+  return { ok: res.ok, status: res.status };
 }
 
 export async function onRequestPost({ request, env }) {
@@ -133,6 +190,10 @@ export async function onRequestPost({ request, env }) {
   } catch {
     return json({ ok: false, message: 'Invalid request.' }, 400);
   }
+  // The form always sends a JSON object; null, an array or a bare value is refused.
+  if (body === null || typeof body !== 'object' || Array.isArray(body)) {
+    return json({ ok: false, message: 'Invalid request.' }, 400);
+  }
 
   // Honeypot: real visitors never see or fill this field. Pretend success so bots learn nothing.
   if (typeof body.hp === 'string' && body.hp.trim() !== '') return json({ ok: true });
@@ -143,8 +204,21 @@ export async function onRequestPost({ request, env }) {
     return json({ ok: false, message: 'Please check your details and send the form again.' }, 400);
   }
 
-  // Optional Turnstile
+  // Enquiries are only stored with Turnstile in place. With the database bound and no secret, the
+  // submission is refused before anything is saved, counted or emailed. Without the database (as on
+  // a site that does not store enquiries) the form works as before, with or without Turnstile.
+  if (env.DB && !env.TURNSTILE_SECRET_KEY) {
+    console.error('Configuration error: the DB binding is set but TURNSTILE_SECRET_KEY is not. Enquiries are refused until Turnstile is configured.');
+    return json({ ok: false, message: SEND_ERROR }, 503);
+  }
+
+  // Cloudflare Turnstile. When TURNSTILE_SECRET_KEY is set, every submission must carry a token that
+  // Cloudflare confirms, before anything is validated, saved or emailed. The form shows the widget
+  // when the build has VITE_TURNSTILE_SITE_KEY, so the two must be set together.
   if (env.TURNSTILE_SECRET_KEY) {
+    if (!body.turnstileToken) {
+      console.error('Turnstile token missing. If this is a real visitor, check VITE_TURNSTILE_SITE_KEY is set for this build.');
+    }
     const ip = request.headers.get('CF-Connecting-IP') || '';
     const passed = await verifyTurnstile(env.TURNSTILE_SECRET_KEY, body.turnstileToken, ip);
     if (!passed) {
@@ -163,19 +237,44 @@ export async function onRequestPost({ request, env }) {
   }
 
   const { values } = result;
-  const { text, html } = buildEnquiry(values);
 
-  const delivered = await sendEmail(env, {
+  // Save the enquiry for the Admin and give it its ROSS reference. Without the D1 binding the form
+  // behaves exactly as before: the enquiry is emailed and nothing is stored.
+  let reference = '';
+  if (env.DB) {
+    try {
+      ({ reference } = await createEnquiry(env.DB, values, { origin: 'website', actor: 'website' }));
+    } catch (error) {
+      // Never lose an enquiry because the database is unavailable; the email still goes out.
+      console.error(`Could not save the enquiry: ${error.message}`);
+    }
+  }
+
+  const { text, html } = buildEnquiry(values, reference);
+
+  const internal = await sendEmail(env, {
     from: env.QUOTE_FROM_EMAIL,
     to: [env.QUOTE_TO_EMAIL || INTERNAL_TO],
     reply_to: values.email,
     subject: oneLine(`New ROSS 360 enquiry — ${values.business}`),
     text,
     html,
-  });
+  }, 'internal');
 
-  if (!delivered) {
-    return json({ ok: false, message: SEND_ERROR }, 502);
+  if (!internal.ok) {
+    // Not saved either: the enquiry would be lost, so the customer is asked to try again.
+    if (!reference) return json({ ok: false, message: SEND_ERROR }, 502);
+    // Saved, so it has been received: the customer is told so, and the missing notification is
+    // recorded on the enquiry's timeline for the Admin.
+    try {
+      await recordEvent(env.DB, reference, 'website', 'notification_failed', {
+        email: 'internal',
+        status: internal.status,
+      });
+    } catch (error) {
+      console.error(`Could not record the failed notification on ${reference}: ${error.message}`);
+    }
+    console.error(`Enquiry ${reference} was saved, but its internal email notification failed.`);
   }
 
   // Optional acknowledgement to the customer. A failure here does not fail the enquiry.
@@ -186,7 +285,7 @@ export async function onRequestPost({ request, env }) {
       reply_to: site.email,
       subject: 'ROSS 360 — Enquiry received',
       text: `${ACK_TEXT}\n\n${site.brand}\n${site.email}`,
-    }).catch(() => false);
+    }, 'acknowledgement').catch(() => false);
   }
 
   return json({ ok: true });

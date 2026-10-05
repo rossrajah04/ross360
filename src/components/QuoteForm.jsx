@@ -35,6 +35,8 @@ export default function QuoteForm() {
   const [status, setStatus] = useState('idle'); // idle | submitting | success | error
   const [serverMessage, setServerMessage] = useState('');
   const [token, setToken] = useState('');
+  // Bumped after a submission that did not succeed, so the spam check issues a fresh token.
+  const [turnstileReset, setTurnstileReset] = useState(0);
   // Recorded once when the form first renders; the server uses it as a basic anti-bot timing check.
   const [startedAt] = useState(() => Date.now());
 
@@ -103,9 +105,11 @@ export default function QuoteForm() {
         if (data && data.errors) setErrors(data.errors);
         setServerMessage((data && data.message) || GENERIC_ERROR);
         setStatus('error');
+        if (TURNSTILE_SITE_KEY) setTurnstileReset((n) => n + 1);
       } catch {
         setServerMessage(GENERIC_ERROR);
         setStatus('error');
+        if (TURNSTILE_SITE_KEY) setTurnstileReset((n) => n + 1);
       }
     },
     [status, startedAt, token],
@@ -273,7 +277,7 @@ export default function QuoteForm() {
         <input id="hp_field" name="hp_field" type="text" tabIndex={-1} autoComplete="off" />
       </div>
 
-      {TURNSTILE_SITE_KEY ? <TurnstileWidget siteKey={TURNSTILE_SITE_KEY} onToken={handleToken} /> : null}
+      {TURNSTILE_SITE_KEY ? <TurnstileWidget siteKey={TURNSTILE_SITE_KEY} onToken={handleToken} resetSignal={turnstileReset} /> : null}
 
       <div className="qt-submit">
         <p className="qt-consent">
