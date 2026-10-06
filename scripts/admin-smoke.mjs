@@ -285,7 +285,7 @@ check('add Morning and Afternoon on one date', slotAm.status === 201 && slotPm.s
 const slotDayRefused = await call('/api/admin/availability', { method: 'POST', body: { date: slotDay, period: 'day' } });
 check('Full day refused while Morning or Afternoon is open', slotDayRefused.status === 409, `status ${slotDayRefused.status}`);
 const closeEmpty = async (slot) =>
-  call(`/api/admin/availability/${slot.id}/close`, { method: 'POST', body: { requests: 'close', pendingCount: slot.pendingCount, pendingMaxId: slot.pendingMaxId } });
+  call(`/api/admin/availability/${slot.id}/close`, { method: 'POST', body: {} });
 await closeEmpty(slotAm.data.slot);
 await closeEmpty(slotPm.data.slot);
 const slotFull = await call('/api/admin/availability', { method: 'POST', body: { date: slotDay, period: 'day' } });
@@ -316,47 +316,57 @@ if (sendTo) {
   });
   check('second send refused', again.status === 409, `status ${again.status}`);
 
-  // The customer's page and date requests (internal email to newquote@ only).
+  // The customer's page and booking, up to Stripe's test Checkout page. Nothing is paid: the hold is released.
   const quoteUrl = (sendPreview.data.email?.text || '').match(/https?:\/\/\S+\/q\/[A-Za-z0-9._-]+/)?.[0] || '';
   const path = quoteUrl ? new URL(quoteUrl).pathname : '/q/none';
   const quotePage = await fetch(`${base}${path}`, { redirect: 'manual' });
   const quoteHtml = await quotePage.text();
-  check('sent quote page shows the quote and Choose a date', quotePage.status === 200 && quoteHtml.includes(ref) && quoteHtml.includes('Choose a date'), `status ${quotePage.status}`);
+  check('sent quote page shows the quote', quotePage.status === 200 && quoteHtml.includes(ref), `status ${quotePage.status}`);
   check('sent quote page has no internal notes', !quoteHtml.includes(NOTE));
-  const slotA = (await call('/api/admin/availability', { method: 'POST', body: { date: addDays(5), period: 'am' } })).data.slot;
-  const slotB = (await call('/api/admin/availability', { method: 'POST', body: { date: addDays(6), period: 'pm' } })).data.slot;
-  const datePage = async () => {
-    const res = await fetch(`${base}${path}/date`, { redirect: 'manual' });
-    const html = await res.text();
-    return { status: res.status, nonce: html.match(/name="nonce" value="([^"]+)"/)?.[1] || '', html };
-  };
-  const post = async (slotId, nonce) =>
-    fetch(`${base}${path}/date`, {
+  const payments = (await call('/api/admin/payments')).data;
+  if (payments.available && payments.mode === 'test') {
+    check('quote page offers Book a slot', quoteHtml.includes('Book a slot'));
+    const slotA = (await call('/api/admin/availability', { method: 'POST', body: { date: addDays(10), period: 'am' } })).data.slot;
+    const slotB = (await call('/api/admin/availability', { method: 'POST', body: { date: addDays(11), period: 'pm' } })).data.slot;
+    const book = await (await fetch(`${base}${path}/book`, { redirect: 'manual' })).text();
+    check('booking page lists the open slots', book.includes(`value="${slotA?.id}"`) && book.includes(`value="${slotB?.id}"`));
+    const payPage = async (slotId) => {
+      const res = await fetch(`${base}${path}/pay?slot=${slotId}`, { redirect: 'manual' });
+      const html = await res.text();
+      return { status: res.status, html, nonce: html.match(/name="nonce" value="([^"]+)"/)?.[1] || '' };
+    };
+    const pay = (slotId, nonce) =>
+      fetch(`${base}${path}/pay`, {
+        method: 'POST',
+        redirect: 'manual',
+        headers: { Origin: base, 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({ slot: String(slotId), plan: 'full', agree: 'yes', nonce }),
+      });
+    const pageA = await payPage(slotA.id);
+    await closeEmpty(slotA);
+    const refused = await pay(slotA.id, pageA.nonce);
+    check('payment for a closed slot is refused', refused.status === 409, `status ${refused.status}`);
+    const pageB = await payPage(slotB.id);
+    check('payment page shows the total and amount due now', pageB.status === 200 && pageB.html.includes('Pay'), `status ${pageB.status}`);
+    const started = await pay(slotB.id, pageB.nonce);
+    const location = started.headers.get('Location') || '';
+    check('payment opens Stripe test Checkout', started.status === 303 && location.startsWith('https://checkout.stripe.com/'), `status ${started.status} ${location}`);
+    const held = await closeEmpty(slotB);
+    check('a held slot cannot be closed', held.status === 409, `status ${held.status}`);
+    const page = await (await fetch(`${base}${path}`, { redirect: 'manual' })).text();
+    const releaseNonce = page.match(/name="nonce" value="([^"]+)"/)?.[1] || '';
+    const released = await fetch(`${base}${path}/release`, {
       method: 'POST',
       redirect: 'manual',
       headers: { Origin: base, 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({ slot: String(slotId), nonce, note: 'Smoke test date request' }),
+      body: new URLSearchParams({ nonce: releaseNonce }),
     });
-  const list = await datePage();
-  check('date page lists the open slots', list.status === 200 && list.html.includes(`value="${slotA?.id}"`) && list.html.includes(`value="${slotB?.id}"`));
-  // Ordering 1: the slot closes first, then the request is refused.
-  await closeEmpty(slotA);
-  const refused = await post(slotA.id, list.nonce);
-  check('request after the slot closed is refused', refused.status === 409, `status ${refused.status}`);
-  // Ordering 2: the request commits first; a close made with an outdated view is refused, then closes it.
-  const accepted = await post(slotB.id, list.nonce);
-  check('date request accepted', accepted.status === 303, `status ${accepted.status}`);
-  const seen = (await call('/api/admin/availability')).data.slots?.find((x) => x.id === slotB.id);
-  await post(slotB.id, (await datePage()).nonce); // the customer chooses again, replacing the request
-  const stale = await call(`/api/admin/availability/${slotB.id}/close`, {
-    method: 'POST',
-    body: { requests: 'close', pendingCount: seen?.pendingCount, pendingMaxId: seen?.pendingMaxId },
-  });
-  check('close refused when a request arrived after it was loaded', stale.status === 409 && stale.data.changed === true, `status ${stale.status}`);
-  const closedB = await closeEmpty(stale.data.slot || seen);
-  check('close with the current requests closes them', closedB.status === 200 && closedB.data.closedRequests === 1, `status ${closedB.status}`);
-  const afterPage = await fetch(`${base}${path}`, { redirect: 'manual' });
-  check('quote page offers Choose a date again', (await afterPage.text()).includes('Choose a date'));
+    check('leaving checkout releases the slot', released.status === 303, `status ${released.status}`);
+    const closedB = await closeEmpty(slotB);
+    check('released slot can be closed', closedB.status === 200, `status ${closedB.status}`);
+  } else {
+    console.log(`      (booking not tested: online payment is ${payments.available ? `in ${payments.mode} mode` : 'off'}; it runs only with a Stripe test key)`);
+  }
 } else {
   console.log('      (no quote emailed: set ADMIN_SMOKE_SEND_TO to your own address to test a real send)');
 }

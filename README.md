@@ -228,17 +228,90 @@ outside D1, such as the internal notification email and any acknowledgement, mus
 separately from the mailbox, including sent quotes (the customer's copy cannot be recalled, and the
 BCC copy is in newquote@).
 
-Not built yet: quote acceptance, booking, payments and Stripe (Phase D).
+Bookings and payments are in Phase C below. Not built yet: job management and delivery (Phase E).
 
-### Customer quote page and date requests (Phase C)
+### Customer quote page, booking and payment (Phase C)
 
-Every quote email now links to the customer's own page, `https://ross360.co.uk/q/<token>`, with the
-line "View your quotation and choose a preferred date online." The page shows the quotation exactly
-as sent (it is drawn from the stored snapshot, never from the quote as it now stands), and, while the
-quote is valid, **Choose a date**. The customer picks one of your open slots and sends a **date
-request**. Nothing is booked: the page says so, `newquote@ross360.co.uk` (or `QUOTE_TO_EMAIL`) gets
-an internal email, and you confirm the date with the customer yourself. The customer is never
-emailed by this, and the enquiry status does not change.
+Every quote email has a **Book a slot** button linking to the customer's own page,
+`https://ross360.co.uk/q/<token>`. The page shows the quotation exactly as sent (drawn from the stored
+snapshot, never from the quote as it now stands). While the quote is valid the customer can **book a
+slot and pay on Stripe Checkout** (hosted by Stripe; no card details reach this site or D1).
+
+- **Packages and deposits.** Essential, Professional and Bespoke quotes can be paid in full or by deposit
+  (£50, £70, £100) when the slot is more than 7 days away. Within 7 days, and for quotes without one of
+  those packages, payment in full only. The deposit counts toward the total; the balance is the total
+  minus the deposit. Before Stripe the customer sees the total, the amount due now, any balance and
+  its deadline.
+- **Holding a slot.** Starting Checkout holds the slot for that customer for Stripe's minimum session
+  time, 30 minutes (plus about a minute of margin). Two customers can't hold or book the same slot: the
+  database refuses a second active booking on a slot. An unpaid hold is released when Stripe expires
+  the session, when the customer chooses a different slot, or by the hourly task.
+- **Confirmation.** A slot is booked only once Stripe confirms payment (the webhook, the customer's
+  return from Stripe, or the hourly task, whichever comes first; each is safe to repeat). The customer
+  gets a confirmation email and newquote@ an internal one. The enquiry moves to Booked. If a payment
+  completes after its hold ran out and the slot was taken, it is refunded in full automatically.
+- **Balance.** Due by the end of the UK day 7 days before the slot. Reminders go 14 and 8 days before
+  (from 09:00 UK), only those still ahead when booked. The email and the customer page have a Pay the
+  balance button (a new Checkout). Unpaid at the deadline: the booking is cancelled, the slot reopens,
+  the deposit is refunded in full and the customer is emailed.
+- **Cancellation.** The customer can cancel online. More than 48 hours before the slot: full refund
+  and the slot reopens at once. Within 48 hours: the request comes to you (Admin -> Bookings) and
+  nothing is refunded until you decide how much to keep, from nothing up to 50% of the booking total
+  (never more than was paid). Slot start times used for these windows: Morning and Full day 09:00,
+  Afternoon 13:00 (UK).
+- **Admin.** Bookings lists every booking with slot, payment status, paid, balance and deadline. A
+  booking's page has cancel (by the customer's request or by ROSS 360), move to another open slot (the
+  customer is emailed), payments and refunds, and **Retry refund** for a refund Stripe refused. A
+  refund that got no answer is retried hourly with the same Stripe idempotency key, so it is never
+  paid twice. **Run scheduled tasks now** runs the hourly tasks at once.
+
+**Testing safely.** With a Stripe test key (`sk_test_...`) no real card can be charged, and customer
+emails go only to addresses on `EMAIL_TEST_ALLOWLIST`; with a test key and no allowlist, no customer
+email is sent at all (quote sends included). A live key (`sk_live_...`) is refused unless
+`STRIPE_ALLOW_LIVE` is `true`, which belongs in Production only and only once approved. Preview and
+Production use separate D1 databases and separate Stripe keys and webhooks.
+
+| Name | Where | Required | Purpose |
+| --- | --- | --- | --- |
+| `STRIPE_SECRET_KEY` | Secret | For booking | Stripe secret key. Preview: a **test** key (`sk_test_...`) only. A restricted key with write access to Checkout Sessions and Refunds is enough |
+| `STRIPE_WEBHOOK_SECRET` | Secret | For booking | The signing secret (`whsec_...`) of the webhook endpoint below, for the same environment |
+| `EMAIL_TEST_ALLOWLIST` | Variable | Preview | Comma-separated addresses that may receive customer emails, for example your own. Leave unset in Production |
+| `SCHEDULER_SECRET` | Secret | For booking | At least 32 characters (`openssl rand -base64 48`). The same value goes into the scheduler Worker |
+| `STRIPE_ALLOW_LIVE` | Variable | Production only | `true` permits a live key. Never set it in Preview |
+
+Without `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET` the page shows the quotation and says online
+booking isn't available; nothing else changes.
+
+**Setting up Stripe for Preview (test mode).**
+
+1. In the Stripe Dashboard switch to **Test mode**. Developers -> API keys: copy the **Secret key**
+   (`sk_test_...`), or create a restricted key as above.
+2. Developers -> Webhooks -> **Add endpoint**. URL: `https://phase-c-customer-links.ross360.pages.dev/api/stripe/webhook`.
+   Events: `checkout.session.completed`, `checkout.session.async_payment_succeeded`,
+   `checkout.session.expired`, `refund.updated`, `refund.failed`, `charge.refund.updated`. Save, then
+   reveal and copy the **Signing secret** (`whsec_...`).
+3. Cloudflare -> Workers & Pages -> `ross360` -> Settings -> Variables and Secrets, **Preview**
+   environment: add `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET` as secrets (Encrypt),
+   `SCHEDULER_SECRET` as a secret, and `EMAIL_TEST_ALLOWLIST` as a plain variable with your own
+   address. Redeploy the branch (retry the latest deployment) so they take effect.
+4. Apply `migrations/0004_bookings.sql` to `ross360-admin-preview` (see Admin).
+5. Deploy the scheduler for Preview (next section). Test cards: `4242 4242 4242 4242` pays, `4000 0000 0000 0002` is declined; any future expiry and any CVC.
+
+**Booking scheduler (Cron Worker).** Reminders, unpaid-balance cancellations, expired holds and refund
+retries run hourly from a small separate Worker in `workers/scheduler/`, which calls
+`/api/scheduler/run` on the site with `SCHEDULER_SECRET`. It has no access to D1 or Stripe itself.
+From that folder on your Mac:
+
+```
+npx wrangler@4 deploy --env preview
+npx wrangler@4 secret put SCHEDULER_SECRET --env preview
+```
+
+Use the same value as the Pages Preview secret. For Production, only when approved, the same with
+`--env production`. Without the Worker nothing runs on its own, but **Run scheduled tasks now** in the
+Admin does the same.
+
+**Customer links.**
 
 | Name | Where | Required | Purpose |
 | --- | --- | --- | --- |
@@ -252,21 +325,17 @@ Without `QUOTE_LINK_SECRET` and `QUOTE_LINK_KEY_ID`, customer pages say the quot
 available online and **sending a quote is refused**, so no email goes out without its link. The link is
 created when a draft is first previewed, so the preview shows exactly the link that is sent.
 
-**When a link works.** While the quote is valid: the page and Choose a date. Up to 90 days after
-"valid until": the page, marked expired, without dates. After that, or once disabled, or for any link
+**When a link works.** While the quote is valid: the page and Book a slot. Up to 90 days after
+"valid until": the page, marked expired, without booking (a quote with an active booking stays
+viewable, with its booking, for as long as the booking is active). After that, or once disabled, or for any link
 that is invalid, unknown or signed with a key no longer configured: the same "no longer available"
 page. A superseded quote says it has been replaced (with no link to the revision). A quote that has
 not been sent, or whose send is unknown, says it isn't available online.
 
 **Availability** (Admin -> Availability). Add Morning, Afternoon or Full day slots; customers see open
 slots from 2 days to 8 weeks ahead. On any date the open slots are either one Full day, or Morning
-and/or Afternoon, never both; the server and the database (0004 triggers) both enforce this. A pending
-request does not hide a slot. When you close a slot you choose what happens to its pending requests:
-**close them** (the default) or **keep them** (they stay pending, marked "Slot closed", for you to settle
-with the customer, and can be closed later from the quote). If a request arrives while you are
-closing, the close is refused and reloads with it, so you never close a request you haven't seen. A
-request and a close are each one transaction, and the database refuses any pending request on a
-closed slot, so a request can never be accepted after its slot was closed.
+and/or Afternoon, never both; the server and the database (0004 triggers) both enforce this. A booked
+or held slot shows its booking and can't be closed; cancel or move the booking first.
 
 **Disabling and replacing a link** (on a sent quote, Customer link). **Disable link** stops it at once,
 including the link in the email already sent. **Create new link** issues a new one (and disables any
@@ -294,14 +363,17 @@ WAF -> Rate limiting rules, create a rule named `Customer quote links`: URI path
 counted by IP address, 20 requests per 10 seconds, action Block for the shortest duration offered.
 Rate limiting rules are available on every plan, and on Free this fits the limits (one rule, counted
 by IP, a 10-second period and a 10-second block, matching on the path). A second, stricter rule for
-date requests only (`POST` to `/q/*`, for example 5 per minute per IP, blocked for 10 minutes) needs
+booking forms only (`POST` to `/q/*`, for example 5 per minute per IP, blocked for 10 minutes) needs
 matching by request method, which Cloudflare's feature table lists for Business and above: add it only
 if your dashboard offers request method as a match field. Check what your own plan offers.
 
-**Deploy order:** apply `0004_bookings.sql` to Preview D1 and set the link secrets in Preview;
-test the branch preview; then set the Production secrets, apply 0004 to Production D1 (the code
-already deployed keeps working with it), and merge. Customer pages run as a Pages Function: `/q/*` is
-in `public/_routes.json`.
+**Deploy order.** Preview first: apply `0004_bookings.sql` to Preview D1, set the Preview secrets
+above, deploy the Preview scheduler, and test the branch preview end to end in Stripe test mode.
+Production only after approval of the Preview journey and the Terms wording: apply 0004 to Production
+D1 (the code already deployed keeps working with it), set the Production link secrets, live Stripe key,
+`STRIPE_ALLOW_LIVE=true`, webhook (to `https://ross360.co.uk/api/stripe/webhook`) and scheduler
+secret, deploy the Production scheduler, publish the approved Terms and Privacy wording, then merge.
+Customer pages run as a Pages Function: `/q/*` is in `public/_routes.json`.
 
 ## Where to edit content
 
@@ -311,6 +383,7 @@ Everything business-specific lives in `src/content/`, so values are not duplicat
 - `pricing.js` — package prices and descriptions, pricing wording
 - `services.js` — deliverable lists, process steps, sector copy
 - `faq.js`, `portfolio.js` (empty until real work exists), `seo.js` (titles, descriptions, structured data)
+- `booking.js` — customer booking page and booking email wording (drafts marked in the file); `quoteEmail.js` — quote email wording
 
 ## Placeholders and provisional items
 
@@ -325,9 +398,10 @@ Everything business-specific lives in `src/content/`, so values are not duplicat
 
 ## Stripe
 
-Payment happens **after a quote is accepted**, so no payment code runs on this website. Send a Stripe Payment
-Link or Invoice created in the Stripe Dashboard with each quote. This keeps secrets and card handling off the site
-entirely. If a hosted checkout is wanted later, it would be a new Pages Function.
+Customers book and pay on Stripe Checkout (hosted by Stripe) from their quote page: see Phase C under
+Admin. The site never sees or stores card details; it keeps Stripe's session, payment and refund ids
+and amounts. Refunds are issued through the Stripe API; Stripe does not return its processing fee on
+a refund.
 
 ## Spam protection on the form
 
