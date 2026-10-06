@@ -4,6 +4,7 @@ import { api } from '../api.js';
 import { when } from '../components/Bits.jsx';
 import { PERIODS, SLOT_NOTE_MAX, periodLabel, weekdayDate } from '../../src/lib/admin/availability.js';
 import { ukToday } from '../../src/lib/admin/quotes.js';
+import { BookingTag } from './Bookings.jsx';
 
 const monthOf = (date) =>
   new Date(`${date.slice(0, 7)}-01T12:00:00Z`).toLocaleDateString('en-GB', { timeZone: 'UTC', month: 'long', year: 'numeric' });
@@ -85,8 +86,8 @@ export default function Availability() {
         <h1 className="ad-h1">Availability</h1>
       </div>
       <p className="ad-note">
-        Customers with a valid quote can send a date request for any open slot from 2 days to 8 weeks ahead. A request books nothing:
-        confirm the date with the customer yourself, then close the slot.
+        Customers with a valid quote can book and pay for any open slot from 2 days to 8 weeks ahead. A slot is booked only once Stripe
+        confirms payment; while a customer is paying, it is held for them for up to 30 minutes.
       </p>
 
       <form className="ad-section" onSubmit={add} noValidate>
@@ -153,7 +154,7 @@ export default function Availability() {
                       {weekdayDate(slot.date)}, {periodLabel(slot.period)}
                     </span>
                     <span className={`ad-tag ad-tag--slot-${slot.status}`}>{slot.status === 'open' ? 'Open' : 'Closed'}</span>
-                    {slot.status === 'open' ? (
+                    {slot.status === 'open' && !slot.booking ? (
                       <button
                         type="button"
                         className="ad-button ad-button--quiet ad-button--small"
@@ -161,36 +162,22 @@ export default function Availability() {
                       >
                         Close
                       </button>
-                    ) : (
+                    ) : slot.status === 'closed' ? (
                       <button type="button" className="ad-button ad-button--quiet ad-button--small" onClick={() => reopen(slot)}>
                         Reopen
                       </button>
-                    )}
+                    ) : null}
                   </div>
                   <SlotNote slot={slot} onSave={saveNote} />
-                  {slot.pendingRequests.length ? (
-                    <ul className="ad-list">
-                      {slot.pendingRequests.map((request) => (
-                        <PendingRequest key={request.id} request={request} slotClosed={slot.status === 'closed'} />
-                      ))}
-                    </ul>
-                  ) : null}
+                  {slot.booking ? <SlotBooking booking={slot.booking} /> : null}
                   {closing?.id === slot.id ? (
                     <CloseSlot
                       slot={closing}
                       onCancel={() => setClosing(null)}
-                      onChanged={(latest) => {
-                        replace(latest);
-                        setClosing(latest);
-                      }}
-                      onClosed={(latest, closedRequests) => {
+                      onClosed={(latest) => {
                         replace(latest);
                         setClosing(null);
-                        setMessage(
-                          `${weekdayDate(latest.date)}, ${periodLabel(latest.period)} closed${
-                            closedRequests ? `, with ${closedRequests} date request${closedRequests === 1 ? '' : 's'}` : ''
-                          }.`,
-                        );
+                        setMessage(`${weekdayDate(latest.date)}, ${periodLabel(latest.period)} closed.`);
                       }}
                     />
                   ) : null}
@@ -206,21 +193,15 @@ export default function Availability() {
   );
 }
 
-function PendingRequest({ request, slotClosed }) {
+function SlotBooking({ booking }) {
   return (
-    <li>
-      Date request from {request.customer || 'a customer'} on{' '}
-      <Link className="ad-link" to={`/quotes/${request.quoteReference}`}>
-        {request.quoteReference}
-      </Link>{' '}
-      (
-      <Link className="ad-link" to={`/enquiries/${request.enquiryReference}`}>
-        {request.enquiryReference}
+    <p className="ad-slot__booking">
+      <BookingTag status={booking.status} />{' '}
+      <Link className="ad-link" to={`/bookings/${booking.id}`}>
+        {booking.customer || 'A customer'}, {booking.quoteReference}
       </Link>
-      ), {when(request.createdAt, true)}
-      {slotClosed ? <span className="ad-tag ad-tag--slot-closed">Slot closed</span> : null}
-      {request.note ? <span className="ad-muted"> · “{request.note}”</span> : null}
-    </li>
+      {booking.status === 'holding' ? <span className="ad-muted"> · paying now, held until {when(booking.holdExpiresAt, true)}</span> : null}
+    </p>
   );
 }
 
@@ -254,52 +235,26 @@ function SlotNote({ slot, onSave }) {
   );
 }
 
-// Closing a slot: the administrator decides what happens to its pending date requests. The choice
-// applies only to the requests shown here; if another arrives first, the server refuses the close and
-// this reloads with it.
-function CloseSlot({ slot, onCancel, onChanged, onClosed }) {
-  const [requests, setRequests] = useState('close');
+// Closing a slot stops new bookings for it. A slot with a booking, or a customer paying for it now,
+// can't be closed: cancel or move the booking first.
+function CloseSlot({ slot, onCancel, onClosed }) {
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
-  const pending = slot.pendingRequests;
 
   const confirm = async () => {
     setBusy(true);
     setError('');
-    const result = await api.closeSlot(slot, pending.length ? requests : 'close');
+    const result = await api.closeSlot(slot.id);
     setBusy(false);
     if (result.status === 401) return;
-    if (result.ok) {
-      onClosed(result.slot, result.closedRequests);
-      return;
-    }
-    setError(result.message || 'Something went wrong.');
-    if (result.changed && result.slot) onChanged(result.slot);
+    if (result.ok) onClosed(result.slot);
+    else setError(result.message || 'Something went wrong.');
   };
 
   return (
     <div className="ad-close-slot" role="group" aria-label={`Close ${weekdayDate(slot.date)}, ${periodLabel(slot.period)}`}>
       {error ? <p className="ad-error" role="alert">{error}</p> : null}
-      {pending.length ? (
-        <>
-          <p>
-            {pending.length === 1 ? 'This slot has 1 pending date request.' : `This slot has ${pending.length} pending date requests.`}
-          </p>
-          <div className="ad-choice">
-            <label className="ad-choice__option">
-              <input type="radio" name={`close-${slot.id}`} checked={requests === 'close'} onChange={() => setRequests('close')} />
-              Close the slot and its pending requests
-            </label>
-            <label className="ad-choice__option">
-              <input type="radio" name={`close-${slot.id}`} checked={requests === 'keep'} onChange={() => setRequests('keep')} />
-              Close the slot and keep its pending requests (marked “Slot closed”, for you to settle with the customer)
-            </label>
-          </div>
-        </>
-      ) : (
-        <p>Close this slot? Customers will no longer be able to choose it.</p>
-      )}
-      <p className="ad-note">Customers are not emailed.</p>
+      <p>Close this slot? Customers will no longer be able to book it.</p>
       <div className="ad-actions">
         <button type="button" className="ad-button" onClick={confirm} disabled={busy}>
           {busy ? 'Closing…' : 'Close slot'}

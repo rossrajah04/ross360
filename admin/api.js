@@ -65,13 +65,16 @@ export const api = {
   availability: () => call('/availability'),
   addSlot: (values) => call('/availability', { method: 'POST', body: values }),
   slotNote: (id, note) => call(`/availability/${id}`, { method: 'PATCH', body: { note } }),
-  closeSlot: (slot, requests) =>
-    call(`/availability/${slot.id}/close`, {
-      method: 'POST',
-      body: { requests, pendingCount: slot.pendingCount, pendingMaxId: slot.pendingMaxId },
-    }),
+  closeSlot: (id) => call(`/availability/${id}/close`, { method: 'POST', body: {} }),
   reopenSlot: (id) => call(`/availability/${id}/reopen`, { method: 'POST', body: {} }),
-  closeDateRequest: (id) => call(`/date-requests/${id}/close`, { method: 'POST', body: {} }),
+  // Bookings and payments (Phase C)
+  bookings: () => call('/bookings'),
+  booking: (id) => call(`/bookings/${id}`),
+  cancelBooking: (id, body) => call(`/bookings/${id}/cancel`, { method: 'POST', body: { ...body, confirm: true } }),
+  moveBooking: (id, slotId) => call(`/bookings/${id}/move`, { method: 'POST', body: { slotId, confirm: true } }),
+  retryRefund: (id, refundId) => call(`/bookings/${id}/refunds/${refundId}/retry`, { method: 'POST', body: {} }),
+  payments: () => call('/payments'),
+  runScheduler: () => call('/scheduler/run', { method: 'POST', body: {} }),
 };
 
 // The customer email of a quote, for the preview frame.

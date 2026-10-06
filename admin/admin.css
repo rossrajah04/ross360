@@ -824,3 +824,124 @@ body {
 .ad-tag--slot-closed {
   margin-left: 6px;
 }
+
+/* Bookings (Phase C) ------------------------------------------------------ */
+
+.ad-tag--booking-holding,
+.ad-tag--booking-cancel_requested {
+  background: #fff7e6;
+  border-color: #f2d9a6;
+}
+
+.ad-tag--booking-confirmed {
+  background: #f1f8f3;
+  border-color: #c9e3d3;
+}
+
+.ad-tag--booking-cancelled,
+.ad-tag--booking-expired {
+  background: #f6f5f3;
+  border-color: #d9d7d1;
+  color: var(--muted);
+}
+
+.ad-tag--warn {
+  background: #fdf3f2;
+  border-color: #f3cfcb;
+  color: var(--danger);
+}
+
+.ad-bookings {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.ad-booking-row {
+  border-bottom: 1px solid var(--line);
+}
+
+.ad-booking-row__link {
+  display: grid;
+  gap: 4px;
+  padding: 12px 0;
+  color: inherit;
+  text-decoration: none;
+}
+
+.ad-booking-row__link:hover .ad-booking-row__when,
+.ad-booking-row__link:focus-visible .ad-booking-row__when {
+  text-decoration: underline;
+}
+
+.ad-booking-row__head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  align-items: center;
+}
+
+.ad-booking-row__when {
+  font-weight: 600;
+}
+
+.ad-panel {
+  margin: 12px 0 0;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg-soft);
+}
+
+.ad-panel p {
+  margin: 0 0 10px;
+}
+
+.ad-panel .ad-field {
+  max-width: 320px;
+}
+
+.ad-sum {
+  display: grid;
+  grid-template-columns: max-content max-content;
+  gap: 4px 24px;
+  margin: 8px 0 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.ad-sum dt {
+  color: var(--muted);
+}
+
+.ad-sum dd {
+  margin: 0;
+  text-align: right;
+}
+
+.ad-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.ad-table th,
+.ad-table td {
+  padding: 8px 12px 8px 0;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  vertical-align: top;
+}
+
+.ad-table th {
+  color: var(--muted);
+  font-weight: 600;
+  font-size: 12px;
+}
+
+.ad-table-wrap {
+  overflow-x: auto;
+}
+
+.ad-slot__booking {
+  margin: 0.25rem 0 0;
+}

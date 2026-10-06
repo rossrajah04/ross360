@@ -26,7 +26,9 @@ export default function Dashboard() {
   const figures = [
     { label: 'New enquiries', value: counts.newEnquiries, to: list('newEnquiries') },
     { label: 'Quotes awaiting response', value: counts.quotesAwaiting, to: list('quotesAwaiting') },
-    { label: 'Pending date requests', value: data.pendingDateRequests ?? 0, to: '/availability' },
+    { label: 'Cancellation requests to decide', value: data.bookings?.cancelRequests ?? 0, to: '/bookings' },
+    { label: 'Balances due', value: data.bookings?.balancesDue ?? 0, to: '/bookings' },
+    ...(data.bookings?.failedRefunds ? [{ label: 'Refunds that failed', value: data.bookings.failedRefunds, to: '/bookings' }] : []),
     { label: 'Upcoming bookings', value: counts.upcomingBookings, to: list('upcomingBookings') },
     { label: 'Jobs in production', value: counts.inProduction, to: list('inProduction') },
     { label: 'Payments outstanding', value: formatMoney(data.paymentsOutstandingPence) },

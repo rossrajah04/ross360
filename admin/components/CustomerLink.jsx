@@ -1,9 +1,12 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { api } from '../api.js';
 import { when } from './Bits.jsx';
-import { dateRequestStatusLabel, periodLabel, weekdayDate } from '../../src/lib/admin/availability.js';
+import { periodLabel, weekdayDate } from '../../src/lib/admin/availability.js';
+import { formatMoney } from '../../src/lib/admin/model.js';
+import { BookingTag } from '../pages/Bookings.jsx';
 
-// The customer's link to a sent quote (Phase C), its views and the customer's date requests.
+// The customer's link to a sent quote (Phase C), its views and the customer's bookings.
 // Nothing here emails the customer: a new link is copied and sent by hand.
 export default function CustomerLink({ quote }) {
   const [data, setData] = useState(null);
@@ -51,10 +54,6 @@ export default function CustomerLink({ quote }) {
     const replacing = data.link ? ' The current link stops working.' : '';
     if (!window.confirm(`Create a new customer link for ${quote.reference}?${replacing} Nothing is emailed: copy the new link and send it yourself.`)) return;
     act(() => api.newLink(quote.reference), 'New link created. Copy it and send it to the customer yourself.');
-  };
-  const closeRequest = (request) => {
-    if (!window.confirm(`Close the date request for ${weekdayDate(request.date)}, ${periodLabel(request.period)}? The customer is not emailed.`)) return;
-    act(() => api.closeDateRequest(request.id), 'Date request closed.');
   };
   const copy = async () => {
     try {
@@ -125,32 +124,25 @@ export default function CustomerLink({ quote }) {
         </div>
       ) : null}
 
-      <h3 className="ad-h3">Date requests</h3>
-      {data.dateRequests.length ? (
+      <h3 className="ad-h3">Bookings</h3>
+      {data.bookings.length ? (
         <ul className="ad-rows">
-          {data.dateRequests.map((request) => (
-            <li key={request.id} className="ad-request">
-              <div>
-                <strong>
-                  {weekdayDate(request.date)}, {periodLabel(request.period)}
-                </strong>{' '}
-                <span className={`ad-tag ad-tag--request-${request.status}`}>{dateRequestStatusLabel(request.status)}</span>
-                {request.status === 'pending' && request.slotStatus === 'closed' ? <span className="ad-tag ad-tag--slot-closed">Slot closed</span> : null}
+          {data.bookings.map((b) => (
+            <li key={b.id}>
+              <Link className="ad-link" to={`/bookings/${b.id}`}>
+                {weekdayDate(b.date)}, {periodLabel(b.period)}
+              </Link>{' '}
+              <BookingTag status={b.status} />
+              <div className="ad-muted">
+                Paid {formatMoney(b.paidPence)} of {formatMoney(b.totalPence)}
+                {b.refundedPence ? `, refunded ${formatMoney(b.refundedPence)}` : ''}
               </div>
-              <div className="ad-muted">Requested {when(request.createdAt, true)}</div>
-              {request.note ? <p className="ad-pre">{request.note}</p> : null}
-              {request.status === 'pending' ? (
-                <button type="button" className="ad-button ad-button--quiet ad-button--small" onClick={() => closeRequest(request)} disabled={busy}>
-                  Close request
-                </button>
-              ) : null}
             </li>
           ))}
         </ul>
       ) : (
-        <p className="ad-muted">No date requests.</p>
+        <p className="ad-muted">No bookings.</p>
       )}
-      <p className="ad-note">A date request books nothing. Confirm the date with the customer yourself, then close the slot on the Availability page.</p>
     </section>
   );
 }

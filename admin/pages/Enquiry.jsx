@@ -15,6 +15,7 @@ import {
 import { PROJECT_TYPES, SPACE_TYPES, SOURCES } from '../../src/lib/quoteSchema.js';
 import { QuoteTag, StatusTag, when } from '../components/Bits.jsx';
 import { periodLabel, weekdayDate } from '../../src/lib/admin/availability.js';
+import { CANCEL_REASONS } from '../../src/lib/admin/booking.js';
 
 const CUSTOMER_FIELDS = ['name', 'business', 'email', 'phone'];
 const PROJECT_FIELDS = ['projectType', 'projectOther', 'spaceType', 'location', 'size', 'areas', 'message', 'source'];
@@ -338,9 +339,7 @@ function describe(event) {
   if (type === 'updated') return `Updated ${detail.fields?.join(', ') || 'details'}`;
   if (type === 'note') return detail.text;
   if (type === 'notification_failed') {
-    return detail.email === 'date_request'
-      ? `Quote ${detail.quote}: internal email about the date request failed (${detail.status})`
-      : 'Internal email notification failed';
+    return detail.quote ? `Quote ${detail.quote}: email "${detail.email}" not sent (${detail.status})` : 'Internal email notification failed';
   }
   if (type === 'quote_created') return `Quote ${detail.quote} created`;
   if (type === 'quote_updated') {
@@ -363,13 +362,29 @@ function describe(event) {
   if (type === 'quote_link_created') return `Quote ${detail.quote}: ${detail.replaced ? 'new ' : ''}customer link created (key ${detail.keyId})`;
   if (type === 'quote_link_revoked') return `Quote ${detail.quote}: customer link disabled`;
   if (type === 'quote_viewed') return `Quote ${detail.quote} viewed by the customer${detail.first ? ' for the first time' : ''}`;
-  if (type === 'date_requested') {
-    return `Quote ${detail.quote}: date requested, ${slotText(detail)}${detail.note ? ', with a note' : ''}. Nothing is booked`;
+  if (type === 'checkout_started') {
+    return `Quote ${detail.quote}: customer started paying ${formatMoney(detail.amountPence)} (${detail.plan === 'deposit' ? 'deposit' : 'in full'}) for ${slotText(detail)}; slot held`;
   }
-  if (type === 'date_request_replaced') return `Quote ${detail.quote}: earlier date request (${slotText(detail)}) replaced by the customer`;
-  if (type === 'date_request_closed') {
-    return `Quote ${detail.quote}: date request (${slotText(detail)}) closed${detail.reason === 'slot_closed' ? ' with its slot' : ''}`;
+  if (type === 'checkout_expired') return `Quote ${detail.quote}: payment not completed for ${slotText(detail)}; slot released`;
+  if (type === 'checkout_released') return `Quote ${detail.quote}: customer left the payment for ${slotText(detail)}; slot released`;
+  if (type === 'booking_confirmed') {
+    return `Quote ${detail.quote}: booked ${slotText(detail)}, ${formatMoney(detail.paidPence)} paid (${detail.plan === 'deposit' ? 'deposit' : 'in full'})`;
   }
+  if (type === 'balance_paid') return `Quote ${detail.quote}: balance of ${formatMoney(detail.paidPence)} paid`;
+  if (type === 'balance_reminder_sent') {
+    return `Quote ${detail.quote}: ${detail.days}-day balance reminder ${detail.skipped ? 'skipped (test address guard)' : 'emailed'}`;
+  }
+  if (type === 'booking_cancel_requested') return `Quote ${detail.quote}: customer asked to cancel ${slotText(detail)} (within 48 hours); decision needed`;
+  if (type === 'booking_cancelled') {
+    const kept = detail.retainedPence ? `, ${formatMoney(detail.retainedPence)} kept` : '';
+    return `Quote ${detail.quote}: booking for ${slotText(detail)} cancelled (${CANCEL_REASONS[detail.reason] || detail.reason})${kept}, ${formatMoney(detail.refundPence)} to refund`;
+  }
+  if (type === 'booking_moved') {
+    return `Quote ${detail.quote}: booking moved from ${slotText({ date: detail.fromDate, period: detail.fromPeriod })} to ${slotText(detail)}`;
+  }
+  if (type === 'refund_issued') return `Quote ${detail.quote}: refund of ${formatMoney(detail.amountPence)} issued by Stripe`;
+  if (type === 'refund_failed') return `Quote ${detail.quote}: refund of ${formatMoney(detail.amountPence)} failed; retry it from the booking`;
+  if (type === 'payment_refunded_late') return `Quote ${detail.quote}: payment of ${formatMoney(detail.paidPence)} arrived after its booking ended; refunded in full`;
   return type;
 }
 

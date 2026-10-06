@@ -10,6 +10,8 @@ import Quote from './pages/Quote.jsx';
 import QuotePreview from './pages/QuotePreview.jsx';
 import Availability from './pages/Availability.jsx';
 import Links from './pages/Links.jsx';
+import Bookings from './pages/Bookings.jsx';
+import Booking from './pages/Booking.jsx';
 
 // Authentication state for the whole Admin. The server decides: this only reflects what
 // /api/admin/session says, and any API call answering 401 sends the user back to sign in.
@@ -81,6 +83,8 @@ export default function App() {
           <Route path="/enquiries/:reference" element={<Enquiry />} />
           <Route path="/quotes/:reference" element={<Quote />} />
           <Route path="/quotes/:reference/preview" element={<QuotePreview />} />
+          <Route path="/bookings" element={<Bookings />} />
+          <Route path="/bookings/:id" element={<Booking />} />
           <Route path="/availability" element={<Availability />} />
           <Route path="/links" element={<Links />} />
           <Route path="*" element={<Navigate to="/" replace />} />
@@ -106,6 +110,9 @@ function Chrome({ email, onSignOut }) {
           </NavLink>
           <NavLink to="/enquiries" className="ad-nav__link">
             Enquiries
+          </NavLink>
+          <NavLink to="/bookings" className="ad-nav__link">
+            Bookings
           </NavLink>
           <NavLink to="/availability" className="ad-nav__link">
             Availability
