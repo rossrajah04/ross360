@@ -40,10 +40,15 @@ export default function QuotePreview() {
     if (!ok) return;
     setSending(true);
     setError('');
-    const result = await api.sendQuote(quote.reference, quote.version);
+    const result = await api.sendQuote(quote.reference, quote.version, data.issuedOn);
     if (result.status === 401) return;
     if (result.ok) {
       navigate(`/quotes/${quote.reference}`, { state: { message: `${quote.reference} sent to ${quote.customerEmail}.` } });
+      return;
+    }
+    // No proof either way: the quote is now locked; its page explains how to check it safely.
+    if (result.unknown) {
+      navigate(`/quotes/${quote.reference}`);
       return;
     }
     // Stays locked if the quote has moved on (sent, being sent or changed); otherwise it can be retried.

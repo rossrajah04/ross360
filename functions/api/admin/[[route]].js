@@ -28,6 +28,7 @@ import {
   getQuote,
   listQuotes,
   previewOf,
+  reconcileQuote,
   recordPreview,
   reviseQuote,
   sendQuote,
@@ -52,6 +53,13 @@ const QUOTE_OUTCOMES = {
   stale: [409, 'This quote has changed since you opened it. Reload it to see the latest version; nothing was saved or sent.'],
   conflict: [409, 'This quote is already being sent, has been sent, or has changed since you previewed it. Nothing was sent again.'],
   not_sent: [409, 'Only a sent quote can be revised.'],
+  not_previewed: [409, 'Preview this version of the quote before sending it. Nothing was sent.'],
+  preview_outdated: [409, 'The preview was for a different day, so its dates are out of date. Preview it again before sending. Nothing was sent.'],
+  not_unknown: [409, 'This quote does not have an unknown send to check.'],
+  window_passed: [
+    409,
+    'This send can no longer be checked automatically (more than 23 hours have passed). It stays locked: check Resend and the newquote@ copy, then reconcile it by hand as the README describes.',
+  ],
   unconfigured: [503, 'Email sending is not set up (RESEND_API_KEY). Nothing was sent.'],
 };
 
@@ -68,6 +76,17 @@ function quoteOutcome(outcome) {
   }
   if (outcome.result === 'incomplete') {
     return json({ ok: false, message: 'This quote is not ready to send.', problems: outcome.problems, quote: outcome.quote }, 422);
+  }
+  if (outcome.result === 'unknown') {
+    return json(
+      {
+        ok: false,
+        unknown: true,
+        message: `We could not confirm whether the email was sent (${outcome.status}). The quote is locked as "Send status unknown" and will not be sent again. Use "Check send status" to find out safely.`,
+        quote: outcome.quote,
+      },
+      502,
+    );
   }
   if (outcome.result === 'failed') {
     return json(
@@ -284,13 +303,21 @@ async function handle(context) {
           subject: email.subject,
           text: email.text,
         },
+        // The UK date the preview was rendered for; sending must happen on the same date.
+        issuedOn: quote.status === 'draft' ? email.snapshot.issuedOn : quote.issuedOn,
       });
     }
 
     if (method !== 'POST') return json({ ok: false, message: 'Method not allowed.' }, 405);
     if (action === 'send') {
-      if (body.confirm !== true || !isVersion(body.version)) return json({ ok: false, message: 'Invalid request.' }, 400);
-      return quoteOutcome(await sendQuote(env, reference, body.version, actor));
+      if (body.confirm !== true || !isVersion(body.version) || typeof body.previewedOn !== 'string') {
+        return json({ ok: false, message: 'Invalid request.' }, 400);
+      }
+      return quoteOutcome(await sendQuote(env, reference, { version: body.version, previewedOn: body.previewedOn }, actor));
+    }
+    if (action === 'check-send') {
+      if (body.confirm !== true) return json({ ok: false, message: 'Invalid request.' }, 400);
+      return quoteOutcome(await reconcileQuote(env, reference, actor));
     }
     if (action === 'revise') {
       const outcome = await reviseQuote(db, reference, actor);

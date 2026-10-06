@@ -11,6 +11,7 @@ import { poundsToPence } from './model.js';
 export const QUOTE_STATUSES = [
   { value: 'draft', label: 'Draft' },
   { value: 'sending', label: 'Sending' },
+  { value: 'send_unknown', label: 'Send status unknown' },
   { value: 'sent', label: 'Sent' },
   { value: 'superseded', label: 'Superseded' },
   { value: 'discarded', label: 'Discarded' },
@@ -242,5 +243,5 @@ export function longDate(isoDate) {
 }
 
 // A quote left in "sending" this long most likely means the request stopped before the result was
-// recorded. It is never sent again automatically: someone must check Resend first.
+// recorded. It is treated like "send_unknown": never sent again automatically, only checked.
 export const SEND_UNKNOWN_AFTER_MS = 10 * 60 * 1000;

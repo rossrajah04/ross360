@@ -209,6 +209,24 @@ export default function Quote() {
     else setError(result.message);
   };
 
+  // Repeats the stored request under the same Idempotency-Key: Resend either reports the original
+  // email (nothing new is sent) or, if the original never arrived, delivers that same email once.
+  const checkSend = async () => {
+    const ok = window.confirm(
+      `Check whether ${reference} was sent?\n\nThis asks Resend about the original request. If it was delivered, nothing is sent again. If it never reached Resend, this same stored email is delivered once to ${quote.sentTo}.`,
+    );
+    if (!ok) return;
+    setBusy(true);
+    setError('');
+    setMessage('');
+    const result = await api.checkSend(reference);
+    setBusy(false);
+    if (result.status === 401) return;
+    if (result.quote) take(result.quote);
+    if (result.ok) setMessage(`Confirmed: ${reference} was sent to ${result.quote.sentTo}.`);
+    else setError(result.message || 'The send could not be confirmed.');
+  };
+
   const revise = async () => {
     setBusy(true);
     setError('');
@@ -289,7 +307,7 @@ export default function Quote() {
         </p>
       ) : null}
 
-      {draft ? null : <SentSummary quote={quote} busy={busy} onRevise={revise} />}
+      {draft ? null : <SentSummary quote={quote} busy={busy} onRevise={revise} onCheckSend={checkSend} />}
 
       {draft ? (
         <>
@@ -461,7 +479,13 @@ export default function Quote() {
         </>
       ) : (
         <section className="ad-section">
-          <h2 className="ad-h2">{quote.status === 'discarded' ? 'Discarded draft' : 'Email as sent'}</h2>
+          <h2 className="ad-h2">
+            {quote.status === 'discarded'
+              ? 'Discarded draft'
+              : quote.status === 'sent' || quote.status === 'superseded'
+                ? 'Email as sent'
+                : 'Email as stored for sending'}
+          </h2>
           {quote.status === 'discarded' ? (
             <p className="ad-note">This draft was discarded and was never sent.</p>
           ) : null}
@@ -483,14 +507,49 @@ export default function Quote() {
   );
 }
 
-function SentSummary({ quote, busy, onRevise }) {
-  if (quote.status === 'sending') {
+function SentSummary({ quote, busy, onRevise, onCheckSend }) {
+  if (quote.status === 'sending' && !quote.sendStatusUnknown) {
     return (
-      <p className={quote.sendStatusUnknown ? 'ad-error' : 'ad-ok'} role="status">
-        {quote.sendStatusUnknown
-          ? 'Send status unknown: check Resend before retrying. This quote will not be sent again automatically.'
-          : 'This quote is being sent.'}
+      <p className="ad-ok" role="status">
+        This quote is being sent.
       </p>
+    );
+  }
+  if (quote.sendStatusUnknown) {
+    return (
+      <section className="ad-section">
+        <h2 className="ad-h2">Send status unknown</h2>
+        <p className="ad-error" role="status">
+          We could not confirm whether this email reached {quote.sentTo}. The quote is locked: it cannot be edited,
+          discarded or sent again from here.
+        </p>
+        <dl className="ad-facts">
+          <dt>Send started</dt>
+          <dd>{when(quote.sendingStartedAt, true)}</dd>
+          <dt>To</dt>
+          <dd>{quote.sentTo}</dd>
+          <dt>Subject</dt>
+          <dd>{quote.sentSubject}</dd>
+        </dl>
+        {quote.canCheckSend ? (
+          <>
+            <p className="ad-note">
+              Check send status asks Resend about the original request. If the email was delivered, nothing is sent
+              again and the quote is marked sent. If the original never reached Resend, the same stored email is
+              delivered once. Any other answer leaves the quote locked.
+            </p>
+            <button type="button" className="ad-button" onClick={onCheckSend} disabled={busy}>
+              Check send status
+            </button>
+          </>
+        ) : (
+          <p className="ad-note">
+            More than 23 hours have passed, so this can no longer be checked safely from the Admin. Look for the email
+            in Resend (Emails, search for {quote.sentTo}) and for the copy in newquote@ross360.co.uk, then reconcile it by
+            hand as the README describes.
+          </p>
+        )}
+      </section>
     );
   }
   if (quote.status !== 'sent' && quote.status !== 'superseded') return null;

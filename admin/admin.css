@@ -622,6 +622,12 @@ body {
   background: #f4f3f0;
 }
 
+.ad-tag--quote-send_unknown {
+  background: #fdf3f2;
+  border-color: #f3cfcb;
+  color: var(--danger);
+}
+
 .ad-tag--quote-sending {
   background: #fff7e6;
   border-color: #f2d9a6;

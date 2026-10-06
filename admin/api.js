@@ -51,8 +51,9 @@ export const api = {
   quote: (reference) => call(`/quotes/${encodeURIComponent(reference)}`),
   saveQuote: (reference, values) => call(`/quotes/${encodeURIComponent(reference)}`, { method: 'PATCH', body: values }),
   previewQuote: (reference) => call(`/quotes/${encodeURIComponent(reference)}/preview`),
-  sendQuote: (reference, version) =>
-    call(`/quotes/${encodeURIComponent(reference)}/send`, { method: 'POST', body: { version, confirm: true } }),
+  sendQuote: (reference, version, previewedOn) =>
+    call(`/quotes/${encodeURIComponent(reference)}/send`, { method: 'POST', body: { version, previewedOn, confirm: true } }),
+  checkSend: (reference) => call(`/quotes/${encodeURIComponent(reference)}/check-send`, { method: 'POST', body: { confirm: true } }),
   reviseQuote: (reference) => call(`/quotes/${encodeURIComponent(reference)}/revise`, { method: 'POST', body: {} }),
   discardQuote: (reference) => call(`/quotes/${encodeURIComponent(reference)}/discard`, { method: 'POST', body: {} }),
 };

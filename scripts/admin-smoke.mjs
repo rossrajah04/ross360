@@ -76,6 +76,7 @@ const routes = [
   ['POST', '/api/admin/quotes/Q-0001/send'],
   ['POST', '/api/admin/quotes/Q-0001/revise'],
   ['POST', '/api/admin/quotes/Q-0001/discard'],
+  ['POST', '/api/admin/quotes/Q-0001/check-send'],
 ];
 for (const [method, path] of routes) {
   const result = await call(path, { method, body: method === 'GET' ? undefined : {}, withCookie: false });
@@ -207,7 +208,10 @@ check('preview HTML refused when signed out', frameSignedOut.status === 401, `st
 
 const discarded = await call(`/api/admin/quotes/${qref}/discard`, { method: 'POST', body: {} });
 check('discard draft', discarded.data.quote?.status === 'discarded', `status ${discarded.status}`);
-const sendDiscarded = await call(`/api/admin/quotes/${qref}/send`, { method: 'POST', body: { version: 2, confirm: true } });
+const sendDiscarded = await call(`/api/admin/quotes/${qref}/send`, {
+  method: 'POST',
+  body: { version: 2, confirm: true, previewedOn: preview.data.issuedOn },
+});
 check('discarded quote cannot be sent', sendDiscarded.status === 409, `status ${sendDiscarded.status}`);
 const quoteEvents = ((await call(`/api/admin/enquiries/${ref1}`)).data.enquiry?.events || []).map((event) => event.type);
 check(
@@ -221,9 +225,21 @@ if (sendTo) {
   const draft = await call(`/api/admin/enquiries/${ref1}/quotes`, { method: 'POST', body: {} });
   const ref = draft.data.quote?.reference;
   await call(`/api/admin/quotes/${ref}`, { method: 'PATCH', body: { ...lines, customerEmail: sendTo } });
-  const sent = await call(`/api/admin/quotes/${ref}/send`, { method: 'POST', body: { version: 2, confirm: true } });
+  const unpreviewed = await call(`/api/admin/quotes/${ref}/send`, {
+    method: 'POST',
+    body: { version: 2, confirm: true, previewedOn: preview.data.issuedOn },
+  });
+  check('send refused before this version is previewed', unpreviewed.status === 409, `status ${unpreviewed.status}`);
+  const sendPreview = await call(`/api/admin/quotes/${ref}/preview`);
+  const sent = await call(`/api/admin/quotes/${ref}/send`, {
+    method: 'POST',
+    body: { version: 2, confirm: true, previewedOn: sendPreview.data.issuedOn },
+  });
   check(`send ${ref} to ${sendTo}`, sent.status === 200 && sent.data.quote?.status === 'sent', `status ${sent.status} ${sent.data.message || ''}`);
-  const again = await call(`/api/admin/quotes/${ref}/send`, { method: 'POST', body: { version: 2, confirm: true } });
+  const again = await call(`/api/admin/quotes/${ref}/send`, {
+    method: 'POST',
+    body: { version: 2, confirm: true, previewedOn: sendPreview.data.issuedOn },
+  });
   check('second send refused', again.status === 409, `status ${again.status}`);
 } else {
   console.log('      (no quote emailed: set ADMIN_SMOKE_SEND_TO to your own address to test a real send)');

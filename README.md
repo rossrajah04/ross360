@@ -133,11 +133,42 @@ the server in whole pence. VAT is not charged, and the quote says so.
 **Preview** shows the exact email, rendered by the server. **Send quote** (after a confirmation)
 emails it from `ROSS 360 <contact@ross360.co.uk>` (reply-to the same) to the customer, with a BCC
 to newquote@ross360.co.uk, using the existing `RESEND_API_KEY`. No new environment variables are
-needed. Sending moves a New or Reviewing enquiry to Quoted. A quote is sent at most once: the
-draft is claimed atomically before Resend is called, the rendered email is stored first, and Resend
-gets an `Idempotency-Key` for that quote version. If Resend refuses, the quote stays a draft and the
-failure is on the timeline. A quote left "sending" for over 10 minutes shows "Send status unknown:
-check Resend before retrying" and is never resent automatically.
+needed. Sending moves a New or Reviewing enquiry to Quoted.
+
+**Send safety.**
+- **Preview first.** A quote can only be sent at the version that was last previewed, on the same UK day the preview was rendered for. The atomic claim (draft → sending) re-checks the status, the version and the previewed version, so a stale preview, a second tab or a double click sends nothing.
+- **Stored before sending.** The rendered email and its snapshot are stored before Resend is called, and Resend gets an `Idempotency-Key` (`quote-<ref>-v<version>`) for that version.
+- **Resend's answer decides what happens next:**
+  - **Accepted:** the quote is Sent.
+  - **Definite refusal** (400, 401, 403, 404, 405, 422, 429): nothing was sent. The quote goes back to the same draft, and `quote_send_failed` is recorded on the timeline.
+  - **Anything else** (no answer, a timeout, a 5xx, a 409 about the idempotency key): the email may or may not have gone. The quote is locked as **Send status unknown** and `quote_send_unknown` is recorded. The stored email is kept, and the quote cannot be edited, discarded, sent or revised.
+- **Stuck in "sending".** A quote left in "sending" for over 10 minutes (the request stopped) is treated the same way.
+
+**Checking an unknown send.**
+- **Check send status** (up to 23 hours after sending started) repeats the exact stored request under the same `Idempotency-Key`. Resend keeps keys for 24 hours.
+  - If the original email reached Resend, Resend returns the original result and sends nothing. The quote is then marked Sent, and the original is superseded and the enquiry moved to Quoted as usual.
+  - If the original never reached Resend, that same stored email is delivered once.
+  - Any other answer leaves the quote locked, with `quote_send_check` on the timeline.
+- **After 23 hours** there is no automatic check, because a repeat could send a second email. Reconcile it by hand:
+  1. In Resend (Emails), search for the customer address and the subject `ROSS 360 quotation Q-000N`. Also look for the BCC copy in newquote@ross360.co.uk.
+  2. **If it was delivered**, record it in D1. Use the email id from Resend, and move the enquiry to Quoted yourself in the Admin if it was New or Reviewing:
+
+     ```sql
+     UPDATE quotes SET status = 'sent', sent_at = '<time from Resend, ISO>', sent_by = 'manual reconciliation',
+       resend_message_id = '<email id from Resend>', updated_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now')
+     WHERE reference = 'Q-000N' AND status IN ('send_unknown', 'sending');
+     ```
+
+  3. **If it was not delivered**, return it to draft and raise its version, so a new send uses a new key, then preview and send it again:
+
+     ```sql
+     UPDATE quotes SET status = 'draft', version = version + 1, sending_started_at = NULL, issued_on = NULL,
+       valid_until = NULL, sent_to = NULL, sent_subject = NULL, sent_html = NULL, sent_text = NULL, sent_snapshot = NULL,
+       updated_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now')
+     WHERE reference = 'Q-000N' AND status IN ('send_unknown', 'sending');
+     ```
+
+  Add a note to the enquiry in the Admin saying what you found. Never do this without checking Resend first.
 
 A sent quote cannot be changed (the database refuses it too). **Revise** copies it into a new draft
 with a new reference; when that is sent, the original is marked Superseded. Drafts can be

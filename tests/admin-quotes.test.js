@@ -61,7 +61,10 @@ async function readyDraft(t, extra = {}) {
     },
   });
   assert.equal(saved.status, 200, JSON.stringify(saved.data));
-  return saved.data.quote;
+  // Sending requires the current version to have been previewed.
+  const preview = await t.call(`/quotes/${saved.data.quote.reference}/preview`);
+  assert.equal(preview.status, 200);
+  return preview.data.quote;
 }
 
 const eventsOf = async (t) => (await getEnquiry(t.db, t.enquiry)).events;
@@ -83,7 +86,7 @@ test('every quote route refuses requests without a session, and returns no quote
     ['POST', '/quotes/Q-0001/discard'],
   ];
   for (const [method, path] of routes) {
-    const result = await callAdmin(t.env, `/api/admin${path}`, { method, body: method === 'GET' ? undefined : { version: 1, confirm: true } });
+    const result = await callAdmin(t.env, `/api/admin${path}`, { method, body: method === 'GET' ? undefined : { version: 1, confirm: true, previewedOn: ukToday() } });
     assert.equal(result.status, 401, `${method} ${path}`);
     assert.equal(result.data.quote, undefined);
     assert.ok(!JSON.stringify(result.data).includes('Alex'), `${method} ${path} leaked data`);
@@ -103,7 +106,7 @@ test('quote writes from another site are refused', async () => {
     const request = new Request(`https://ross360.test/api/admin${path}`, {
       method,
       headers: { Origin: 'https://evil.test', 'Content-Type': 'application/json', Cookie: t.cookie },
-      body: JSON.stringify({ version: 1, confirm: true }),
+      body: JSON.stringify({ version: 1, confirm: true, previewedOn: ukToday() }),
     });
     const response = await onRequest({ request, env: t.env, params: { route: path.split('/').filter(Boolean) } });
     assert.equal(response.status, 403, `${method} ${path}`);
@@ -250,7 +253,7 @@ test('a draft can be discarded; it is kept, logged, and can no longer be changed
   assert.equal((await t.call(`/quotes/${q.reference}/discard`, { method: 'POST', body: {} })).status, 409);
   assert.equal((await t.call(`/quotes/${q.reference}`, { method: 'PATCH', body: { version: q.version, validDays: 3 } })).status, 409);
   await withResend(accepted, async (calls) => {
-    const sent = await t.call(`/quotes/${q.reference}/send`, { method: 'POST', body: { version: q.version, confirm: true } });
+    const sent = await t.call(`/quotes/${q.reference}/send`, { method: 'POST', body: { version: q.version, confirm: true, previewedOn: ukToday() } });
     assert.equal(sent.status, 409);
     assert.equal(calls.length, 0);
   });
@@ -346,7 +349,7 @@ test('sending emails the customer from contact@, BCCs newquote@, stores the snap
   const previewHtml = (await t.call(`/quotes/${q.reference}/preview.html`)).data.raw;
 
   await withResend(accepted, async (calls) => {
-    const sent = await t.call(`/quotes/${q.reference}/send`, { method: 'POST', body: { version: q.version, confirm: true } });
+    const sent = await t.call(`/quotes/${q.reference}/send`, { method: 'POST', body: { version: q.version, confirm: true, previewedOn: ukToday() } });
     assert.equal(sent.status, 200, JSON.stringify(sent.data));
     assert.equal(calls.length, 1);
     const [call] = calls;
@@ -397,12 +400,12 @@ test('sending moves Reviewing to Quoted but leaves later statuses alone', async 
   const t = await setUp();
   await changeStatus(t.db, t.enquiry, 'reviewing', 'test');
   let q = await readyDraft(t);
-  await withResend(accepted, () => t.call(`/quotes/${q.reference}/send`, { method: 'POST', body: { version: q.version, confirm: true } }));
+  await withResend(accepted, () => t.call(`/quotes/${q.reference}/send`, { method: 'POST', body: { version: q.version, confirm: true, previewedOn: ukToday() } }));
   assert.equal((await getEnquiry(t.db, t.enquiry)).status, 'quoted');
 
   await changeStatus(t.db, t.enquiry, 'booked', 'test');
   q = await readyDraft(t);
-  await withResend(accepted, () => t.call(`/quotes/${q.reference}/send`, { method: 'POST', body: { version: q.version, confirm: true } }));
+  await withResend(accepted, () => t.call(`/quotes/${q.reference}/send`, { method: 'POST', body: { version: q.version, confirm: true, previewedOn: ukToday() } }));
   const enquiry = await getEnquiry(t.db, t.enquiry);
   assert.equal(enquiry.status, 'booked');
   assert.equal(enquiry.events.filter((e) => e.type === 'status' && e.detail.to === 'quoted').length, 1);
@@ -414,7 +417,7 @@ test('if Resend refuses, the quote goes back to the same draft, the failure is l
   await withResend(
     (n) => (n === 1 ? new Response(JSON.stringify({ name: 'validation_error', message: 'bad' }), { status: 422 }) : accepted()),
     async (calls) => {
-      const failed = await t.call(`/quotes/${q.reference}/send`, { method: 'POST', body: { version: q.version, confirm: true } });
+      const failed = await t.call(`/quotes/${q.reference}/send`, { method: 'POST', body: { version: q.version, confirm: true, previewedOn: ukToday() } });
       assert.equal(failed.status, 502);
       assert.equal(failed.data.quote.status, 'draft');
       assert.equal(failed.data.quote.version, q.version);
@@ -425,27 +428,225 @@ test('if Resend refuses, the quote goes back to the same draft, the failure is l
       assert.deepEqual(failure.detail, { quote: q.reference, status: 422 });
       assert.equal((await getEnquiry(t.db, t.enquiry)).status, 'new');
 
-      const retry = await t.call(`/quotes/${q.reference}/send`, { method: 'POST', body: { version: q.version, confirm: true } });
+      const retry = await t.call(`/quotes/${q.reference}/send`, { method: 'POST', body: { version: q.version, confirm: true, previewedOn: ukToday() } });
       assert.equal(retry.status, 200);
       assert.equal(calls[0].headers['Idempotency-Key'], calls[1].headers['Idempotency-Key']);
     },
   );
 });
 
-test('if Resend cannot be reached, nothing is marked sent', async () => {
+// --- Ambiguous outcomes, stale previews and safe recovery --------------------------------------
+
+const sendBody = (q, extra = {}) => ({ version: q.version, confirm: true, previewedOn: ukToday(), ...extra });
+const row = (t, ref) => t.db.db.prepare(`SELECT * FROM quotes WHERE reference = ?`).get(ref);
+const failing = (status, body = { name: 'error', message: 'stub' }) => () => new Response(JSON.stringify(body), { status });
+
+test('ambiguous Resend outcomes lock the quote as send status unknown, keeping the stored email', async () => {
+  const ambiguous = [
+    ['no response', () => Promise.reject(new TypeError('network down'))],
+    ['timeout', () => Promise.reject(new DOMException('The operation timed out.', 'TimeoutError'))],
+    ['500', failing(500)],
+    ['502', failing(502)],
+    ['503', failing(503)],
+    ['408', failing(408)],
+    ['409 concurrent', failing(409, { name: 'concurrent_idempotent_requests' })],
+    ['409 key reused', failing(409, { name: 'invalid_idempotent_request' })],
+  ];
+  for (const [label, respond] of ambiguous) {
+    const t = await setUp();
+    const q = await readyDraft(t);
+    await withResend(respond, async (calls) => {
+      const result = await t.call(`/quotes/${q.reference}/send`, { method: 'POST', body: sendBody(q) });
+      assert.equal(result.status, 502, label);
+      assert.equal(result.data.unknown, true, label);
+      const quote = result.data.quote;
+      assert.equal(quote.status, 'send_unknown', label);
+      assert.equal(quote.sendStatusUnknown, true, label);
+      assert.equal(quote.canCheckSend, true, label);
+      // The email as it was (perhaps) sent is kept.
+      const stored = row(t, q.reference);
+      assert.ok(stored.sent_html && stored.sent_snapshot && stored.sent_text, label);
+      assert.equal(stored.sent_to, 'alex@example.test', label);
+      assert.equal(stored.issued_on, ukToday(), label);
+
+      // Locked: no edit, discard, second send or revision while unknown.
+      assert.equal((await t.call(`/quotes/${q.reference}`, { method: 'PATCH', body: { version: q.version, validDays: 3 } })).status, 409, label);
+      assert.equal((await t.call(`/quotes/${q.reference}/discard`, { method: 'POST', body: {} })).status, 409, label);
+      assert.equal((await t.call(`/quotes/${q.reference}/send`, { method: 'POST', body: sendBody(q) })).status, 409, label);
+      assert.equal((await t.call(`/quotes/${q.reference}/revise`, { method: 'POST', body: {} })).status, 409, label);
+      assert.equal(calls.length, 1, `${label}: exactly one request to Resend`);
+    });
+    const events = await eventsOf(t);
+    assert.deepEqual(events.find((e) => e.type === 'quote_send_unknown').detail.quote, q.reference);
+    assert.ok(!events.some((e) => e.type === 'quote_send_failed' || e.type === 'quote_sent'), label);
+    assert.equal((await getEnquiry(t.db, t.enquiry)).status, 'new', label);
+  }
+});
+
+test('only a definite refusal returns the quote to draft', async () => {
+  for (const status of [400, 401, 403, 422, 429]) {
+    const t = await setUp();
+    const q = await readyDraft(t);
+    await withResend(failing(status), async () => {
+      const result = await t.call(`/quotes/${q.reference}/send`, { method: 'POST', body: sendBody(q) });
+      assert.equal(result.status, 502);
+      assert.equal(result.data.quote.status, 'draft', `status ${status}`);
+      assert.equal(row(t, q.reference).sent_html, null);
+    });
+  }
+});
+
+test('the server refuses to send a version that was not previewed, atomically', async () => {
+  const t = await setUp();
+  const q = await readyDraft(t); // previewed at this version
+  // Changed after the preview: the new version has not been previewed.
+  const saved = await t.call(`/quotes/${q.reference}`, { method: 'PATCH', body: { version: q.version, travelPence: 0 } });
+  const v = saved.data.quote.version;
+  await withResend(accepted, async (calls) => {
+    const stale = await t.call(`/quotes/${q.reference}/send`, { method: 'POST', body: sendBody(q) });
+    assert.equal(stale.status, 409, 'the previewed (old) version is no longer current');
+    const unpreviewed = await t.call(`/quotes/${q.reference}/send`, { method: 'POST', body: sendBody({ version: v }) });
+    assert.equal(unpreviewed.status, 409);
+    assert.match(unpreviewed.data.message, /Preview this version/);
+    assert.equal(calls.length, 0);
+
+    // The claim itself re-checks previewed_version: if it changes after the pre-checks pass but
+    // before the claim runs, nothing is sent.
+    await t.call(`/quotes/${q.reference}/preview`);
+    const prepare = t.db.prepare.bind(t.db);
+    t.db.prepare = (sql) => {
+      if (sql.includes("SET status = 'sending'")) {
+        t.db.db.prepare(`UPDATE quotes SET previewed_version = NULL WHERE reference = ?`).run(q.reference);
+      }
+      return prepare(sql);
+    };
+    const raced = await t.call(`/quotes/${q.reference}/send`, { method: 'POST', body: sendBody({ version: v }) });
+    t.db.prepare = prepare;
+    assert.equal(raced.status, 409);
+    assert.equal(calls.length, 0);
+    assert.equal(row(t, q.reference).status, 'draft');
+
+    // Previewed: now it sends.
+    await t.call(`/quotes/${q.reference}/preview`);
+    assert.equal((await t.call(`/quotes/${q.reference}/send`, { method: 'POST', body: sendBody({ version: v }) })).status, 200);
+    assert.equal(calls.length, 1);
+  });
+});
+
+test('a preview from another day must be refreshed before sending', async () => {
   const t = await setUp();
   const q = await readyDraft(t);
-  const original = globalThis.fetch;
-  globalThis.fetch = async () => {
-    throw new TypeError('network down');
-  };
-  try {
-    const failed = await t.call(`/quotes/${q.reference}/send`, { method: 'POST', body: { version: q.version, confirm: true } });
-    assert.equal(failed.status, 502);
-    assert.equal(failed.data.quote.status, 'draft');
-  } finally {
-    globalThis.fetch = original;
+  await withResend(accepted, async (calls) => {
+    const old = await t.call(`/quotes/${q.reference}/send`, { method: 'POST', body: sendBody(q, { previewedOn: addDays(ukToday(), -1) }) });
+    assert.equal(old.status, 409);
+    assert.match(old.data.message, /different day/);
+    const missing = await t.call(`/quotes/${q.reference}/send`, { method: 'POST', body: { version: q.version, confirm: true } });
+    assert.equal(missing.status, 400);
+    assert.equal(calls.length, 0);
+  });
+  // The preview says which day it was rendered for.
+  assert.equal((await t.call(`/quotes/${q.reference}/preview`)).data.issuedOn, ukToday());
+});
+
+test('checking an unknown send repeats the exact stored request under the same key, and confirms it as sent', async () => {
+  const t = await setUp();
+  const q = await readyDraft(t);
+  await withResend(
+    (n) => (n === 1 ? Promise.reject(new TypeError('network down')) : accepted()),
+    async (calls) => {
+      await t.call(`/quotes/${q.reference}/send`, { method: 'POST', body: sendBody(q) });
+      const before = row(t, q.reference);
+      const checked = await t.call(`/quotes/${q.reference}/check-send`, { method: 'POST', body: { confirm: true } });
+      assert.equal(checked.status, 200, JSON.stringify(checked.data));
+      assert.equal(checked.data.quote.status, 'sent');
+      assert.equal(checked.data.quote.resendMessageId, 'resend-message-1');
+      assert.equal(calls.length, 2);
+      assert.equal(calls[1].headers['Idempotency-Key'], calls[0].headers['Idempotency-Key']);
+      assert.deepEqual(calls[1].body, calls[0].body, 'byte-identical request, so Resend cannot send twice');
+
+      // The sent snapshot is exactly what was stored when sending started.
+      const after = row(t, q.reference);
+      for (const column of ['sent_html', 'sent_text', 'sent_subject', 'sent_snapshot', 'sent_to', 'issued_on', 'valid_until']) {
+        assert.equal(after[column], before[column], column);
+      }
+    },
+  );
+  const enquiry = await getEnquiry(t.db, t.enquiry);
+  assert.equal(enquiry.status, 'quoted');
+  const types = enquiry.events.map((e) => e.type);
+  assert.ok(types.includes('quote_send_unknown'));
+  assert.equal(types.filter((e) => e === 'quote_sent').length, 1);
+  assert.equal(enquiry.events.find((e) => e.type === 'quote_sent').detail.confirmedByCheck, true);
+});
+
+test('a check that cannot confirm delivery leaves the quote locked, whatever Resend answers', async () => {
+  for (const respond of [failing(422), failing(401), failing(500), failing(409, { name: 'concurrent_idempotent_requests' }), () => Promise.reject(new TypeError('down'))]) {
+    const t = await setUp();
+    const q = await readyDraft(t);
+    await withResend(failing(503), () => t.call(`/quotes/${q.reference}/send`, { method: 'POST', body: sendBody(q) }));
+    await withResend(respond, async () => {
+      const checked = await t.call(`/quotes/${q.reference}/check-send`, { method: 'POST', body: { confirm: true } });
+      assert.equal(checked.status, 502);
+      assert.equal(checked.data.quote.status, 'send_unknown');
+    });
+    assert.ok((await eventsOf(t)).some((e) => e.type === 'quote_send_check'));
   }
+});
+
+test('two checks at once record the send once', async () => {
+  const t = await setUp();
+  const q = await readyDraft(t);
+  await withResend(failing(500), () => t.call(`/quotes/${q.reference}/send`, { method: 'POST', body: sendBody(q) }));
+  await withResend(accepted, async () => {
+    const results = await Promise.all(
+      [1, 2, 3].map(() => t.call(`/quotes/${q.reference}/check-send`, { method: 'POST', body: { confirm: true } })),
+    );
+    assert.ok(results.some((r) => r.status === 200));
+  });
+  const events = await eventsOf(t);
+  assert.equal(events.filter((e) => e.type === 'quote_sent').length, 1);
+  assert.equal(events.filter((e) => e.type === 'status' && e.detail.to === 'quoted').length, 1);
+});
+
+test('a quote stuck in sending can be checked after 10 minutes; outside the 24-hour window it stays locked', async () => {
+  const t = await setUp();
+  const q = await readyDraft(t);
+  // A send that stopped after claiming (for example, the worker was stopped mid-request).
+  await withResend(accepted, async () => {
+    t.db.db.prepare(`UPDATE quotes SET status = 'sending', sending_started_at = ?, sent_to = 'alex@example.test', sent_subject = 's', sent_html = 'h', sent_text = 't', sent_snapshot = '{}' WHERE reference = ?`)
+      .run(new Date().toISOString(), q.reference);
+    // Too early: it may still be in progress.
+    assert.equal((await t.call(`/quotes/${q.reference}/check-send`, { method: 'POST', body: { confirm: true } })).status, 409);
+    t.db.db.prepare(`UPDATE quotes SET sending_started_at = ? WHERE reference = ?`).run(new Date(Date.now() - 11 * 60 * 1000).toISOString(), q.reference);
+    const checked = await t.call(`/quotes/${q.reference}/check-send`, { method: 'POST', body: { confirm: true } });
+    assert.equal(checked.data.quote.status, 'sent');
+  });
+
+  const u = await setUp();
+  const r = await readyDraft(u);
+  await withResend(failing(500), () => u.call(`/quotes/${r.reference}/send`, { method: 'POST', body: sendBody(r) }));
+  u.db.db.prepare(`UPDATE quotes SET sending_started_at = ? WHERE reference = ?`).run(new Date(Date.now() - 23.5 * 60 * 60 * 1000).toISOString(), r.reference);
+  await withResend(accepted, async (calls) => {
+    const late = await u.call(`/quotes/${r.reference}/check-send`, { method: 'POST', body: { confirm: true } });
+    assert.equal(late.status, 409);
+    assert.match(late.data.message, /no longer be checked automatically/);
+    assert.equal(late.data.quote.status, 'send_unknown');
+    assert.equal(late.data.quote.canCheckSend, false);
+    assert.equal(calls.length, 0, 'never resent once the idempotency window may have passed');
+  });
+});
+
+test('only an unknown send can be checked, and the check needs confirmation', async () => {
+  const t = await setUp();
+  const q = await readyDraft(t);
+  await withResend(accepted, async (calls) => {
+    assert.equal((await t.call(`/quotes/${q.reference}/check-send`, { method: 'POST', body: { confirm: true } })).status, 409);
+    await t.call(`/quotes/${q.reference}/send`, { method: 'POST', body: sendBody(q) });
+    assert.equal((await t.call(`/quotes/${q.reference}/check-send`, { method: 'POST', body: { confirm: true } })).status, 409);
+    assert.equal((await t.call(`/quotes/${q.reference}/check-send`, { method: 'POST', body: {} })).status, 400);
+    assert.equal(calls.length, 1);
+  });
+  assert.equal((await callAdmin(t.env, `/api/admin/quotes/${q.reference}/check-send`, { method: 'POST', body: { confirm: true } })).status, 401);
 });
 
 test('two sends at once deliver exactly one email', async () => {
@@ -453,7 +654,7 @@ test('two sends at once deliver exactly one email', async () => {
   const q = await readyDraft(t);
   await withResend(accepted, async (calls) => {
     const results = await Promise.all(
-      Array.from({ length: 4 }, () => t.call(`/quotes/${q.reference}/send`, { method: 'POST', body: { version: q.version, confirm: true } })),
+      Array.from({ length: 4 }, () => t.call(`/quotes/${q.reference}/send`, { method: 'POST', body: { version: q.version, confirm: true, previewedOn: ukToday() } })),
     );
     assert.deepEqual(results.map((r) => r.status).sort(), [200, 409, 409, 409]);
     assert.equal(calls.length, 1);
@@ -467,10 +668,10 @@ test('a second send, a stale version or a missing confirmation sends nothing', a
   await withResend(accepted, async (calls) => {
     assert.equal((await t.call(`/quotes/${q.reference}/send`, { method: 'POST', body: { version: q.version } })).status, 400);
     assert.equal((await t.call(`/quotes/${q.reference}/send`, { method: 'POST', body: { version: q.version, confirm: 'yes' } })).status, 400);
-    assert.equal((await t.call(`/quotes/${q.reference}/send`, { method: 'POST', body: { version: q.version - 1, confirm: true } })).status, 409);
+    assert.equal((await t.call(`/quotes/${q.reference}/send`, { method: 'POST', body: { version: q.version - 1, confirm: true, previewedOn: ukToday() } })).status, 409);
     assert.equal(calls.length, 0);
-    assert.equal((await t.call(`/quotes/${q.reference}/send`, { method: 'POST', body: { version: q.version, confirm: true } })).status, 200);
-    assert.equal((await t.call(`/quotes/${q.reference}/send`, { method: 'POST', body: { version: q.version, confirm: true } })).status, 409);
+    assert.equal((await t.call(`/quotes/${q.reference}/send`, { method: 'POST', body: { version: q.version, confirm: true, previewedOn: ukToday() } })).status, 200);
+    assert.equal((await t.call(`/quotes/${q.reference}/send`, { method: 'POST', body: { version: q.version, confirm: true, previewedOn: ukToday() } })).status, 409);
     assert.equal(calls.length, 1);
   });
 });
@@ -483,7 +684,7 @@ test('a quote stuck in sending shows its status as unknown and is never sent aga
   const read = await t.call(`/quotes/${q.reference}`);
   assert.equal(read.data.quote.sendStatusUnknown, true);
   await withResend(accepted, async (calls) => {
-    const result = await t.call(`/quotes/${q.reference}/send`, { method: 'POST', body: { version: q.version, confirm: true } });
+    const result = await t.call(`/quotes/${q.reference}/send`, { method: 'POST', body: { version: q.version, confirm: true, previewedOn: ukToday() } });
     assert.equal(result.status, 409);
     assert.equal(calls.length, 0);
   });
@@ -496,7 +697,8 @@ test('an incomplete draft is not sent, and nothing is sent without Resend config
   const t = await setUp();
   await t.call(`/enquiries/${t.enquiry}/quotes`, { method: 'POST', body: {} });
   await withResend(accepted, async (calls) => {
-    const empty = await t.call('/quotes/Q-0001/send', { method: 'POST', body: { version: 1, confirm: true } });
+    await t.call('/quotes/Q-0001/preview');
+    const empty = await t.call('/quotes/Q-0001/send', { method: 'POST', body: { version: 1, confirm: true, previewedOn: ukToday() } });
     assert.equal(empty.status, 422);
     assert.ok(empty.data.problems.some((p) => /line/.test(p)));
     assert.equal(calls.length, 0);
@@ -504,7 +706,7 @@ test('an incomplete draft is not sent, and nothing is sent without Resend config
 
   const u = await setUp({ resend: false });
   const q = await readyDraft(u);
-  const result = await u.call(`/quotes/${q.reference}/send`, { method: 'POST', body: { version: q.version, confirm: true } });
+  const result = await u.call(`/quotes/${q.reference}/send`, { method: 'POST', body: { version: q.version, confirm: true, previewedOn: ukToday() } });
   assert.equal(result.status, 503);
   assert.equal((await getQuote(u.db, q.reference)).status, 'draft');
 });
@@ -514,7 +716,7 @@ test('an incomplete draft is not sent, and nothing is sent without Resend config
 test('a sent quote cannot be changed, through the API or directly in the database', async () => {
   const t = await setUp();
   const q = await readyDraft(t);
-  await withResend(accepted, () => t.call(`/quotes/${q.reference}/send`, { method: 'POST', body: { version: q.version, confirm: true } }));
+  await withResend(accepted, () => t.call(`/quotes/${q.reference}/send`, { method: 'POST', body: { version: q.version, confirm: true, previewedOn: ukToday() } }));
   assert.equal((await t.call(`/quotes/${q.reference}`, { method: 'PATCH', body: { version: q.version, validDays: 3 } })).status, 409);
   assert.equal((await t.call(`/quotes/${q.reference}/discard`, { method: 'POST', body: {} })).status, 409);
 
@@ -533,7 +735,7 @@ test('a sent quote cannot be changed, through the API or directly in the databas
 test('revising a sent quote makes a linked draft with a new reference; sending it supersedes the original', async () => {
   const t = await setUp();
   const q = await readyDraft(t);
-  await withResend(accepted, () => t.call(`/quotes/${q.reference}/send`, { method: 'POST', body: { version: q.version, confirm: true } }));
+  await withResend(accepted, () => t.call(`/quotes/${q.reference}/send`, { method: 'POST', body: { version: q.version, confirm: true, previewedOn: ukToday() } }));
 
   assert.equal((await t.call(`/quotes/${q.reference}/revise`, { method: 'POST', body: {} })).status, 201);
   const revision = await getQuote(t.db, 'Q-0002');
@@ -555,7 +757,8 @@ test('revising a sent quote makes a linked draft with a new reference; sending i
   assert.equal((await getQuote(t.db, q.reference)).status, 'sent');
   const saved = await t.call('/quotes/Q-0002', { method: 'PATCH', body: { version: 1, travelPence: 0 } });
   assert.equal(saved.data.quote.totalPence, 41900);
-  await withResend(accepted, () => t.call('/quotes/Q-0002/send', { method: 'POST', body: { version: 2, confirm: true } }));
+  await t.call('/quotes/Q-0002/preview');
+  await withResend(accepted, () => t.call('/quotes/Q-0002/send', { method: 'POST', body: { version: 2, confirm: true, previewedOn: ukToday() } }));
   const original = await getQuote(t.db, q.reference);
   assert.equal(original.status, 'superseded');
   assert.deepEqual(original.revisions, [{ reference: 'Q-0002', status: 'sent' }]);
@@ -574,7 +777,7 @@ test('every quote action is on the enquiry timeline, without email bodies, notes
   const t = await setUp();
   const q = await readyDraft(t);
   await t.call(`/quotes/${q.reference}/preview`);
-  await withResend(accepted, () => t.call(`/quotes/${q.reference}/send`, { method: 'POST', body: { version: q.version, confirm: true } }));
+  await withResend(accepted, () => t.call(`/quotes/${q.reference}/send`, { method: 'POST', body: { version: q.version, confirm: true, previewedOn: ukToday() } }));
   await t.call(`/quotes/${q.reference}/revise`, { method: 'POST', body: {} });
   await t.call('/quotes/Q-0002/discard', { method: 'POST', body: {} });
   const events = await eventsOf(t);

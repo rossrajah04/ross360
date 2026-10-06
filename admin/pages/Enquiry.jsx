@@ -332,8 +332,13 @@ function describe(event) {
   if (type === 'quote_previewed') return `Quote ${detail.quote} previewed`;
   if (type === 'quote_sent') {
     const supersedes = detail.supersedes ? `, replacing ${detail.supersedes}` : '';
-    return `Quote ${detail.quote} sent to ${detail.to} for ${formatMoney(detail.totalPence)}${supersedes}`;
+    const checked = detail.confirmedByCheck ? ' (confirmed by checking with the email service)' : '';
+    return `Quote ${detail.quote} sent to ${detail.to} for ${formatMoney(detail.totalPence)}${supersedes}${checked}`;
   }
+  if (type === 'quote_send_unknown') {
+    return `Quote ${detail.quote}: could not confirm whether the email was sent (${detail.status}). Locked until checked`;
+  }
+  if (type === 'quote_send_check') return `Quote ${detail.quote}: send status checked, still not confirmed (${detail.status})`;
   if (type === 'quote_send_failed') return `Quote ${detail.quote} could not be sent (email service status ${detail.status})`;
   if (type === 'quote_revised') return `Quote ${detail.from} revised as ${detail.to}`;
   if (type === 'quote_discarded') return `Quote ${detail.quote} discarded`;

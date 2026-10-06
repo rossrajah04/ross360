@@ -61,10 +61,11 @@ function toApi(row, items, revisions = []) {
     sentTo: row.sent_to,
     sentSubject: row.sent_subject,
     resendMessageId: row.resend_message_id,
-    // Left in "sending" for over 10 minutes: the result was never recorded. Never retried automatically.
-    sendStatusUnknown:
-      row.status === 'sending' &&
-      Date.now() - new Date(row.sending_started_at || row.updated_at).getTime() > SEND_UNKNOWN_AFTER_MS,
+    // Resend gave no proof either way, or the request stopped before the result was recorded.
+    // Never resent automatically; it can only be checked (reconcileQuote).
+    sendStatusUnknown: isSendUnknown(row),
+    canCheckSend: canReconcile(row),
+    previewedVersion: row.previewed_version ?? null,
     items: items.map(itemToApi),
   };
   for (const [key, field] of Object.entries(QUOTE_TEXT_FIELDS)) quote[key] = row[field.column] ?? '';
@@ -308,7 +309,7 @@ export async function reviseQuote(db, reference, actor) {
   if (!row) return { result: 'not_found' };
   if (row.status !== 'sent') return { result: 'not_sent', quote: await loadQuote(db, row) };
   const open = await db
-    .prepare(`SELECT reference FROM quotes WHERE revision_of = ? AND status IN ('draft', 'sending')`)
+    .prepare(`SELECT reference FROM quotes WHERE revision_of = ? AND status IN ('draft', 'sending', 'send_unknown')`)
     .bind(row.id)
     .first();
   if (open) return { result: 'open_revision', revision: open.reference, quote: await loadQuote(db, row) };
@@ -349,51 +350,151 @@ export async function reviseQuote(db, reference, actor) {
 }
 
 // --- Sending ------------------------------------------------------------------------------------
+//
+// What Resend's answer proves:
+// - 2xx: Resend accepted the email. It is sent.
+// - REFUSED statuses: Resend rejected the request before sending anything (bad request, bad key,
+//   validation error, rate limit). It is definitely not sent, so the quote can safely go back to draft.
+// - Anything else (no answer, a timeout, a network error, a 5xx, a 409 about the idempotency key, or
+//   an unexpected status): the email may or may not have gone. The quote is locked as "send status
+//   unknown" and can never be edited, discarded or sent again from the Admin. It can only be checked
+//   (see reconcileQuote), which never risks a second email.
 
-async function callResend(env, payload, idempotencyKey) {
+const RESEND_URL = 'https://api.resend.com/emails';
+const RESEND_TIMEOUT_MS = 20_000;
+const REFUSED = new Set([400, 401, 403, 404, 405, 422, 429]);
+
+// Resend keeps an Idempotency-Key for 24 hours; checking an unknown send relies on it, so it is only
+// offered well inside that window.
+export const RECONCILE_WINDOW_MS = 23 * 60 * 60 * 1000;
+
+const idempotencyKey = (reference, version) => `quote-${reference}-v${version}`;
+
+// The exact Resend request for a quote. Built from the stored email only, so a later check sends a
+// byte-identical request under the same Idempotency-Key.
+function resendPayload({ to, subject, html, text }) {
+  return { from: QUOTE_FROM, to: [to], bcc: [QUOTE_BCC], reply_to: QUOTE_FROM, subject, html, text };
+}
+
+/** Returns { outcome: 'accepted' | 'refused' | 'unknown', status, id }. */
+async function callResend(env, payload, key) {
   let res;
   try {
-    res = await fetch('https://api.resend.com/emails', {
+    res = await fetch(RESEND_URL, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${env.RESEND_API_KEY}`,
         'Content-Type': 'application/json',
-        // Resend drops a repeated request with the same key (kept for 24 hours), so a retried send
-        // of the same quote version cannot deliver a second email.
-        'Idempotency-Key': idempotencyKey,
+        // Resend answers a repeated request with the same key and payload with the original
+        // response, without sending again (keys are kept for 24 hours).
+        'Idempotency-Key': key,
       },
       body: JSON.stringify(payload),
+      signal: AbortSignal.timeout(RESEND_TIMEOUT_MS),
     });
   } catch (error) {
-    console.error(`Resend request (quote) could not be sent: ${safeResendDetail(`${error?.name}: ${error?.message}`)}`);
-    return { ok: false, status: 'not sent' };
+    // No answer: the request may still have reached Resend.
+    console.error(`Resend request (quote) got no answer: ${safeResendDetail(`${error?.name}: ${error?.message}`)}`);
+    return { outcome: 'unknown', status: error?.name === 'TimeoutError' ? 'timeout' : 'no response', id: null };
   }
-  let data = {};
   let raw = '';
+  let data = {};
   try {
     raw = await res.text();
     data = JSON.parse(raw);
   } catch {
     data = {};
   }
-  if (!res.ok) {
-    console.error(`Resend request (quote) failed with status ${res.status}; ${safeResendDetail(raw) || '(empty response body)'}`);
+  const id = typeof data.id === 'string' ? data.id.slice(0, 100) : null;
+  if (res.ok) return { outcome: 'accepted', status: res.status, id };
+  console.error(`Resend request (quote) failed with status ${res.status}; ${safeResendDetail(raw) || '(empty response body)'}`);
+  return { outcome: REFUSED.has(res.status) ? 'refused' : 'unknown', status: res.status, id: null };
+}
+
+/** True when a quote's send may have happened but was never confirmed. */
+export function isSendUnknown(row, at = Date.now()) {
+  if (row.status === 'send_unknown') return true;
+  return row.status === 'sending' && at - new Date(row.sending_started_at || row.updated_at).getTime() > SEND_UNKNOWN_AFTER_MS;
+}
+
+/** True while an unknown send can still be checked safely through Resend's Idempotency-Key. */
+export function canReconcile(row, at = Date.now()) {
+  return isSendUnknown(row, at) && at - new Date(row.sending_started_at).getTime() < RECONCILE_WINDOW_MS;
+}
+
+// Statements that record a confirmed send: the quote becomes sent, the quote it revises becomes
+// superseded, and a New or Reviewing enquiry moves to Quoted. Every write is conditional on the quote
+// still being in one of `from`, so running this twice (two checks at once) records it only once.
+function recordSent(db, row, { at, actor, id, from, detail }) {
+  const states = from.map(() => '?').join(', ');
+  const stillOpen = `EXISTS (SELECT 1 FROM quotes WHERE id = ? AND status IN (${states}))`;
+  const statements = [
+    db
+      .prepare(
+        `INSERT INTO enquiry_events (enquiry_id, created_at, actor, type, detail)
+         SELECT ?, ?, ?, 'quote_sent', ? WHERE ${stillOpen}`,
+      )
+      .bind(row.enquiry_id, at, actor, JSON.stringify(detail), row.id, ...from),
+    db
+      .prepare(
+        `INSERT INTO enquiry_events (enquiry_id, created_at, actor, type, detail)
+         SELECT id, ?, ?, 'status', json_object('from', status, 'to', 'quoted')
+         FROM enquiries WHERE id = ? AND status IN ('new', 'reviewing') AND ${stillOpen}`,
+      )
+      .bind(at, actor, row.enquiry_id, row.id, ...from),
+    db
+      .prepare(
+        `UPDATE enquiries SET status = 'quoted', status_changed_at = ?, updated_at = ?
+         WHERE id = ? AND status IN ('new', 'reviewing') AND ${stillOpen}`,
+      )
+      .bind(at, at, row.enquiry_id, row.id, ...from),
+  ];
+  if (row.revision_of) {
+    statements.push(
+      db
+        .prepare(`UPDATE quotes SET status = 'superseded', updated_at = ? WHERE id = ? AND status = 'sent' AND ${stillOpen}`)
+        .bind(at, row.revision_of, row.id, ...from),
+    );
   }
-  return { ok: res.ok, status: res.status, id: typeof data.id === 'string' ? data.id.slice(0, 100) : null };
+  statements.push(
+    db
+      .prepare(
+        `UPDATE quotes SET status = 'sent', sent_at = ?, sent_by = ?, resend_message_id = ?, updated_at = ?
+         WHERE id = ? AND status IN (${states})`,
+      )
+      .bind(at, actor, id, at, row.id, ...from),
+  );
+  return statements;
+}
+
+async function markUnknown(db, row, actor, reference, status, type = 'quote_send_unknown') {
+  const at = now();
+  await db.batch([
+    eventStatement(db, row.enquiry_id, at, actor, type, { quote: reference, status }),
+    db
+      .prepare(`UPDATE quotes SET status = 'send_unknown', updated_at = ? WHERE id = ? AND status IN ('sending', 'send_unknown')`)
+      .bind(at, row.id),
+  ]);
 }
 
 /**
  * Send a draft quote to the customer.
  *
- * Duplicate sends are prevented in layers: the draft must be at the version the administrator
- * previewed; it is claimed with one atomic update (draft -> sending), so a double click, a second tab
- * or a repeated request finds nothing to claim; the rendered email is stored before Resend is called;
- * and Resend is given an Idempotency-Key for this quote version.
+ * Duplicate and stale sends are prevented in layers:
+ * - the request must name the current version, and that version must be the one last previewed
+ *   (previewed_version), on the same UK day the preview was rendered for;
+ * - the draft is claimed with one atomic update (draft -> sending) that re-checks status, version and
+ *   previewed version, so a double click, a second tab, a stale preview or a repeated request finds
+ *   nothing to claim;
+ * - the rendered email and snapshot are stored before Resend is called;
+ * - Resend is given an Idempotency-Key for this quote version;
+ * - an answer that does not prove whether the email went locks the quote as "send status unknown".
  *
- * Returns { result, quote?, problems?, status? } where result is one of
- * 'sent', 'not_found', 'not_draft', 'stale', 'incomplete', 'unconfigured', 'conflict', 'failed'.
+ * Returns { result, quote?, problems?, status? } where result is one of 'sent', 'not_found',
+ * 'not_draft', 'stale', 'not_previewed', 'preview_outdated', 'incomplete', 'unconfigured', 'conflict',
+ * 'failed' (definitely not sent; back to draft) or 'unknown' (may have been sent; locked).
  */
-export async function sendQuote(env, reference, version, actor) {
+export async function sendQuote(env, reference, { version, previewedOn }, actor) {
   const db = env.DB;
   await requireSchema(db);
   const row = await findQuoteRow(db, reference);
@@ -401,6 +502,10 @@ export async function sendQuote(env, reference, version, actor) {
   const quote = await loadQuote(db, row);
   if (quote.status !== 'draft') return { result: 'not_draft', quote };
   if (quote.version !== version) return { result: 'stale', quote };
+  if (row.previewed_version !== version) return { result: 'not_previewed', quote };
+  const issuedOn = ukToday();
+  // The preview showed the issue and valid-until dates for the day it was rendered.
+  if (previewedOn !== issuedOn) return { result: 'preview_outdated', quote };
   const problems = sendProblems(quote);
   if (problems.length) return { result: 'incomplete', problems, quote };
   if (!env.RESEND_API_KEY) {
@@ -408,17 +513,17 @@ export async function sendQuote(env, reference, version, actor) {
     return { result: 'unconfigured', quote };
   }
 
-  const issuedOn = ukToday();
   const email = renderQuote(quote, { enquiryReference: quote.enquiryReference, issuedOn });
   const snapshot = { ...email.snapshot, subject: email.subject, from: QUOTE_FROM, to: quote.customerEmail, bcc: QUOTE_BCC };
   const startedAt = now();
 
-  // 1. Claim the draft, storing exactly what will be sent. Only one request can do this.
+  // 1. Claim the draft, storing exactly what will be sent. Only one request can do this, and only for
+  //    the version that was previewed.
   const claimed = await db
     .prepare(
       `UPDATE quotes SET status = 'sending', sending_started_at = ?, updated_at = ?, issued_on = ?, valid_until = ?,
          sent_to = ?, sent_subject = ?, sent_html = ?, sent_text = ?, sent_snapshot = ?
-       WHERE id = ? AND status = 'draft' AND version = ?
+       WHERE id = ? AND status = 'draft' AND version = ? AND previewed_version = ?
        RETURNING id`,
     )
     .bind(
@@ -433,6 +538,7 @@ export async function sendQuote(env, reference, version, actor) {
       JSON.stringify(snapshot),
       row.id,
       version,
+      version,
     )
     .first();
   if (!claimed) return { result: 'conflict', quote: await getQuote(db, reference) };
@@ -440,22 +546,14 @@ export async function sendQuote(env, reference, version, actor) {
   // 2. Send.
   const sent = await callResend(
     env,
-    {
-      from: QUOTE_FROM,
-      to: [quote.customerEmail],
-      bcc: [QUOTE_BCC],
-      reply_to: QUOTE_FROM,
-      subject: email.subject,
-      html: email.html,
-      text: email.text,
-    },
-    `quote-${reference}-v${version}`,
+    resendPayload({ to: quote.customerEmail, subject: email.subject, html: email.html, text: email.text }),
+    idempotencyKey(reference, version),
   );
 
-  const at = now();
-  if (!sent.ok) {
-    // 3a. Nothing was accepted by Resend: back to the same draft (same version, so a retry uses the
-    // same Idempotency-Key), with the failure on the timeline.
+  // 3a. Resend refused the request: nothing was sent. Back to the same draft (same version), with the
+  //     failure on the timeline. The stored email is cleared because it was never delivered.
+  if (sent.outcome === 'refused') {
+    const at = now();
     await db.batch([
       db
         .prepare(
@@ -469,49 +567,72 @@ export async function sendQuote(env, reference, version, actor) {
     return { result: 'failed', status: sent.status, quote: await getQuote(db, reference) };
   }
 
-  // 3b. Sent: record it, supersede the quote this one revises, and move a New or Reviewing enquiry
-  // to Quoted (with its own status entry on the timeline).
-  const statements = [
-    db
-      .prepare(
-        `UPDATE quotes SET status = 'sent', sent_at = ?, sent_by = ?, resend_message_id = ?, updated_at = ?
-         WHERE id = ? AND status = 'sending'`,
-      )
-      .bind(at, actor, sent.id, at, row.id),
-  ];
-  if (row.revision_of) {
-    statements.push(
-      db.prepare(`UPDATE quotes SET status = 'superseded', updated_at = ? WHERE id = ? AND status = 'sent'`).bind(at, row.revision_of),
-    );
+  // 3b. No proof either way: keep everything stored and lock the quote.
+  if (sent.outcome === 'unknown') {
+    await markUnknown(db, row, actor, reference, sent.status);
+    return { result: 'unknown', status: sent.status, quote: await getQuote(db, reference) };
   }
-  statements.push(
-    eventStatement(db, row.enquiry_id, at, actor, 'quote_sent', {
-      quote: reference,
-      totalPence: quote.totalPence,
-      to: quote.customerEmail,
-      ...(quote.revisionOf ? { supersedes: quote.revisionOf } : {}),
-    }),
-    db
-      .prepare(
-        `INSERT INTO enquiry_events (enquiry_id, created_at, actor, type, detail)
-         SELECT id, ?, ?, 'status', json_object('from', status, 'to', 'quoted')
-         FROM enquiries WHERE id = ? AND status IN ('new', 'reviewing')`,
-      )
-      .bind(at, actor, row.enquiry_id),
-    db
-      .prepare(
-        `UPDATE enquiries SET status = 'quoted', status_changed_at = ?, updated_at = ?
-         WHERE id = ? AND status IN ('new', 'reviewing')`,
-      )
-      .bind(at, at, row.enquiry_id),
-  );
+
+  // 3c. Sent.
+  const detail = {
+    quote: reference,
+    totalPence: quote.totalPence,
+    to: quote.customerEmail,
+    ...(quote.revisionOf ? { supersedes: quote.revisionOf } : {}),
+  };
   try {
-    await db.batch(statements);
+    await db.batch(recordSent(db, row, { at: now(), actor, id: sent.id, from: ['sending'], detail }));
   } catch (error) {
-    // The email has gone but the result could not be recorded. The quote stays "sending" and will
-    // show "Send status unknown", so nobody sends it again without checking Resend.
-    console.error(`Quote ${reference} was sent (Resend accepted it) but recording the result failed: ${error.message}`);
+    // Resend accepted the email but the result could not be recorded. The quote stays "sending",
+    // shows "Send status unknown" after 10 minutes, and can then be checked, never resent.
+    console.error(`Quote ${reference} was accepted by Resend but recording the result failed: ${error.message}`);
     throw error;
   }
+  return { result: 'sent', quote: await getQuote(db, reference) };
+}
+
+/**
+ * Check a quote whose send is unknown, without any risk of a second email.
+ *
+ * Within Resend's 24-hour idempotency window, the exact stored request is repeated under the same
+ * Idempotency-Key. If the original reached Resend, Resend returns the original response and sends
+ * nothing; if it never arrived, this delivers that same stored email, once. Only an accepted answer
+ * resolves the quote (to sent). Any other answer leaves it locked as unknown: a refusal now does not
+ * prove the original was refused (for example, the API key may have changed since).
+ *
+ * Outside the window this does nothing; the quote stays locked for manual reconciliation (README).
+ * Returns { result: 'sent' | 'unknown' | 'not_found' | 'not_unknown' | 'window_passed' | 'unconfigured', quote, status? }.
+ */
+export async function reconcileQuote(env, reference, actor) {
+  const db = env.DB;
+  await requireSchema(db);
+  const row = await findQuoteRow(db, reference);
+  if (!row) return { result: 'not_found' };
+  if (!isSendUnknown(row)) return { result: 'not_unknown', quote: await loadQuote(db, row) };
+  if (!canReconcile(row)) return { result: 'window_passed', quote: await loadQuote(db, row) };
+  if (!env.RESEND_API_KEY) return { result: 'unconfigured', quote: await loadQuote(db, row) };
+
+  // A quote stuck in "sending" (the request stopped) is first marked unknown, so it shows as such
+  // whatever happens next.
+  if (row.status === 'sending') await markUnknown(db, row, actor, reference, 'no result recorded');
+
+  const snapshot = JSON.parse(row.sent_snapshot || '{}');
+  const checked = await callResend(
+    env,
+    resendPayload({ to: row.sent_to, subject: row.sent_subject, html: row.sent_html, text: row.sent_text }),
+    idempotencyKey(reference, row.version),
+  );
+  if (checked.outcome !== 'accepted') {
+    await eventStatement(db, row.enquiry_id, now(), actor, 'quote_send_check', { quote: reference, status: checked.status }).run();
+    return { result: 'unknown', status: checked.status, quote: await getQuote(db, reference) };
+  }
+  const detail = {
+    quote: reference,
+    totalPence: snapshot.totalPence ?? row.total_pence,
+    to: row.sent_to,
+    confirmedByCheck: true,
+    ...(row.revision_of_reference ? { supersedes: row.revision_of_reference } : {}),
+  };
+  await db.batch(recordSent(db, row, { at: now(), actor, id: checked.id, from: ['send_unknown', 'sending'], detail }));
   return { result: 'sent', quote: await getQuote(db, reference) };
 }
