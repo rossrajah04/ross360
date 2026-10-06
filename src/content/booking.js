@@ -62,6 +62,8 @@ export const booking = {
   toPayment: 'Continue to payment',
   holdNote: 'The slot is held for you for 30 minutes while you pay.',
   stripeNote: 'Payment is taken securely by Stripe. ROSS 360 does not see or store card details.',
+  // Quotes not marked business (consumer and property): booked by email for now.
+  byEmail: "To go ahead, please reply to the quotation email and we'll arrange the next steps with you.",
   paymentsOff: 'Online booking is not available at the moment. Please reply to the quotation email to arrange a date.',
   paymentStartFailed: 'Payment could not be started. Please try again in a moment.',
 

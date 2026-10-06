@@ -48,6 +48,8 @@ export function customerSnapshot(quote, { enquiryReference, issuedOn }) {
     },
     serviceDescription: quote.serviceDescription,
     package: quote.package,
+    // Only 'business' quotes can be booked and paid online (see CUSTOMER_TYPES).
+    customerType: quote.customerType ?? null,
     items: quote.items.map((item) => ({
       kind: item.kind,
       description: item.description,
@@ -75,6 +77,10 @@ export function renderQuote(quote, { enquiryReference, issuedOn, quoteUrl = null
   const termsUrl = `${site.url}${quoteEmail.termsPath}`;
   const subject = oneLine(quoteEmail.subject(s.reference));
   const validity = L.validUntil(longDate(s.validUntil), s.validDays);
+  // Online booking only for quotes marked business; otherwise the Phase B reply-by-email line, no button.
+  const online = s.customerType === 'business';
+  const bookUrl = online ? quoteUrl : null;
+  const nextSteps = online ? quoteEmail.nextSteps : quoteEmail.nextStepsByEmail;
   const preparedFor = [s.customer.name, s.customer.business, s.customer.location].filter(Boolean);
 
   const totals = [
@@ -108,8 +114,8 @@ export function renderQuote(quote, { enquiryReference, issuedOn, quoteUrl = null
     quoteEmail.vat,
     validity,
     '',
-    quoteEmail.nextSteps,
-    ...(quoteUrl ? ['', `${quoteEmail.bookButton}: ${quoteUrl}`] : []),
+    nextSteps,
+    ...(bookUrl ? ['', `${quoteEmail.bookButton}: ${bookUrl}`] : []),
     '',
     quoteEmail.closing,
     '',
@@ -184,9 +190,9 @@ export function renderQuote(quote, { enquiryReference, issuedOn, quoteUrl = null
     totalRows +
     '</table>' +
     p(`${escapeHtml(quoteEmail.vat)}<br>${escapeHtml(validity)}`) +
-    p(escapeHtml(quoteEmail.nextSteps)) +
-    (quoteUrl
-      ? `<p style="margin:4px 0 24px"><a href="${escapeHtml(quoteUrl)}" style="display:inline-block;padding:12px 20px;border-radius:6px;background:${INK};color:#ffffff;font-family:${FONT};font-size:15px;font-weight:600;text-decoration:none">${escapeHtml(quoteEmail.bookButton)}</a></p>`
+    p(escapeHtml(nextSteps)) +
+    (bookUrl
+      ? `<p style="margin:4px 0 24px"><a href="${escapeHtml(bookUrl)}" style="display:inline-block;padding:12px 20px;border-radius:6px;background:${INK};color:#ffffff;font-family:${FONT};font-size:15px;font-weight:600;text-decoration:none">${escapeHtml(quoteEmail.bookButton)}</a></p>`
       : '') +
     p(escapeHtml(quoteEmail.closing)) +
     `<p style="margin:28px 0 0;padding-top:16px;border-top:1px solid ${LINE};font-family:${FONT};font-size:13px;line-height:1.6;color:${MUTED}">` +

@@ -225,7 +225,7 @@ test('without QUOTE_LINK_SECRET the page is unavailable and sending is refused; 
   const call = (path, options = {}) => callAdmin(unset, `/api/admin${path}`, { cookie: t.cookie, ...options });
   const created = await call(`/enquiries/${t.enquiry}/quotes`, { method: 'POST', body: {} });
   const ref = created.data.quote.reference;
-  await call(`/quotes/${ref}`, { method: 'PATCH', body: { version: 1, items: [{ kind: 'custom', description: 'Tour', quantity: 1, unitPence: 30000 }] } });
+  await call(`/quotes/${ref}`, { method: 'PATCH', body: { version: 1, customerType: 'business', items: [{ kind: 'custom', description: 'Tour', quantity: 1, unitPence: 30000 }] } });
   const preview = await call(`/quotes/${ref}/preview`);
   assert.ok(!preview.data.email.text.includes('/q/'));
   const q = preview.data.quote;

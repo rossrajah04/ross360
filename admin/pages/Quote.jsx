@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { api, quotePreviewUrl } from '../api.js';
 import { formatMoney, penceToPounds } from '../../src/lib/admin/model.js';
 import {
+  CUSTOMER_TYPES,
   MILEAGE_RULE,
   PACKAGES,
   QUOTE_LIMITS,
@@ -22,6 +23,7 @@ import CustomerLink from '../components/CustomerLink.jsx';
 function toForm(quote) {
   return {
     package: quote.package || '',
+    customerType: quote.customerType || '',
     customerName: quote.customerName,
     customerBusiness: quote.customerBusiness,
     customerEmail: quote.customerEmail,
@@ -90,6 +92,7 @@ function fromForm(form) {
 
   const values = {
     package: form.package || null,
+    customerType: form.customerType || null,
     customerName: form.customerName,
     customerBusiness: form.customerBusiness,
     customerEmail: form.customerEmail,
@@ -352,6 +355,26 @@ export default function Quote() {
               {input('customerEmail', 'Customer email (the quote is sent here)', { type: 'email' })}
               {input('customerLocation', 'Address / postcode')}
             </div>
+            <fieldset className="ad-field ad-choice">
+              <legend className="ad-label">Customer type</legend>
+              {CUSTOMER_TYPES.map((type) => (
+                <label key={type.value} className="ad-choice__option">
+                  <input
+                    type="radio"
+                    name="q-customerType"
+                    value={type.value}
+                    checked={form.customerType === type.value}
+                    onChange={() => set('customerType', type.value)}
+                  />
+                  {type.label}
+                </label>
+              ))}
+              {fieldError('customerType')}
+              <span className="ad-note">
+                Only quotes marked Business get the Book a slot button. Others ask the customer to reply by email. Choose
+                this yourself: it is not taken from the business name.
+              </span>
+            </fieldset>
             <div className="ad-grid ad-grid--single">
               {input('serviceDescription', 'Service description', { area: true })}
             </div>
@@ -727,6 +750,8 @@ function SentSummary({ quote, busy, onRevise, onCheckSend }) {
         </dd>
         <dt>To</dt>
         <dd>{quote.sentTo}</dd>
+        <dt>Customer type</dt>
+        <dd>{CUSTOMER_TYPES.find((type) => type.value === quote.customerType)?.label ?? 'Not set (book by email)'}</dd>
         <dt>Total</dt>
         <dd>{formatMoney(quote.totalPence)}</dd>
         <dt>Valid until</dt>

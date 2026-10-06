@@ -31,8 +31,8 @@ export const HOLD_MARGIN_SECONDS = 60;
 export const FREE_CANCELLATION_HOURS = site.policy.freeCancellationHours; // 48
 export const LATE_CANCELLATION_MAX_PERCENT = site.policy.lateCancellationMaxPercent; // 50
 
-// When each period starts, for the 48-hour cancellation rule (UK time). An assumption until ROSS 360
-// sets its own times.
+// When each period starts, for the 48-hour cancellation rule (UK local time), as set by ROSS 360
+// (6 October 2026).
 export const SLOT_START = { am: '09:00', pm: '13:00', day: '09:00' };
 
 export const BOOKING_STATUSES = [
@@ -150,3 +150,10 @@ export function cancellationWindow(date, period, at = new Date()) {
 /** The most ROSS 360 may keep on a late cancellation: 50% of the booking price, and never more than was paid. */
 export const maxRetention = (totalPence, paidPence) =>
   Math.max(0, Math.min(paidPence, Math.floor((totalPence * LATE_CANCELLATION_MAX_PERCENT) / 100)));
+
+/**
+ * Whether a sent quotation can be booked and paid online: only quotes the administrator explicitly
+ * marked as for a business (CUSTOMER_TYPES in quotes.js). Consumer and property bookings are arranged
+ * by email until the consumer cancellation wording has had legal review (ROSS 360, 6 October 2026).
+ */
+export const onlineBooking = (snapshot) => snapshot?.customerType === 'business';

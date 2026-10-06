@@ -48,6 +48,7 @@ function toApi(row, items, revisions = []) {
     status: row.status,
     version: row.version,
     package: row.package,
+    customerType: row.customer_type ?? null,
     travelPence: row.travel_pence,
     // How the travel amount was arrived at (Admin only; the customer sees only travelPence).
     travelMode: row.travel_mode ?? 'manual',
@@ -185,6 +186,7 @@ function travelDetail(values) {
 const EDITABLE = [
   ...Object.keys(QUOTE_TEXT_FIELDS),
   'package',
+  'customerType',
   'travelMode',
   'travelOneWayTenths',
   'travelOverride',
@@ -197,6 +199,7 @@ const TRAVEL_KEYS = ['travelMode', 'travelOneWayTenths', 'travelOverride', 'trav
 const CHANGE_LABELS = {
   ...Object.fromEntries(Object.entries(QUOTE_TEXT_FIELDS).map(([key, field]) => [key, field.label])),
   package: 'Package',
+  customerType: 'Customer type',
   travelPence: 'Travel',
   travelMode: 'Travel method',
   travelOneWayTenths: 'Travel distance',
@@ -277,7 +280,7 @@ export async function updateQuote(db, reference, input, version, actor) {
     db
       .prepare(
         `UPDATE quotes SET ${textColumns.map(([, field]) => `${field.column} = ?`).join(', ')},
-           package = ?, travel_pence = ?, discount_pence = ?, valid_days = ?, subtotal_pence = ?, total_pence = ?,
+           package = ?, customer_type = ?, travel_pence = ?, discount_pence = ?, valid_days = ?, subtotal_pence = ?, total_pence = ?,
            travel_mode = ?, travel_one_way_tenths = ?, travel_rate_pence = ?, travel_free_tenths = ?,
            travel_calculated_pence = ?, travel_override = ?,
            version = version + 1, updated_at = ?
@@ -287,6 +290,7 @@ export async function updateQuote(db, reference, input, version, actor) {
       .bind(
         ...textColumns.map(([key]) => values[key]),
         values.package,
+        values.customerType,
         values.travelPence,
         values.discountPence,
         values.validDays,
@@ -392,12 +396,12 @@ export async function reviseQuote(db, reference, actor) {
            customer_name, customer_business, customer_email, customer_location, service_description, internal_notes,
            travel_pence, discount_pence, discount_label, subtotal_pence, total_pence, valid_days,
            travel_mode, travel_one_way_tenths, travel_rate_pence, travel_free_tenths, travel_calculated_pence,
-           travel_override, travel_override_reason, created_at, updated_at)
+           travel_override, travel_override_reason, customer_type, created_at, updated_at)
          SELECT c.value, printf('Q-%04d', c.value), q.enquiry_id, q.id, 'draft', 1, q.package,
            q.customer_name, q.customer_business, q.customer_email, q.customer_location, q.service_description, q.internal_notes,
            q.travel_pence, q.discount_pence, q.discount_label, q.subtotal_pence, q.total_pence, q.valid_days,
            q.travel_mode, q.travel_one_way_tenths, q.travel_rate_pence, q.travel_free_tenths, q.travel_calculated_pence,
-           q.travel_override, q.travel_override_reason, ?, ?
+           q.travel_override, q.travel_override_reason, q.customer_type, ?, ?
          FROM counters c, quotes q WHERE c.name = 'quote' AND q.id = ? AND q.status = 'sent'
          RETURNING reference`,
       )

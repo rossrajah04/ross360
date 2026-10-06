@@ -25,11 +25,11 @@ test('the migrations bring an empty database to the latest schema version', asyn
     'quotes',
     'schema_migrations',
   ]);
-  assert.equal(LATEST_SCHEMA_VERSION, 4);
+  assert.equal(LATEST_SCHEMA_VERSION, 5);
   db.close();
 });
 
-test('running 0001, 0002 and 0004 again is harmless; running 0003 again stops at once and changes nothing', async () => {
+test('running 0001, 0002 and 0004 again is harmless; running 0003 or 0005 again stops at once and changes nothing', async () => {
   const { readFileSync } = await import('node:fs');
   const sql = (name) => readFileSync(new URL(`../migrations/${name}`, import.meta.url), 'utf8');
   const db = new FakeD1();
@@ -40,7 +40,8 @@ test('running 0001, 0002 and 0004 again is harmless; running 0003 again stops at
   // SQLite cannot add a column only if it is missing: the first ALTER fails, before anything else runs.
   assert.throws(() => db.db.exec(sql('0003_quote_travel.sql')), /duplicate column name: travel_mode/);
   db.db.exec(sql('0004_bookings.sql'));
-  assert.equal(await schemaVersion(db), 4);
+  assert.throws(() => db.db.exec(sql('0005_quote_customer_type.sql')), /duplicate column name: customer_type/);
+  assert.equal(await schemaVersion(db), 5);
   const counter = await db.prepare(`SELECT value FROM counters WHERE name = 'enquiry'`).first();
   assert.equal(counter.value, 7);
   const quoteCounter = await db.prepare(`SELECT value FROM counters WHERE name = 'quote'`).first();
@@ -81,7 +82,7 @@ test('an older schema version is refused rather than changed', async () => {
   db.close();
 });
 
-test('0002, 0003 and 0004 bring a version 1 database with data to version 4 without touching Phase A records', async () => {
+test('0002 to 0005 bring a version 1 database with data to version 5 without touching Phase A records', async () => {
   const { readFileSync } = await import('node:fs');
   const { createEnquiry, getEnquiry } = await import('../server/admin/enquiries.js');
   const db = new FakeD1({ migrated: false });
@@ -93,7 +94,7 @@ test('0002, 0003 and 0004 bring a version 1 database with data to version 4 with
   const refused = await callAdmin(env, '/api/admin/session');
   assert.equal(refused.status, 503);
   assert.match(refused.data.message, /version 1/);
-  assert.match(refused.data.message, /0004_bookings\.sql/);
+  assert.match(refused.data.message, /0005_quote_customer_type\.sql/);
 
   // Records written by Phase A at version 1.
   const before = db.db.prepare(`SELECT COUNT(*) AS n FROM enquiries`).get().n;
@@ -108,6 +109,8 @@ test('0002, 0003 and 0004 bring a version 1 database with data to version 4 with
   assert.equal(await schemaVersion(db), 3);
   db.db.exec(readFileSync(new URL('../migrations/0004_bookings.sql', import.meta.url), 'utf8'));
   assert.equal(await schemaVersion(db), 4);
+  db.db.exec(readFileSync(new URL('../migrations/0005_quote_customer_type.sql', import.meta.url), 'utf8'));
+  assert.equal(await schemaVersion(db), 5);
   assert.equal(db.db.prepare(`SELECT COUNT(*) AS n FROM enquiries`).get().n, before + 1);
   assert.equal((await getEnquiry(db, 'ROSS-0005')).name, 'Existing');
   assert.equal((await getEnquiry(db, 'ROSS-0005')).events.length, 1);

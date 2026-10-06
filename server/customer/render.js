@@ -8,6 +8,7 @@ import { booking as B } from '../../src/content/booking.js';
 import { formatMoney } from '../../src/lib/admin/model.js';
 import { longDate } from '../../src/lib/admin/quotes.js';
 import { periodLabel, weekdayDate } from '../../src/lib/admin/availability.js';
+import { onlineBooking } from '../../src/lib/admin/booking.js';
 
 const escapeHtml = (value) =>
   String(value ?? '')
@@ -199,6 +200,8 @@ export function renderQuotePage({ snapshot, state, booking, latest, urls, notice
     }
     if (state === 'expired') {
       parts.push(noticeBox(escapeHtml(C.expired(longDate(snapshot.validUntil)))));
+    } else if (!onlineBooking(snapshot)) {
+      parts.push(`<p>${escapeHtml(B.byEmail)}</p>`);
     } else if (!paymentsOn) {
       parts.push(noticeBox(escapeHtml(B.paymentsOff)));
     } else {

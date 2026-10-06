@@ -34,7 +34,7 @@ import { customerQuote as C } from '../../src/content/customerQuote.js';
 import { booking as B } from '../../src/content/booking.js';
 import { quoteEmail } from '../../src/content/quoteEmail.js';
 import { site } from '../../src/content/site.js';
-import { cancellationWindow, maxRetention, paymentOptions } from '../../src/lib/admin/booking.js';
+import { cancellationWindow, maxRetention, onlineBooking, paymentOptions } from '../../src/lib/admin/booking.js';
 import { ukToday } from '../../src/lib/admin/quotes.js';
 
 const HEADERS = {
@@ -193,6 +193,7 @@ async function handle({ request, env, params }) {
 
   // --- Booking: only while the quotation is valid and has no booking ----------------------------
   if (ctx.state !== 'valid') return redirect(urls.self);
+  if (!onlineBooking(ctx.snapshot)) return redirect(urls.self);
   if (!paymentsAvailable(env)) return redirect(urls.self);
   const current = await activeBooking(db, ctx.quoteId);
   if (current && current.status !== 'holding') return redirect(urls.self);

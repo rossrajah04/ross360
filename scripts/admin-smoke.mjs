@@ -188,6 +188,7 @@ check('quote copies the customer details', created.data.quote?.customerEmail ===
 const lines = {
   version: 1,
   package: 'professional',
+  customerType: 'business',
   items: [
     { kind: 'package', description: 'Professional 360° virtual tour', quantity: 1, unitPence: 34900 },
     { kind: 'custom', description: 'Additional floor', quantity: 2, unitPence: 5000 },

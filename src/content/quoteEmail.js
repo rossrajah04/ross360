@@ -14,6 +14,9 @@ export const quoteEmail = {
   bookButton: 'Book a slot',
   // Draft for approval.
   nextSteps: 'To go ahead, book a slot and pay online. Your booking is confirmed once payment is received.',
+  // Quotes not marked business are booked by email (ROSS 360, 6 October 2026): ROSS 360's own Phase B
+  // line, verbatim.
+  nextStepsByEmail: "If you'd like to go ahead, simply reply to this email and we'll arrange the next steps with you.",
   closing: 'We look forward to working with you.',
   labels: {
     date: 'Date',

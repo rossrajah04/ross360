@@ -144,7 +144,14 @@ test('UK dates: issue date in UK time, validity added in calendar days', () => {
   assert.equal(longDate('2026-10-19'), '19 October 2026');
 });
 
-test('a quote needs a name, a valid email and at least one line before it can be sent', () => {
-  assert.equal(sendProblems({ customerName: '', customerEmail: 'x', items: [] }).length, 3);
-  assert.deepEqual(sendProblems({ customerName: 'Alex', customerEmail: 'alex@example.test', items: [line()] }), []);
+test('a quote needs a name, a valid email, at least one line and a customer type before it can be sent', () => {
+  assert.equal(sendProblems({ customerName: '', customerEmail: 'x', items: [] }).length, 4);
+  assert.deepEqual(sendProblems({ customerName: 'Alex', customerEmail: 'alex@example.test', items: [line()], customerType: 'business' }), []);
+  assert.deepEqual(sendProblems({ customerName: 'Alex', customerEmail: 'alex@example.test', items: [line()], customerType: 'consumer' }), []);
+  assert.deepEqual(sendProblems({ customerName: 'Alex', customerEmail: 'alex@example.test', items: [line()] }), [
+    'Choose whether the customer is a business or a consumer.',
+  ]);
+  // Never inferred from the business name.
+  assert.equal(sendProblems({ customerName: 'Alex', customerBusiness: 'Alex Ltd', customerEmail: 'alex@example.test', items: [line()] }).length, 1);
+  assert.equal(validateQuoteDraft({ customerType: 'company' }).valid, false);
 });

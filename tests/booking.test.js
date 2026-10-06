@@ -632,7 +632,7 @@ test('test mode: customer emails go only to EMAIL_TEST_ALLOWLIST; quotes to anyo
   const ref = created.data.quote.reference;
   await t.call(`/quotes/${ref}`, {
     method: 'PATCH',
-    body: { version: created.data.quote.version, package: 'professional', items: [packageItem('professional')], serviceDescription: 'Tour' },
+    body: { version: created.data.quote.version, package: 'professional', customerType: 'business', items: [packageItem('professional')], serviceDescription: 'Tour' },
   });
   const preview = await t.call(`/quotes/${ref}/preview`);
   await withResend(async (calls) => {
@@ -660,6 +660,35 @@ test('a booked quote cannot be revised, and the quote email has the Book a slot 
     assert.equal(revise.status, 409);
     assert.match(revise.data.message, /has a booking/);
   });
+});
+
+test('only quotes marked business can be booked online; consumer quotes are booked by email', async () => {
+  // A business name alone does not make a quote bookable: the administrator's choice does.
+  const { t, slot, token, email, reference } = await ready(20, 'am', { customerType: 'consumer', customerBusiness: 'Alex Ltd' });
+  assert.doesNotMatch(email.html, /Book a slot/);
+  assert.doesNotMatch(email.text, /\/q\//);
+  assert.match(email.text, /If you'd like to go ahead, simply reply to this email and we'll arrange the next steps with you\./);
+  await withServices(async ({ stripe }) => {
+    const page = await callPage(t.env, `/q/${token}`);
+    assert.equal(page.status, 200);
+    assert.match(page.html, new RegExp(reference));
+    assert.doesNotMatch(page.html, /Book a slot/);
+    assert.match(page.html, /please reply to the quotation email/);
+    for (const path of ['book', `pay?slot=${slot.id}`]) {
+      const res = await callPage(t.env, `/q/${token}/${path}`);
+      assert.equal(res.status, 303, path);
+    }
+    const ctx = await resolveQuoteLink(t.env, token);
+    const outcome = await startCheckout(t.env, ctx, { slotId: slot.id, plan: 'full' }, `https://ross360.test/q/${token}`);
+    assert.equal(outcome.result, 'not_allowed');
+    assert.equal(stripe.calls.length, 0);
+    assert.equal(one(t, `SELECT COUNT(*) AS n FROM bookings`).n, 0);
+  });
+  // Marked on the quote and locked once sent; a revision keeps it until changed.
+  assert.throws(() => t.db.db.prepare(`UPDATE quotes SET customer_type = 'business' WHERE reference = ?`).run(reference), /cannot be changed/);
+  const revision = await t.call(`/quotes/${reference}/revise`, { method: 'POST', body: {} });
+  assert.equal(revision.status, 201, JSON.stringify(revision.data));
+  assert.equal(revision.data.quote.customerType, 'consumer');
 });
 
 test('the scheduler endpoint needs the shared secret', async () => {

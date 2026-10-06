@@ -52,6 +52,7 @@ export async function previewedDraft(t, extra = {}) {
     body: {
       version: created.data.quote.version,
       package: 'professional',
+      customerType: 'business',
       items: [packageItem('professional'), { kind: 'custom', description: 'Additional floor', quantity: 2, unitPence: 5000 }],
       travelMode: 'mileage',
       travelOneWayTenths: 236,
@@ -81,7 +82,9 @@ export async function sentQuote(t, extra = {}) {
     });
     assert.equal(sent.status, 200, JSON.stringify(sent.data));
     const email = calls[0].body;
-    const url = email.text.match(/https:\/\/ross360\.test\/q\/\S+/)[0];
+    // Quotes booked by email carry no link in the email; the Admin shows it.
+    const url =
+      email.text.match(/https:\/\/ross360\.test\/q\/\S+/)?.[0] ?? (await t.call(`/quotes/${quote.reference}/customer`)).data.customer.link.url;
     return { reference: quote.reference, url, token: url.split('/q/')[1], email, quote: sent.data.quote };
   });
 }

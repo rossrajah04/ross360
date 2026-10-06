@@ -38,6 +38,7 @@
 //     cookies.
 
 import { site } from './site.js';
+import { previewLegalWording } from './legalPreview.js';
 
 // {email} in any string is rendered as a link to the contact address; {ico} as a link to the ICO.
 export const privacy = {
@@ -98,7 +99,10 @@ export const privacy = {
           ul: [
             'quotations and what was agreed',
             'booking details, such as the date, access arrangements and on-site contacts',
-            'payment information, such as invoices, amounts and whether a payment has been made',
+            // Preview builds only: the online-booking wording, for review (6 October 2026).
+            previewLegalWording
+              ? 'booking and payment information, such as the date you booked, amounts paid and refunded, payment deadlines and payment references from our payment provider'
+              : 'payment information, such as invoices, amounts and whether a payment has been made',
             'correspondence between you and us',
             'project details and the information needed to deliver the service',
             'the 360° photographs and finished tour of your space',
@@ -202,8 +206,18 @@ export const privacy = {
             ],
             [
               'Resend',
-              'Delivers the details you submit through the Get a Quote form to our inbox, and may send you an email confirming we have received your enquiry.',
+              previewLegalWording
+                ? 'Delivers our emails: the details you submit through the Get a Quote form to our inbox, any email confirming we have received your enquiry, your quotation, and emails about your booking, such as confirmations, payment reminders and cancellations.'
+                : 'Delivers the details you submit through the Get a Quote form to our inbox, and may send you an email confirming we have received your enquiry.',
             ],
+            ...(previewLegalWording
+              ? [
+                  [
+                    'Stripe',
+                    'Processes online card payments and refunds when you book or pay a balance. Stripe receives the amount, your email address and your card details, and handles them under its own privacy policy. We receive confirmation of payment, the amount and Stripe’s reference for it; we do not receive or store your full card details.',
+                  ],
+                ]
+              : []),
             ['Google Workspace', 'Provides our business email, including {email}.'],
             [
               'Panoee',

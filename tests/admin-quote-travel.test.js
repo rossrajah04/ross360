@@ -41,7 +41,7 @@ async function withResend(run) {
   }
 }
 
-const essentials = { package: 'essential', items: [packageItem('essential')] }; // £249
+const essentials = { package: 'essential', customerType: 'business', items: [packageItem('essential')] }; // £249
 const save = (t, version, body) => t.call(`/quotes/${t.reference}`, { method: 'PATCH', body: { version, ...body } });
 const row = (t, reference = t.reference) => t.db.db.prepare(`SELECT * FROM quotes WHERE reference = ?`).get(reference);
 // Oldest first (the timeline lists newest first).

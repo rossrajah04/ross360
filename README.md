@@ -69,13 +69,14 @@ Setting it up in Cloudflare Pages:
    npx wrangler d1 execute <database-name> --remote --file=migrations/0002_quotes.sql
    npx wrangler d1 execute <database-name> --remote --file=migrations/0003_quote_travel.sql
    npx wrangler d1 execute <database-name> --remote --file=migrations/0004_bookings.sql
+   npx wrangler d1 execute <database-name> --remote --file=migrations/0005_quote_customer_type.sql
    ```
 
    or paste the file into the database's Console in the Cloudflare dashboard. Each file records its
    version in `schema_migrations`, and the Admin refuses to run (and the quote form stores nothing)
    until the database is at the version set in `server/admin/schema.js`. 0001, 0002 and 0004 are safe
-   to run twice. **0003 is not**: it adds columns, and a second run stops at once with "duplicate column
-   name" (changing nothing). Check `SELECT version, name FROM schema_migrations ORDER BY version;`
+   to run twice. **0003 and 0005 are not**: they add columns, and a second run stops at once with
+   "duplicate column name" (changing nothing). Check `SELECT version, name FROM schema_migrations ORDER BY version;`
    before applying it. A future change goes in a new numbered file, with `LATEST_SCHEMA_VERSION`
    raised to match.
 4. **Set the account.** Settings -> Variables and Secrets:
@@ -190,7 +191,7 @@ with a new reference; when that is sent, the original is marked Superseded. Draf
 discarded; they are kept, and their reference is not reused. Every action is on the enquiry's
 timeline. Acceptance, payment and booking are not built yet.
 
-**Deploy order:** this code needs schema version 4. Apply each missing migration to a database
+**Deploy order:** this code needs schema version 5. Apply each missing migration to a database
 before this code runs against it (Preview first; Production before merging). Until then the Admin
 answers 503 and the quote form emails enquiries without saving them. Each migration is additive, and
 the code already deployed keeps working once it is applied, so apply it first and merge afterwards.
@@ -236,6 +237,13 @@ Every quote email has a **Book a slot** button linking to the customer's own pag
 `https://ross360.co.uk/q/<token>`. The page shows the quotation exactly as sent (drawn from the stored
 snapshot, never from the quote as it now stands). While the quote is valid the customer can **book a
 slot and pay on Stripe Checkout** (hosted by Stripe; no card details reach this site or D1).
+
+- **Business quotes only, for now.** Each quote has a **Customer type** you choose before sending:
+  Business, or Consumer or private property. Only quotes marked Business get the Book a slot button and
+  online booking. Others are booked by email: the email has the reply-by-email next-steps line and no
+  button, and the page asks the customer to reply. It is never inferred from the business name or the
+  enquiry's project type, and it is locked once the quote is sent (revise to change it). Consumer
+  online booking waits for legal review of the consumer cancellation wording.
 
 - **Packages and deposits.** Essential, Professional and Bespoke quotes can be paid in full or by deposit
   (£50, £70, £100) when the slot is more than 7 days away. Within 7 days, and for quotes without one of
@@ -294,7 +302,8 @@ booking isn't available; nothing else changes.
    environment: add `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET` as secrets (Encrypt),
    `SCHEDULER_SECRET` as a secret, and `EMAIL_TEST_ALLOWLIST` as a plain variable with your own
    address. Redeploy the branch (retry the latest deployment) so they take effect.
-4. Apply `migrations/0004_bookings.sql` to `ross360-admin-preview` (see Admin).
+4. Apply `migrations/0004_bookings.sql`, then `migrations/0005_quote_customer_type.sql`, to
+   `ross360-admin-preview` (see Admin).
 5. Deploy the scheduler for Preview (next section). Test cards: `4242 4242 4242 4242` pays, `4000 0000 0000 0002` is declined; any future expiry and any CVC.
 
 **Booking scheduler (Cron Worker).** Reminders, unpaid-balance cancellations, expired holds and refund
@@ -367,9 +376,14 @@ booking forms only (`POST` to `/q/*`, for example 5 per minute per IP, blocked f
 matching by request method, which Cloudflare's feature table lists for Business and above: add it only
 if your dashboard offers request method as a match field. Check what your own plan offers.
 
-**Deploy order.** Preview first: apply `0004_bookings.sql` to Preview D1, set the Preview secrets
+**Terms and Privacy wording.** The proposed online-booking wording appears in the Terms and Privacy
+notice only on preview builds (any branch except `main`; see `src/content/legalPreview.js`). Builds of
+`main`, and so Production, keep the current wording, even after a merge, until it is approved and
+made permanent.
+
+**Deploy order.** Preview first: apply `0004_bookings.sql` and `0005_quote_customer_type.sql` to Preview D1, set the Preview secrets
 above, deploy the Preview scheduler, and test the branch preview end to end in Stripe test mode.
-Production only after approval of the Preview journey and the Terms wording: apply 0004 to Production
+Production only after approval of the Preview journey and the Terms wording: apply 0004 and 0005 to Production
 D1 (the code already deployed keeps working with it), set the Production link secrets, live Stripe key,
 `STRIPE_ALLOW_LIVE=true`, webhook (to `https://ross360.co.uk/api/stripe/webhook`) and scheduler
 secret, deploy the Production scheduler, publish the approved Terms and Privacy wording, then merge.

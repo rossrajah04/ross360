@@ -29,6 +29,7 @@
 //   - Fairness of the up-to-50% charge for consumers (Consumer Rights Act 2015, Part 2).
 
 import { site } from './site.js';
+import { previewLegalWording } from './legalPreview.js';
 import { lowestPrice } from './pricing.js';
 
 const { freeCancellationHours: hours, lateCancellationMaxPercent: percent } = site.policy;
@@ -113,12 +114,23 @@ export const terms = {
       title: 'Payment',
       blocks: [
         {
-          ul: [
-            'Paid projects require payment in full before the booking is confirmed.',
-            'You can pay using the payment methods we offer at the time, which may include online card payment and bank transfer.',
-            'Online card payments may be processed by a third-party payment provider, such as Stripe. Where a payment provider processes your payment, we do not see or store your full card details.',
-            'We do not begin work until payment has been received and the booking has been confirmed.',
-          ],
+          // Preview builds only: the online-booking wording approved for Preview testing (6 October 2026).
+          ul: previewLegalWording
+            ? [
+                'A booking is confirmed only when payment has been received. Until then, no date is reserved for you.',
+                'When you book online, you can pay in full or, for the Essential, Professional and Bespoke packages when the booked date is more than 7 days away, pay a deposit of £50, £70 or £100 respectively. Bookings made 7 days or fewer before the date, and quotations that do not use one of those packages, are paid in full when booking.',
+                'A deposit counts toward the total price shown on your quotation. The balance is the total price less the deposit, and is due by the end of the day (UK time) 7 days before the booked date. We will send you reminders with a link to pay it.',
+                'If the balance has not been paid by then, the booking is cancelled, the date is released and your deposit is refunded in full. We will email you to confirm this.',
+                'Online card payments are processed by Stripe. We do not see or store your full card details.',
+                'You can also pay using any other payment method we agree with you, such as bank transfer.',
+                'We do not begin work until the booking has been confirmed.',
+              ]
+            : [
+                'Paid projects require payment in full before the booking is confirmed.',
+                'You can pay using the payment methods we offer at the time, which may include online card payment and bank transfer.',
+                'Online card payments may be processed by a third-party payment provider, such as Stripe. Where a payment provider processes your payment, we do not see or store your full card details.',
+                'We do not begin work until payment has been received and the booking has been confirmed.',
+              ],
         },
       ],
     },
@@ -170,8 +182,18 @@ export const terms = {
       blocks: [
         {
           ul: [
-            `You can cancel or reschedule free of charge with at least ${hours} hours’ notice before the appointment.`,
-            `If you cancel or reschedule with less than ${hours} hours’ notice, we may make a charge of up to ${percent}% of the project price.`,
+            // Preview builds only: the online-booking wording approved for Preview testing (6 October 2026).
+            ...(previewLegalWording
+              ? [
+                  'You can cancel a confirmed booking online, from your quotation page, or by emailing us.',
+                  `If you cancel more than ${hours} hours before the booked time, we refund everything you have paid in full.`,
+                  `If you cancel within ${hours} hours of the booked time, we may keep up to ${percent}% of the total price of the booking, and never more than you have paid. We refund the rest.`,
+                  `To move your booking to another date, please email us. With more than ${hours} hours’ notice there is no charge.`,
+                ]
+              : [
+                  `You can cancel or reschedule free of charge with at least ${hours} hours’ notice before the appointment.`,
+                  `If you cancel or reschedule with less than ${hours} hours’ notice, we may make a charge of up to ${percent}% of the project price.`,
+                ]),
             `If no one is available at the appointment, we are denied access, or we cannot carry out the booked work because the premises are not ready or not safe, we may make a charge of up to ${percent}% of the project price.`,
             'These charges are not automatic. Whether we make a charge, and how much, is at our discretion and will be reasonable and proportionate to the circumstances and to the time and costs we have incurred, particularly where consumer law applies.',
             'If we need to cancel or reschedule, you can choose a reasonable alternative date or a full refund of any amount paid for work not carried out.',

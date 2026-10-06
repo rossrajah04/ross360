@@ -51,6 +51,7 @@ async function readyDraft(t, extra = {}) {
     body: {
       version: 1,
       package: 'professional',
+      customerType: 'business',
       items: [packageItem('professional'), { kind: 'custom', description: 'Additional floor', quantity: 2, unitPence: 5000 }],
       travelPence: 2500,
       discountPence: 3000,

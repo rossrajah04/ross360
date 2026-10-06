@@ -25,6 +25,7 @@ import {
   balanceOverdue,
   cancellationWindow,
   maxRetention,
+  onlineBooking,
   paymentOptions,
   reminderDates,
   ukEndOfDay,
@@ -287,7 +288,7 @@ const constraintOf = (error) => {
  */
 export async function startCheckout(env, ctx, { slotId, plan }, pageUrl, now = new Date()) {
   const db = env.DB;
-  if (ctx.state !== 'valid') return { result: 'not_allowed' };
+  if (ctx.state !== 'valid' || !onlineBooking(ctx.snapshot)) return { result: 'not_allowed' };
   if (!paymentsAvailable(env)) return { result: 'payments_off' };
   if (plan !== 'full' && plan !== 'deposit') return { result: 'invalid_plan' };
   if (!(await bookableSlot(db, slotId, now, ctx.quoteId))) return { result: 'slot_unavailable' };

@@ -73,6 +73,16 @@ export const QUOTE_TEXT_FIELDS = {
   travelOverrideReason: { column: 'travel_override_reason', label: 'Travel override reason', max: QUOTE_LIMITS.travelOverrideReason },
 };
 
+// Who the customer is, as the administrator marks it on each quote. Only quotes explicitly marked
+// 'business' can be booked and paid online; consumer and property bookings are arranged by email
+// until the consumer cancellation wording has had legal review (ROSS 360, 6 October 2026). Never
+// inferred from the business name or the enquiry's project type.
+export const CUSTOMER_TYPES = [
+  { value: 'business', label: 'Business (book and pay online)' },
+  { value: 'consumer', label: 'Consumer or private property (book by email)' },
+];
+const CUSTOMER_TYPE_IDS = CUSTOMER_TYPES.map((t) => t.value);
+
 export const QUOTE_NUMBER_FIELDS = {
   travelPence: { column: 'travel_pence', label: 'Travel' },
   discountPence: { column: 'discount_pence', label: 'Discount' },
@@ -172,6 +182,10 @@ export function validateQuoteDraft(input = {}) {
   if (pkg !== undefined && pkg !== null && typeof pkg !== 'string') wrongType('package');
   else if (pkg && !PACKAGE_IDS.includes(pkg)) errors.package = 'Please choose one of the listed packages.';
   else values.package = pkg || null;
+
+  const customerType = input.customerType;
+  if (customerType !== undefined && customerType !== null && !CUSTOMER_TYPE_IDS.includes(customerType)) wrongType('customerType');
+  else values.customerType = customerType || null;
 
   const integer = (key, fallback, min, max, message) => {
     const raw = input[key];
@@ -292,6 +306,7 @@ export function sendProblems(quote) {
   if (!String(quote.customerName || '').trim()) problems.push('Add the customer’s name.');
   if (!EMAIL_RE.test(String(quote.customerEmail || ''))) problems.push('Add a valid customer email address.');
   if (!quote.items?.length) problems.push('Add at least one line.');
+  if (!CUSTOMER_TYPE_IDS.includes(quote.customerType)) problems.push('Choose whether the customer is a business or a consumer.');
   return problems;
 }
 
