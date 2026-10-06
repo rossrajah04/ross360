@@ -463,6 +463,11 @@ test('ambiguous Resend outcomes lock the quote as send status unknown, keeping t
       assert.equal(quote.status, 'send_unknown', label);
       assert.equal(quote.sendStatusUnknown, true, label);
       assert.equal(quote.canCheckSend, true, label);
+      assert.equal(
+        Date.parse(quote.checkSendUntil) - Date.parse(quote.sendingStartedAt),
+        23 * 60 * 60 * 1000,
+        `${label}: the check is offered for 23 hours from the send`,
+      );
       // The email as it was (perhaps) sent is kept.
       const stored = row(t, q.reference);
       assert.ok(stored.sent_html && stored.sent_snapshot && stored.sent_text, label);

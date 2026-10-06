@@ -213,7 +213,7 @@ export default function Quote() {
   // email (nothing new is sent) or, if the original never arrived, delivers that same email once.
   const checkSend = async () => {
     const ok = window.confirm(
-      `Check whether ${reference} was sent?\n\nThis asks Resend about the original request. If it was delivered, nothing is sent again. If it never reached Resend, this same stored email is delivered once to ${quote.sentTo}.`,
+      `This can deliver ${reference} to ${quote.sentTo} once.\n\nThe exact stored email is sent to Resend again with the same Idempotency-Key. If Resend already has the original request, nothing is sent again and the quote is marked sent. If the original never reached Resend, the stored email is delivered now.\n\nCheck the send status?`,
     );
     if (!ok) return;
     setBusy(true);
@@ -533,10 +533,14 @@ function SentSummary({ quote, busy, onRevise, onCheckSend }) {
         </dl>
         {quote.canCheckSend ? (
           <>
+            <p className="ad-error">
+              Checking can deliver this quote once. If the original request never reached Resend, checking sends the
+              exact stored email to {quote.sentTo}, with the same Idempotency-Key.
+            </p>
             <p className="ad-note">
-              Check send status asks Resend about the original request. If the email was delivered, nothing is sent
-              again and the quote is marked sent. If the original never reached Resend, the same stored email is
-              delivered once. Any other answer leaves the quote locked.
+              If Resend already has the original request, nothing is sent again and the quote is marked sent. Any other
+              answer leaves the quote locked. This check is available until {when(quote.checkSendUntil, true)}; after
+              that, reconcile it by hand as the README describes.
             </p>
             <button type="button" className="ad-button" onClick={onCheckSend} disabled={busy}>
               Check send status

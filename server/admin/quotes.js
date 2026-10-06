@@ -65,6 +65,9 @@ function toApi(row, items, revisions = []) {
     // Never resent automatically; it can only be checked (reconcileQuote).
     sendStatusUnknown: isSendUnknown(row),
     canCheckSend: canReconcile(row),
+    checkSendUntil: row.sending_started_at
+      ? new Date(new Date(row.sending_started_at).getTime() + RECONCILE_WINDOW_MS).toISOString()
+      : null,
     previewedVersion: row.previewed_version ?? null,
     items: items.map(itemToApi),
   };
