@@ -1,70 +1,10 @@
--- ROSS 360 Admin, Phase C: customer quote links, availability, bookings and Stripe payments (version 4).
+-- ROSS 360 Admin, Phase C: bookings and Stripe payments (version 5).
 --
--- Additive only: new tables, their indexes and triggers. No existing table, column or trigger is
--- changed, and the code from version 3 keeps working against it. Apply after 0003, by hand, with:
---   npx wrangler d1 execute <database-name> --remote --file=migrations/0004_bookings.sql
--- Every statement is safe to run twice. The file ends by recording version 4.
-
--- A customer link to a sent quote: /q/<token>. The token is the key id, this random link id and an
--- HMAC signature made with QUOTE_LINK_SECRET. Only the link id and key id are stored, never the
--- signature or the secret, so this table alone cannot produce a working link.
-CREATE TABLE IF NOT EXISTS quote_links (
-  id INTEGER PRIMARY KEY,
-  quote_id INTEGER NOT NULL REFERENCES quotes (id),
-  link_id TEXT NOT NULL UNIQUE,
-  key_id TEXT NOT NULL,
-  created_at TEXT NOT NULL,
-  created_by TEXT NOT NULL,
-  revoked_at TEXT,
-  revoked_by TEXT,
-  first_viewed_at TEXT,
-  last_viewed_at TEXT,
-  view_count INTEGER NOT NULL DEFAULT 0
-);
-
-CREATE INDEX IF NOT EXISTS quote_links_quote ON quote_links (quote_id);
--- At most one working (not revoked) link per quote.
-CREATE UNIQUE INDEX IF NOT EXISTS quote_links_one_active ON quote_links (quote_id) WHERE revoked_at IS NULL;
-
--- Dates ROSS 360 offers for capture. period: am (Morning) | pm (Afternoon) | day (Full day).
--- status: open | closed. A slot is offered to customers while it is open and has no active booking.
-CREATE TABLE IF NOT EXISTS availability_slots (
-  id INTEGER PRIMARY KEY,
-  slot_date TEXT NOT NULL, -- YYYY-MM-DD (UK date)
-  period TEXT NOT NULL,
-  status TEXT NOT NULL DEFAULT 'open',
-  note TEXT NOT NULL DEFAULT '', -- internal; never shown to customers
-  created_at TEXT NOT NULL,
-  updated_at TEXT NOT NULL,
-  UNIQUE (slot_date, period)
-);
-
-CREATE INDEX IF NOT EXISTS availability_slots_date ON availability_slots (slot_date, status);
-
--- Overlap rule: on any date, the open slots are either one Full day, or Morning and/or Afternoon,
--- never both. The code checks this in the same statement that adds or reopens a slot; these triggers
--- are the backstop.
-CREATE TRIGGER IF NOT EXISTS availability_slots_overlap_insert
-BEFORE INSERT ON availability_slots
-WHEN NEW.status = 'open' AND EXISTS (
-  SELECT 1 FROM availability_slots s
-  WHERE s.slot_date = NEW.slot_date AND s.status = 'open'
-    AND ((NEW.period = 'day' AND s.period IN ('am', 'pm')) OR (NEW.period IN ('am', 'pm') AND s.period = 'day'))
-)
-BEGIN
-  SELECT RAISE(ABORT, 'availability_overlap');
-END;
-
-CREATE TRIGGER IF NOT EXISTS availability_slots_overlap_update
-BEFORE UPDATE OF status, period, slot_date ON availability_slots
-WHEN NEW.status = 'open' AND EXISTS (
-  SELECT 1 FROM availability_slots s
-  WHERE s.id <> NEW.id AND s.slot_date = NEW.slot_date AND s.status = 'open'
-    AND ((NEW.period = 'day' AND s.period IN ('am', 'pm')) OR (NEW.period IN ('am', 'pm') AND s.period = 'day'))
-)
-BEGIN
-  SELECT RAISE(ABORT, 'availability_overlap');
-END;
+-- Additive only: three new tables, their indexes and triggers. No existing table, column or trigger
+-- is changed: quote links and availability come from 0004_customer_links, and its date_requests table
+-- and rows are kept as they are (no longer used by the code). Apply after 0004, by hand, with:
+--   npx wrangler d1 execute <database-name> --remote --file=migrations/0005_bookings.sql
+-- Every statement is safe to run twice. The file ends by recording version 5.
 
 -- A booking of one slot for one sent quote.
 -- status: holding (on Stripe Checkout until hold_expires_at) | expired (checkout not completed; slot
@@ -167,4 +107,4 @@ CREATE INDEX IF NOT EXISTS booking_refunds_booking ON booking_refunds (booking_i
 CREATE INDEX IF NOT EXISTS booking_refunds_status ON booking_refunds (status);
 
 INSERT OR IGNORE INTO schema_migrations (version, name, applied_at)
-VALUES (4, '0004_bookings', strftime('%Y-%m-%dT%H:%M:%SZ', 'now'));
+VALUES (5, '0005_bookings', strftime('%Y-%m-%dT%H:%M:%SZ', 'now'));

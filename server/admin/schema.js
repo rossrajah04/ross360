@@ -5,9 +5,9 @@
 // the schema version this code expects, and refuses to run against anything older.
 
 // Raise this when a new migration file is added, to the version that file records.
-export const LATEST_SCHEMA_VERSION = 5;
+export const LATEST_SCHEMA_VERSION = 6;
 export const FIRST_MIGRATION = 'migrations/0001_admin_phase_a.sql';
-export const LATEST_MIGRATION = 'migrations/0005_quote_customer_type.sql';
+export const LATEST_MIGRATION = 'migrations/0006_quote_customer_type.sql';
 
 export class SchemaNotReady extends Error {
   constructor(found) {

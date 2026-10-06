@@ -1,10 +1,10 @@
--- ROSS 360 Admin: who a quote is for (version 5).
+-- ROSS 360 Admin: who a quote is for (version 6).
 --
--- Additive only: one new column on `quotes` and one new trigger. Apply after 0004, by hand, with:
---   npx wrangler d1 execute <database-name> --remote --file=migrations/0005_quote_customer_type.sql
+-- Additive only: one new column on `quotes` and one new trigger. Apply after 0005, by hand, with:
+--   npx wrangler d1 execute <database-name> --remote --file=migrations/0006_quote_customer_type.sql
 --
 -- Like 0003, this file is NOT safe to run twice: a second run stops at the first statement with
--- "duplicate column name" and changes nothing. Check first that version 5 is not already recorded:
+-- "duplicate column name" and changes nothing. Check first that version 6 is not already recorded:
 --   SELECT version, name FROM schema_migrations ORDER BY version;
 
 -- business | consumer, chosen by the administrator on each quote (NULL until chosen; a quote cannot
@@ -21,4 +21,4 @@ BEGIN
 END;
 
 INSERT OR IGNORE INTO schema_migrations (version, name, applied_at)
-VALUES (5, '0005_quote_customer_type', strftime('%Y-%m-%dT%H:%M:%SZ', 'now'));
+VALUES (6, '0006_quote_customer_type', strftime('%Y-%m-%dT%H:%M:%SZ', 'now'));

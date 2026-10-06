@@ -68,14 +68,15 @@ Setting it up in Cloudflare Pages:
    npx wrangler d1 execute <database-name> --remote --file=migrations/0001_admin_phase_a.sql
    npx wrangler d1 execute <database-name> --remote --file=migrations/0002_quotes.sql
    npx wrangler d1 execute <database-name> --remote --file=migrations/0003_quote_travel.sql
-   npx wrangler d1 execute <database-name> --remote --file=migrations/0004_bookings.sql
-   npx wrangler d1 execute <database-name> --remote --file=migrations/0005_quote_customer_type.sql
+   npx wrangler d1 execute <database-name> --remote --file=migrations/0004_customer_links.sql
+   npx wrangler d1 execute <database-name> --remote --file=migrations/0005_bookings.sql
+   npx wrangler d1 execute <database-name> --remote --file=migrations/0006_quote_customer_type.sql
    ```
 
    or paste the file into the database's Console in the Cloudflare dashboard. Each file records its
    version in `schema_migrations`, and the Admin refuses to run (and the quote form stores nothing)
-   until the database is at the version set in `server/admin/schema.js`. 0001, 0002 and 0004 are safe
-   to run twice. **0003 and 0005 are not**: they add columns, and a second run stops at once with
+   until the database is at the version set in `server/admin/schema.js`. 0001, 0002, 0004 and 0005 are
+   safe to run twice. **0003 and 0006 are not**: they add columns, and a second run stops at once with
    "duplicate column name" (changing nothing). Check `SELECT version, name FROM schema_migrations ORDER BY version;`
    before applying it. A future change goes in a new numbered file, with `LATEST_SCHEMA_VERSION`
    raised to match.
@@ -191,7 +192,7 @@ with a new reference; when that is sent, the original is marked Superseded. Draf
 discarded; they are kept, and their reference is not reused. Every action is on the enquiry's
 timeline. Acceptance, payment and booking are not built yet.
 
-**Deploy order:** this code needs schema version 5. Apply each missing migration to a database
+**Deploy order:** this code needs schema version 6. Apply each missing migration to a database
 before this code runs against it (Preview first; Production before merging). Until then the Admin
 answers 503 and the quote form emails enquiries without saving them. Each migration is additive, and
 the code already deployed keeps working once it is applied, so apply it first and merge afterwards.
@@ -202,7 +203,8 @@ There is no delete button or delete endpoint. When an enquiry must be removed (a
 spam, or a test record), an authorised administrator deletes it directly in D1, in the Cloudflare
 dashboard (Workers & Pages -> D1 -> the database -> Console) or with
 `npx wrangler d1 execute <database-name> --remote --command "..."`. Its quote lines, quotes and
-timeline entries (and, since Phase C, its bookings, their payments and refunds, and its customer links)
+timeline entries (and, since Phase C, its bookings, their payments and refunds, any date requests from
+the earlier Phase C preview, and its customer links)
 must be deleted first,
 in this order, because each refers to the one after it:
 
@@ -216,6 +218,7 @@ SELECT id, reference, name, business, email FROM enquiries WHERE reference = 'RO
 DELETE FROM booking_refunds WHERE booking_id IN (SELECT id FROM bookings WHERE quote_id IN (SELECT id FROM quotes WHERE enquiry_id = (SELECT id FROM enquiries WHERE reference = 'ROSS-0007')));
 DELETE FROM booking_payments WHERE booking_id IN (SELECT id FROM bookings WHERE quote_id IN (SELECT id FROM quotes WHERE enquiry_id = (SELECT id FROM enquiries WHERE reference = 'ROSS-0007')));
 DELETE FROM bookings WHERE quote_id IN (SELECT id FROM quotes WHERE enquiry_id = (SELECT id FROM enquiries WHERE reference = 'ROSS-0007'));
+DELETE FROM date_requests WHERE quote_id IN (SELECT id FROM quotes WHERE enquiry_id = (SELECT id FROM enquiries WHERE reference = 'ROSS-0007'));
 DELETE FROM quote_links WHERE quote_id IN (SELECT id FROM quotes WHERE enquiry_id = (SELECT id FROM enquiries WHERE reference = 'ROSS-0007'));
 DELETE FROM quote_items WHERE quote_id IN (SELECT id FROM quotes WHERE enquiry_id = (SELECT id FROM enquiries WHERE reference = 'ROSS-0007'));
 DELETE FROM quotes WHERE enquiry_id = (SELECT id FROM enquiries WHERE reference = 'ROSS-0007');
@@ -302,8 +305,8 @@ booking isn't available; nothing else changes.
    environment: add `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET` as secrets (Encrypt),
    `SCHEDULER_SECRET` as a secret, and `EMAIL_TEST_ALLOWLIST` as a plain variable with your own
    address. Redeploy the branch (retry the latest deployment) so they take effect.
-4. Apply `migrations/0004_bookings.sql`, then `migrations/0005_quote_customer_type.sql`, to
-   `ross360-admin-preview` (see Admin).
+4. Bring `ross360-admin-preview` to version 6: it already has 0004_customer_links (version 4), so
+   apply `migrations/0005_bookings.sql`, then `migrations/0006_quote_customer_type.sql` (see Admin).
 5. Deploy the scheduler for Preview (next section). Test cards: `4242 4242 4242 4242` pays, `4000 0000 0000 0002` is declined; any future expiry and any CVC.
 
 **Booking scheduler (Cron Worker).** Reminders, unpaid-balance cancellations, expired holds and refund
@@ -381,9 +384,9 @@ notice only on preview builds (any branch except `main`; see `src/content/legalP
 `main`, and so Production, keep the current wording, even after a merge, until it is approved and
 made permanent.
 
-**Deploy order.** Preview first: apply `0004_bookings.sql` and `0005_quote_customer_type.sql` to Preview D1, set the Preview secrets
+**Deploy order.** Preview first: apply `0005_bookings.sql` and `0006_quote_customer_type.sql` to Preview D1 (it already has 0004), set the Preview secrets
 above, deploy the Preview scheduler, and test the branch preview end to end in Stripe test mode.
-Production only after approval of the Preview journey and the Terms wording: apply 0004 and 0005 to Production
+Production only after approval of the Preview journey and the Terms wording: apply 0004, 0005 and 0006 to Production
 D1 (the code already deployed keeps working with it), set the Production link secrets, live Stripe key,
 `STRIPE_ALLOW_LIVE=true`, webhook (to `https://ross360.co.uk/api/stripe/webhook`) and scheduler
 secret, deploy the Production scheduler, publish the approved Terms and Privacy wording, then merge.
