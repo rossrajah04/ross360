@@ -102,6 +102,13 @@ export class FakeD1 {
   }
 }
 
+/** Signing keys for customer links, used only inside these tests. */
+export const TEST_LINK_KEYS = {
+  QUOTE_LINK_SECRET: 'test-only-link-secret-0123456789abcdef0123',
+  QUOTE_LINK_KEY_ID: 'k1',
+  QUOTE_LINK_BASE_URL: 'https://ross360.test',
+};
+
 /** An env with the Admin configured. The password is only ever used inside these tests. */
 export async function adminEnv(db, { email = 'admin@example.test', password = 'correct horse battery' } = {}) {
   const { derive } = await import('../../server/admin/auth.js');
@@ -110,7 +117,13 @@ export async function adminEnv(db, { email = 'admin@example.test', password = 'c
   const hash = await derive(password, salt, iterations);
   const b64 = (bytes) => Buffer.from(bytes).toString('base64');
   return {
-    env: { DB: db, ADMIN_EMAIL: email, ADMIN_PASSWORD_HASH: `pbkdf2$${iterations}$${b64(salt)}$${b64(hash)}` },
+    env: {
+      DB: db,
+      ADMIN_EMAIL: email,
+      ADMIN_PASSWORD_HASH: `pbkdf2$${iterations}$${b64(salt)}$${b64(hash)}`,
+      // Customer links (Phase C). Test-only values.
+      ...TEST_LINK_KEYS,
+    },
     email,
     password,
   };

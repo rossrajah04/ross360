@@ -93,6 +93,12 @@ export default function QuotePreview() {
           <dd>{formatMoney(quote.totalPence)}</dd>
         </dl>
 
+        {quote.status === 'draft' && data.linkConfigured === false ? (
+          <p className="ad-error" role="alert">
+            Customer links are not set up (QUOTE_LINK_SECRET and QUOTE_LINK_KEY_ID), so this email has no link and cannot be sent.
+          </p>
+        ) : null}
+
         {problems.length ? (
           <div className="ad-error" role="alert">
             Before this can be sent:

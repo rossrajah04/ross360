@@ -16,6 +16,7 @@ import {
   typedPence,
 } from '../../src/lib/admin/quotes.js';
 import { QuoteTag, when } from '../components/Bits.jsx';
+import CustomerLink from '../components/CustomerLink.jsx';
 
 // The quote as the form edits it: money in pounds as typed, quantities as typed.
 function toForm(quote) {
@@ -338,6 +339,7 @@ export default function Quote() {
       ) : null}
 
       {draft ? null : <SentSummary quote={quote} busy={busy} onRevise={revise} onCheckSend={checkSend} />}
+      {quote.status === 'sent' || quote.status === 'superseded' ? <CustomerLink quote={quote} /> : null}
 
       {draft ? (
         <>

@@ -66,9 +66,10 @@ export function customerSnapshot(quote, { enquiryReference, issuedOn }) {
 
 /**
  * Render a quote for the customer. Returns { subject, html, text, snapshot }.
- * `issuedOn` is the UK date (YYYY-MM-DD) the quote is, or would be, issued.
+ * `issuedOn` is the UK date (YYYY-MM-DD) the quote is, or would be, issued. `quoteUrl` is the
+ * customer's link to the quote page (Phase C); a quote cannot be sent without one.
  */
-export function renderQuote(quote, { enquiryReference, issuedOn }) {
+export function renderQuote(quote, { enquiryReference, issuedOn, quoteUrl = null }) {
   const s = customerSnapshot(quote, { enquiryReference, issuedOn });
   const L = quoteEmail.labels;
   const termsUrl = `${site.url}${quoteEmail.termsPath}`;
@@ -107,6 +108,7 @@ export function renderQuote(quote, { enquiryReference, issuedOn }) {
     quoteEmail.vat,
     validity,
     '',
+    ...(quoteUrl ? [quoteEmail.linkLine, quoteUrl, ''] : []),
     quoteEmail.nextSteps,
     '',
     quoteEmail.closing,
@@ -182,6 +184,7 @@ export function renderQuote(quote, { enquiryReference, issuedOn }) {
     totalRows +
     '</table>' +
     p(`${escapeHtml(quoteEmail.vat)}<br>${escapeHtml(validity)}`) +
+    (quoteUrl ? p(`<a href="${escapeHtml(quoteUrl)}" style="color:${INK};font-weight:600">${escapeHtml(quoteEmail.linkLine)}</a>`) : '') +
     p(escapeHtml(quoteEmail.nextSteps)) +
     p(escapeHtml(quoteEmail.closing)) +
     `<p style="margin:28px 0 0;padding-top:16px;border-top:1px solid ${LINE};font-family:${FONT};font-size:13px;line-height:1.6;color:${MUTED}">` +

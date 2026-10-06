@@ -56,6 +56,22 @@ export const api = {
   checkSend: (reference) => call(`/quotes/${encodeURIComponent(reference)}/check-send`, { method: 'POST', body: { confirm: true } }),
   reviseQuote: (reference) => call(`/quotes/${encodeURIComponent(reference)}/revise`, { method: 'POST', body: {} }),
   discardQuote: (reference) => call(`/quotes/${encodeURIComponent(reference)}/discard`, { method: 'POST', body: {} }),
+
+  // Customer links and availability (Phase C)
+  customerLink: (reference) => call(`/quotes/${encodeURIComponent(reference)}/customer`),
+  newLink: (reference) => call(`/quotes/${encodeURIComponent(reference)}/link/new`, { method: 'POST', body: { confirm: true } }),
+  revokeLink: (reference) => call(`/quotes/${encodeURIComponent(reference)}/link/revoke`, { method: 'POST', body: { confirm: true } }),
+  links: () => call('/links'),
+  availability: () => call('/availability'),
+  addSlot: (values) => call('/availability', { method: 'POST', body: values }),
+  slotNote: (id, note) => call(`/availability/${id}`, { method: 'PATCH', body: { note } }),
+  closeSlot: (slot, requests) =>
+    call(`/availability/${slot.id}/close`, {
+      method: 'POST',
+      body: { requests, pendingCount: slot.pendingCount, pendingMaxId: slot.pendingMaxId },
+    }),
+  reopenSlot: (id) => call(`/availability/${id}/reopen`, { method: 'POST', body: {} }),
+  closeDateRequest: (id) => call(`/date-requests/${id}/close`, { method: 'POST', body: {} }),
 };
 
 // The customer email of a quote, for the preview frame.

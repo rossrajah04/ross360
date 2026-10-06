@@ -26,6 +26,7 @@ export default function Dashboard() {
   const figures = [
     { label: 'New enquiries', value: counts.newEnquiries, to: list('newEnquiries') },
     { label: 'Quotes awaiting response', value: counts.quotesAwaiting, to: list('quotesAwaiting') },
+    { label: 'Pending date requests', value: data.pendingDateRequests ?? 0, to: '/availability' },
     { label: 'Upcoming bookings', value: counts.upcomingBookings, to: list('upcomingBookings') },
     { label: 'Jobs in production', value: counts.inProduction, to: list('inProduction') },
     { label: 'Payments outstanding', value: formatMoney(data.paymentsOutstandingPence) },

@@ -68,12 +68,13 @@ Setting it up in Cloudflare Pages:
    npx wrangler d1 execute <database-name> --remote --file=migrations/0001_admin_phase_a.sql
    npx wrangler d1 execute <database-name> --remote --file=migrations/0002_quotes.sql
    npx wrangler d1 execute <database-name> --remote --file=migrations/0003_quote_travel.sql
+   npx wrangler d1 execute <database-name> --remote --file=migrations/0004_customer_links.sql
    ```
 
    or paste the file into the database's Console in the Cloudflare dashboard. Each file records its
    version in `schema_migrations`, and the Admin refuses to run (and the quote form stores nothing)
-   until the database is at the version set in `server/admin/schema.js`. 0001 and 0002 are safe to
-   run twice. **0003 is not**: it adds columns, and a second run stops at once with "duplicate column
+   until the database is at the version set in `server/admin/schema.js`. 0001, 0002 and 0004 are safe
+   to run twice. **0003 is not**: it adds columns, and a second run stops at once with "duplicate column
    name" (changing nothing). Check `SELECT version, name FROM schema_migrations ORDER BY version;`
    before applying it. A future change goes in a new numbered file, with `LATEST_SCHEMA_VERSION`
    raised to match.
@@ -189,7 +190,7 @@ with a new reference; when that is sent, the original is marked Superseded. Draf
 discarded; they are kept, and their reference is not reused. Every action is on the enquiry's
 timeline. Acceptance, payment and booking are not built yet.
 
-**Deploy order:** this code needs schema version 3. Apply each missing migration to a database
+**Deploy order:** this code needs schema version 4. Apply each missing migration to a database
 before this code runs against it (Preview first; Production before merging). Until then the Admin
 answers 503 and the quote form emails enquiries without saving them. Each migration is additive, and
 the code already deployed keeps working once it is applied, so apply it first and merge afterwards.
@@ -200,13 +201,17 @@ There is no delete button or delete endpoint. When an enquiry must be removed (a
 spam, or a test record), an authorised administrator deletes it directly in D1, in the Cloudflare
 dashboard (Workers & Pages -> D1 -> the database -> Console) or with
 `npx wrangler d1 execute <database-name> --remote --command "..."`. Its quote lines, quotes and
-timeline entries must be deleted first, in this order, because each refers to the one after it:
+timeline entries (and, since Phase C, its date requests and customer links) must be deleted first,
+in this order, because each refers to the one after it:
 
 ```sql
 -- 1. Check it is the right record.
 SELECT id, reference, name, business, email FROM enquiries WHERE reference = 'ROSS-0007';
 
--- 2. Delete its quote lines, quotes and timeline entries, then the enquiry itself.
+-- 2. Delete its date requests, customer links, quote lines, quotes and timeline entries, then the
+--    enquiry itself.
+DELETE FROM date_requests WHERE quote_id IN (SELECT id FROM quotes WHERE enquiry_id = (SELECT id FROM enquiries WHERE reference = 'ROSS-0007'));
+DELETE FROM quote_links WHERE quote_id IN (SELECT id FROM quotes WHERE enquiry_id = (SELECT id FROM enquiries WHERE reference = 'ROSS-0007'));
 DELETE FROM quote_items WHERE quote_id IN (SELECT id FROM quotes WHERE enquiry_id = (SELECT id FROM enquiries WHERE reference = 'ROSS-0007'));
 DELETE FROM quotes WHERE enquiry_id = (SELECT id FROM enquiries WHERE reference = 'ROSS-0007');
 DELETE FROM enquiry_events WHERE enquiry_id = (SELECT id FROM enquiries WHERE reference = 'ROSS-0007');
@@ -219,7 +224,80 @@ outside D1, such as the internal notification email and any acknowledgement, mus
 separately from the mailbox, including sent quotes (the customer's copy cannot be recalled, and the
 BCC copy is in newquote@).
 
-Not built yet: quote acceptance, booking, payments, Stripe and any customer-facing booking page.
+Not built yet: quote acceptance, booking, payments and Stripe (Phase D).
+
+### Customer quote page and date requests (Phase C)
+
+Every quote email now links to the customer's own page, `https://ross360.co.uk/q/<token>`, with the
+line "View your quotation and choose a preferred date online." The page shows the quotation exactly
+as sent (it is drawn from the stored snapshot, never from the quote as it now stands), and, while the
+quote is valid, **Choose a date**. The customer picks one of your open slots and sends a **date
+request**. Nothing is booked: the page says so, `newquote@ross360.co.uk` (or `QUOTE_TO_EMAIL`) gets
+an internal email, and you confirm the date with the customer yourself. The customer is never
+emailed by this, and the enquiry status does not change.
+
+| Name | Where | Required | Purpose |
+| --- | --- | --- | --- |
+| `QUOTE_LINK_SECRET` | Secret | Yes | Signs customer links. At least 32 characters, for example `openssl rand -base64 48`. Different for Preview and Production |
+| `QUOTE_LINK_KEY_ID` | Variable | Yes | A short name for that secret, letters and digits only, for example `k1` |
+| `QUOTE_LINK_SECRET_PREVIOUS` | Secret | No | During a routine rotation only: the secret before the current one |
+| `QUOTE_LINK_KEY_ID_PREVIOUS` | Variable | No | Its key id |
+| `QUOTE_LINK_BASE_URL` | Variable | No | Leave unset in Production (`https://ross360.co.uk`). In Preview, set it to the preview address so links in test emails open the preview |
+
+Without `QUOTE_LINK_SECRET` and `QUOTE_LINK_KEY_ID`, customer pages say the quotation isn't
+available online and **sending a quote is refused**, so no email goes out without its link. The link is
+created when a draft is first previewed, so the preview shows exactly the link that is sent.
+
+**When a link works.** While the quote is valid: the page and Choose a date. Up to 90 days after
+"valid until": the page, marked expired, without dates. After that, or once disabled, or for any link
+that is invalid, unknown or signed with a key no longer configured: the same "no longer available"
+page. A superseded quote says it has been replaced (with no link to the revision). A quote that has
+not been sent, or whose send is unknown, says it isn't available online.
+
+**Availability** (Admin -> Availability). Add Morning, Afternoon or Full day slots; customers see open
+slots from 2 days to 8 weeks ahead. On any date the open slots are either one Full day, or Morning
+and/or Afternoon, never both; the server and the database (0004 triggers) both enforce this. A pending
+request does not hide a slot. When you close a slot you choose what happens to its pending requests:
+**close them** (the default) or **keep them** (they stay pending, marked "Slot closed", for you to settle
+with the customer, and can be closed later from the quote). If a request arrives while you are
+closing, the close is refused and reloads with it, so you never close a request you haven't seen. A
+request and a close are each one transaction, and the database refuses any pending request on a
+closed slot, so a request can never be accepted after its slot was closed.
+
+**Disabling and replacing a link** (on a sent quote, Customer link). **Disable link** stops it at once,
+including the link in the email already sent. **Create new link** issues a new one (and disables any
+current one). Nothing is emailed: copy the link and send it yourself. Quotes sent before Phase C have
+no link; **Create customer link** gives them one.
+
+**Rotating `QUOTE_LINK_SECRET` (routine, no compromise).** Existing links keep working:
+
+1. Set `QUOTE_LINK_SECRET_PREVIOUS` and `QUOTE_LINK_KEY_ID_PREVIOUS` to the current values, then set a
+   new `QUOTE_LINK_SECRET` and `QUOTE_LINK_KEY_ID` (for example `k2`). Redeploy.
+2. New links use `k2`; every `k1` link still works.
+3. Admin -> Links shows how many working links each key has, and lists the quotes whose links would
+   stop if the previous key were removed. Remove the `_PREVIOUS` pair once that list is empty (at most
+   about 104 days: 14 days' validity plus 90), or create new links for those quotes first.
+
+**If a secret is compromised.** Set a new `QUOTE_LINK_SECRET` and `QUOTE_LINK_KEY_ID` and do **not**
+keep the old one as previous. Every link signed with it stops at once. Admin -> Links lists the quotes
+affected that are still within their viewing window; for each, **Create new link** and send it to the
+customer yourself. For one link sent to the wrong person, use **Disable link** and **Create new link**
+on that quote; the secret is not involved.
+
+**Recommended: a Cloudflare rate limit on `/q/*`.** Not needed for security (links cannot be guessed:
+a 128-bit id plus a signature), but it stops scripted abuse. In the Cloudflare dashboard, Security ->
+WAF -> Rate limiting rules, create a rule named `Customer quote links`: URI path starts with `/q/`,
+counted by IP address, 20 requests per 10 seconds, action Block for the shortest duration offered.
+Rate limiting rules are available on every plan, and on Free this fits the limits (one rule, counted
+by IP, a 10-second period and a 10-second block, matching on the path). A second, stricter rule for
+date requests only (`POST` to `/q/*`, for example 5 per minute per IP, blocked for 10 minutes) needs
+matching by request method, which Cloudflare's feature table lists for Business and above: add it only
+if your dashboard offers request method as a match field. Check what your own plan offers.
+
+**Deploy order:** apply `0004_customer_links.sql` to Preview D1 and set the link secrets in Preview;
+test the branch preview; then set the Production secrets, apply 0004 to Production D1 (the code
+already deployed keeps working with it), and merge. Customer pages run as a Pages Function: `/q/*` is
+in `public/_routes.json`.
 
 ## Where to edit content
 
@@ -274,5 +352,7 @@ For extra protection add a Cloudflare WAF rate-limiting rule on `/api/quote`.
 ## Tests
 
 `npm test` runs the Node test suite in `tests/`: Admin authentication, the migrations and schema
-check, enquiry creation, sequential reference generation and the quote form handler. `tests/helpers/d1.js` stands in for a Cloudflare D1
+check, enquiry creation, sequential reference generation, the quote form handler, quotes, mileage
+travel, customer links (`tests/customer-links.test.js`) and availability and date requests, including
+the request-versus-close race (`tests/availability.test.js`). `tests/helpers/d1.js` stands in for a Cloudflare D1
 binding using an in-memory SQLite database, so no Cloudflare account is needed to run them.

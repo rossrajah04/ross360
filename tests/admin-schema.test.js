@@ -13,18 +13,21 @@ test('the migrations bring an empty database to the latest schema version', asyn
   assert.deepEqual(db.tables(), [
     'admin_login_failures',
     'admin_sessions',
+    'availability_slots',
     'counters',
+    'date_requests',
     'enquiries',
     'enquiry_events',
     'quote_items',
+    'quote_links',
     'quotes',
     'schema_migrations',
   ]);
-  assert.equal(LATEST_SCHEMA_VERSION, 3);
+  assert.equal(LATEST_SCHEMA_VERSION, 4);
   db.close();
 });
 
-test('running 0001 and 0002 again is harmless; running 0003 again stops at once and changes nothing', async () => {
+test('running 0001, 0002 and 0004 again is harmless; running 0003 again stops at once and changes nothing', async () => {
   const { readFileSync } = await import('node:fs');
   const sql = (name) => readFileSync(new URL(`../migrations/${name}`, import.meta.url), 'utf8');
   const db = new FakeD1();
@@ -34,7 +37,8 @@ test('running 0001 and 0002 again is harmless; running 0003 again stops at once 
   db.db.exec(sql('0002_quotes.sql'));
   // SQLite cannot add a column only if it is missing: the first ALTER fails, before anything else runs.
   assert.throws(() => db.db.exec(sql('0003_quote_travel.sql')), /duplicate column name: travel_mode/);
-  assert.equal(await schemaVersion(db), 3);
+  db.db.exec(sql('0004_customer_links.sql'));
+  assert.equal(await schemaVersion(db), 4);
   const counter = await db.prepare(`SELECT value FROM counters WHERE name = 'enquiry'`).first();
   assert.equal(counter.value, 7);
   const quoteCounter = await db.prepare(`SELECT value FROM counters WHERE name = 'quote'`).first();
@@ -75,7 +79,7 @@ test('an older schema version is refused rather than changed', async () => {
   db.close();
 });
 
-test('0002 and 0003 bring a version 1 database with data to version 3 without touching Phase A records', async () => {
+test('0002, 0003 and 0004 bring a version 1 database with data to version 4 without touching Phase A records', async () => {
   const { readFileSync } = await import('node:fs');
   const { createEnquiry, getEnquiry } = await import('../server/admin/enquiries.js');
   const db = new FakeD1({ migrated: false });
@@ -87,7 +91,7 @@ test('0002 and 0003 bring a version 1 database with data to version 3 without to
   const refused = await callAdmin(env, '/api/admin/session');
   assert.equal(refused.status, 503);
   assert.match(refused.data.message, /version 1/);
-  assert.match(refused.data.message, /0003_quote_travel\.sql/);
+  assert.match(refused.data.message, /0004_customer_links\.sql/);
 
   // Records written by Phase A at version 1.
   const before = db.db.prepare(`SELECT COUNT(*) AS n FROM enquiries`).get().n;
@@ -100,6 +104,8 @@ test('0002 and 0003 bring a version 1 database with data to version 3 without to
   assert.equal(await schemaVersion(db), 2);
   db.db.exec(readFileSync(new URL('../migrations/0003_quote_travel.sql', import.meta.url), 'utf8'));
   assert.equal(await schemaVersion(db), 3);
+  db.db.exec(readFileSync(new URL('../migrations/0004_customer_links.sql', import.meta.url), 'utf8'));
+  assert.equal(await schemaVersion(db), 4);
   assert.equal(db.db.prepare(`SELECT COUNT(*) AS n FROM enquiries`).get().n, before + 1);
   assert.equal((await getEnquiry(db, 'ROSS-0005')).name, 'Existing');
   assert.equal((await getEnquiry(db, 'ROSS-0005')).events.length, 1);
@@ -196,11 +202,20 @@ test('the README erasure procedure removes one enquiry, its quotes and its timel
   await reviseQuote(db, 'Q-0001', 'test');
   await createQuote(db, 'ROSS-0003', 'test');
 
+  // Phase C: a customer link, an availability slot and a date request on the sent quote.
+  const at = 'a';
+  db.db.exec(`INSERT INTO quote_links (quote_id, link_id, key_id, created_at, created_by) VALUES (1, 'link-1', 'k1', '${at}', 'test')`);
+  db.db.exec(`INSERT INTO availability_slots (slot_date, period, status, created_at, updated_at) VALUES ('2099-01-01', 'am', 'open', '${at}', '${at}')`);
+  db.db.exec(`INSERT INTO date_requests (quote_id, slot_id, customer_note, created_at, updated_at) VALUES (1, 1, 'note', '${at}', '${at}')`);
+  assert.throws(() => db.db.exec(`DELETE FROM quotes WHERE id = 1`), /FOREIGN KEY/);
+
   // The foreign keys stop the enquiry being deleted before its quotes and timeline.
   assert.throws(() => db.db.exec(`DELETE FROM enquiries WHERE reference = 'ROSS-0002'`), /FOREIGN KEY/);
 
   // The statements documented in the README, in order.
   const id = `(SELECT id FROM enquiries WHERE reference = 'ROSS-0002')`;
+  db.db.exec(`DELETE FROM date_requests WHERE quote_id IN (SELECT id FROM quotes WHERE enquiry_id = ${id});`);
+  db.db.exec(`DELETE FROM quote_links WHERE quote_id IN (SELECT id FROM quotes WHERE enquiry_id = ${id});`);
   db.db.exec(`DELETE FROM quote_items WHERE quote_id IN (SELECT id FROM quotes WHERE enquiry_id = ${id});`);
   db.db.exec(`DELETE FROM quotes WHERE enquiry_id = ${id};`);
   db.db.exec(`DELETE FROM enquiry_events WHERE enquiry_id = ${id};`);

@@ -36,6 +36,18 @@ import {
   updateQuote,
 } from '../../../server/admin/quotes.js';
 import { QUOTE_FROM, QUOTE_BCC } from '../../../server/admin/quoteRender.js';
+import { createLink, customerLinkInfo, linkKeyReport, linksConfigured, revokeLink } from '../../../server/admin/quoteLinks.js';
+import {
+  addSlot,
+  closeDateRequest,
+  closeSlot,
+  listSlots,
+  pendingDateRequestCount,
+  reopenSlot,
+  setSlotNote,
+  validateSlot,
+} from '../../../server/admin/availability.js';
+import { SLOT_NOTE_MAX } from '../../../src/lib/admin/availability.js';
 import { QUOTE_REFERENCE_RE } from '../../../src/lib/admin/quotes.js';
 import { STATUS_VALUES, REFERENCE_RE, parseStatusFilter, validateEnquiryPatch, validateManualEnquiry } from '../../../src/lib/admin/model.js';
 
@@ -61,6 +73,7 @@ const QUOTE_OUTCOMES = {
     'This send can no longer be checked automatically (more than 23 hours have passed). It stays locked: check Resend and the newquote@ copy, then reconcile it by hand as the README describes.',
   ],
   unconfigured: [503, 'Email sending is not set up (RESEND_API_KEY). Nothing was sent.'],
+  link_unconfigured: [503, 'Customer links are not set up (QUOTE_LINK_SECRET and QUOTE_LINK_KEY_ID). Nothing was sent.'],
 };
 
 function quoteOutcome(outcome) {
@@ -114,6 +127,31 @@ const PREVIEW_HEADERS = {
 };
 
 const isVersion = (value) => Number.isSafeInteger(value) && value > 0;
+const isId = (value) => /^\d{1,10}$/.test(value || '');
+const isCount = (value) => Number.isSafeInteger(value) && value >= 0;
+
+// How each outcome of an availability action is answered (Phase C).
+const OVERLAP_MESSAGES = {
+  day: 'Close the morning and afternoon slots on this date first.',
+  am: 'Close the full-day slot on this date first.',
+  pm: 'Close the full-day slot on this date first.',
+};
+function slotOutcome(outcome, okStatus = 200) {
+  const { result, slot } = outcome;
+  if (result === 'ok') return json({ ok: true, slot, closedRequests: outcome.closedRequests }, okStatus);
+  if (result === 'not_found') return notFound();
+  if (result === 'overlap') return json({ ok: false, message: OVERLAP_MESSAGES[outcome.period], slot }, 409);
+  if (result === 'exists') return json({ ok: false, message: 'This slot is already open.', slot }, 409);
+  if (result === 'past') return json({ ok: false, message: 'This date has passed.', slot }, 422);
+  if (result === 'already_closed') return json({ ok: false, message: 'This slot is already closed.', slot }, 409);
+  if (result === 'changed') {
+    return json(
+      { ok: false, changed: true, message: 'A new date request has arrived for this slot. Review it and close the slot again.', slot },
+      409,
+    );
+  }
+  return json({ ok: false, message: 'Something went wrong.' }, 500);
+}
 
 export async function onRequest(context) {
   try {
@@ -193,7 +231,57 @@ async function handle(context) {
   const url = new URL(request.url);
 
   if (segments[0] === 'dashboard' && segments.length === 1 && method === 'GET') {
-    return json({ ok: true, ...(await dashboard(db)) });
+    return json({ ok: true, ...(await dashboard(db)), pendingDateRequests: await pendingDateRequestCount(db) });
+  }
+
+  // --- Customer links and availability (Phase C) --------------------------------------------------
+  if (segments[0] === 'links' && segments.length === 1) {
+    if (method !== 'GET') return json({ ok: false, message: 'Method not allowed.' }, 405);
+    return json({ ok: true, ...(await linkKeyReport(env)) });
+  }
+
+  if (segments[0] === 'availability') {
+    if (segments.length === 1) {
+      if (method === 'GET') return json({ ok: true, slots: await listSlots(db) });
+      if (method === 'POST') {
+        const validation = validateSlot(body);
+        if (!validation.valid) {
+          return json({ ok: false, message: 'Please check the highlighted fields.', errors: validation.errors }, 422);
+        }
+        return slotOutcome(await addSlot(db, validation.values), 201);
+      }
+      return json({ ok: false, message: 'Method not allowed.' }, 405);
+    }
+    if (!isId(segments[1])) return notFound();
+    const id = Number(segments[1]);
+    if (segments.length === 2) {
+      if (method !== 'PATCH') return json({ ok: false, message: 'Method not allowed.' }, 405);
+      if (typeof body.note !== 'string') return json({ ok: false, message: 'Invalid request.' }, 400);
+      const note = body.note.trim();
+      if (note.length > SLOT_NOTE_MAX) return json({ ok: false, message: `Please keep the note under ${SLOT_NOTE_MAX} characters.` }, 422);
+      return slotOutcome(await setSlotNote(db, id, note));
+    }
+    if (segments.length === 3 && method === 'POST') {
+      if (segments[2] === 'reopen') return slotOutcome(await reopenSlot(db, id));
+      if (segments[2] === 'close') {
+        if (!['close', 'keep'].includes(body.requests) || !isCount(body.pendingCount) || !isCount(body.pendingMaxId)) {
+          return json({ ok: false, message: 'Invalid request.' }, 400);
+        }
+        return slotOutcome(
+          await closeSlot(db, id, { requests: body.requests, pendingCount: body.pendingCount, pendingMaxId: body.pendingMaxId }, actor),
+        );
+      }
+    }
+    return notFound();
+  }
+
+  if (segments[0] === 'date-requests' && segments.length === 3 && segments[2] === 'close') {
+    if (method !== 'POST') return json({ ok: false, message: 'Method not allowed.' }, 405);
+    if (!isId(segments[1])) return notFound();
+    const outcome = await closeDateRequest(db, Number(segments[1]), actor);
+    if (outcome.result === 'not_found') return notFound();
+    if (outcome.result === 'not_pending') return json({ ok: false, message: 'This date request is no longer pending.' }, 409);
+    return json({ ok: true });
   }
 
   if (segments[0] === 'enquiries') {
@@ -267,10 +355,34 @@ async function handle(context) {
     }
   }
 
+  if (segments[0] === 'quotes' && segments.length === 4 && segments[2] === 'link') {
+    const reference = decodeURIComponent(segments[1]);
+    if (!QUOTE_REFERENCE_RE.test(reference)) return notFound();
+    if (method !== 'POST') return json({ ok: false, message: 'Method not allowed.' }, 405);
+    if (body.confirm !== true) return json({ ok: false, message: 'Invalid request.' }, 400);
+    let outcome;
+    if (segments[3] === 'new') outcome = await createLink(env, reference, actor);
+    else if (segments[3] === 'revoke') outcome = await revokeLink(env, reference, actor);
+    else return notFound();
+    if (outcome.result === 'not_found') return notFound();
+    if (outcome.result === 'not_sent') return json({ ok: false, message: 'Only a sent quote can have a new customer link.' }, 409);
+    if (outcome.result === 'no_link') return json({ ok: false, message: 'This quote has no working customer link.' }, 409);
+    if (outcome.result === 'unconfigured') {
+      return json({ ok: false, message: 'Customer links are not set up (QUOTE_LINK_SECRET and QUOTE_LINK_KEY_ID).' }, 503);
+    }
+    return json({ ok: true, customer: await customerLinkInfo(env, reference) });
+  }
+
   if (segments[0] === 'quotes' && (segments.length === 2 || segments.length === 3)) {
     const reference = decodeURIComponent(segments[1]);
     if (!QUOTE_REFERENCE_RE.test(reference)) return notFound();
     const action = segments[2];
+
+    if (action === 'customer') {
+      if (method !== 'GET') return json({ ok: false, message: 'Method not allowed.' }, 405);
+      const customer = await customerLinkInfo(env, reference);
+      return customer ? json({ ok: true, customer }) : notFound();
+    }
 
     if (!action) {
       if (method === 'GET') {
@@ -290,7 +402,7 @@ async function handle(context) {
       if (!quote) return notFound();
       // A draft (or discarded draft) is rendered now; anything sent or being sent shows exactly what
       // was stored for sending.
-      const email = previewOf(quote) || (await sentEmail(db, reference));
+      const email = (await previewOf(env, quote, actor)) || (await sentEmail(db, reference));
       if (action === 'preview.html') return new Response(email.html, { status: 200, headers: PREVIEW_HEADERS });
       if (quote.status === 'draft') await recordPreview(db, reference, actor);
       return json({
@@ -305,6 +417,7 @@ async function handle(context) {
         },
         // The UK date the preview was rendered for; sending must happen on the same date.
         issuedOn: quote.status === 'draft' ? email.snapshot.issuedOn : quote.issuedOn,
+        linkConfigured: linksConfigured(env),
       });
     }
 

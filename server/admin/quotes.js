@@ -10,6 +10,7 @@
 import { requireSchema } from './schema.js';
 import { renderQuote, QUOTE_FROM, QUOTE_BCC } from './quoteRender.js';
 import { safeResendDetail } from '../../functions/api/quote.js';
+import { activeLink, ensureDraftLink, linksConfigured, quoteUrl } from './quoteLinks.js';
 import {
   QUOTE_TEXT_FIELDS,
   SEND_UNKNOWN_AFTER_MS,
@@ -308,12 +309,20 @@ export async function updateQuote(db, reference, input, version, actor) {
   return { result: 'ok', quote };
 }
 
-/** Render the customer email for a quote as it stands. Drafts use today's UK date. */
-export function previewOf(quote) {
-  if (quote.status === 'draft' || quote.status === 'discarded') {
-    return renderQuote(quote, { enquiryReference: quote.enquiryReference, issuedOn: ukToday() });
-  }
-  return null;
+/**
+ * Render the customer email for a draft (or discarded draft) as it stands, with today's UK date, or
+ * null for any other quote (its stored email is shown instead). Previewing a draft creates its
+ * customer link, so the preview carries exactly the link the email will be sent with.
+ */
+export async function previewOf(env, quote, actor) {
+  if (quote.status !== 'draft' && quote.status !== 'discarded') return null;
+  const row = await findQuoteRow(env.DB, quote.reference);
+  const link =
+    quote.status === 'draft'
+      ? await ensureDraftLink(env, { id: row.id, enquiryId: row.enquiry_id, reference: quote.reference }, actor)
+      : await activeLink(env.DB, row.id);
+  const url = link ? await quoteUrl(env, link.key_id, link.link_id) : null;
+  return renderQuote(quote, { enquiryReference: quote.enquiryReference, issuedOn: ukToday(), quoteUrl: url });
 }
 
 /** The stored email of a quote that has been (or is being) sent. */
@@ -547,7 +556,8 @@ async function markUnknown(db, row, actor, reference, status, type = 'quote_send
  * - an answer that does not prove whether the email went locks the quote as "send status unknown".
  *
  * Returns { result, quote?, problems?, status? } where result is one of 'sent', 'not_found',
- * 'not_draft', 'stale', 'not_previewed', 'preview_outdated', 'incomplete', 'unconfigured', 'conflict',
+ * 'not_draft', 'stale', 'not_previewed', 'preview_outdated', 'incomplete', 'unconfigured',
+ * 'link_unconfigured', 'conflict',
  * 'failed' (definitely not sent; back to draft) or 'unknown' (may have been sent; locked).
  */
 export async function sendQuote(env, reference, { version, previewedOn }, actor) {
@@ -568,8 +578,18 @@ export async function sendQuote(env, reference, { version, previewedOn }, actor)
     console.error('Quote not sent: RESEND_API_KEY is not set.');
     return { result: 'unconfigured', quote };
   }
+  // Every quote email carries the customer's link, so none can go out unsigned.
+  if (!linksConfigured(env)) {
+    console.error('Quote not sent: QUOTE_LINK_SECRET and QUOTE_LINK_KEY_ID are not set.');
+    return { result: 'link_unconfigured', quote };
+  }
+  // The link is created by the preview; without it (or if its key has since been removed) the preview
+  // did not show what would be sent.
+  const link = await activeLink(db, row.id);
+  const url = link ? await quoteUrl(env, link.key_id, link.link_id) : null;
+  if (!url) return { result: 'not_previewed', quote };
 
-  const email = renderQuote(quote, { enquiryReference: quote.enquiryReference, issuedOn });
+  const email = renderQuote(quote, { enquiryReference: quote.enquiryReference, issuedOn, quoteUrl: url });
   const snapshot = { ...email.snapshot, subject: email.subject, from: QUOTE_FROM, to: quote.customerEmail, bcc: QUOTE_BCC };
   const startedAt = now();
 

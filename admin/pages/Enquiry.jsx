@@ -14,6 +14,7 @@ import {
 } from '../../src/lib/admin/model.js';
 import { PROJECT_TYPES, SPACE_TYPES, SOURCES } from '../../src/lib/quoteSchema.js';
 import { QuoteTag, StatusTag, when } from '../components/Bits.jsx';
+import { periodLabel, weekdayDate } from '../../src/lib/admin/availability.js';
 
 const CUSTOMER_FIELDS = ['name', 'business', 'email', 'phone'];
 const PROJECT_FIELDS = ['projectType', 'projectOther', 'spaceType', 'location', 'size', 'areas', 'message', 'source'];
@@ -328,13 +329,19 @@ function describeTravel(travel) {
   return `Travel: ${miles}, calculated ${formatMoney(travel.travelPence)}`;
 }
 
+const slotText = (detail) => `${weekdayDate(detail.date)}, ${periodLabel(detail.period)}`;
+
 function describe(event) {
   const { type, detail } = event;
   if (type === 'created') return detail.origin === 'website' ? 'Enquiry received from the website' : 'Enquiry added';
   if (type === 'status') return `Status changed from ${statusLabel(detail.from)} to ${statusLabel(detail.to)}`;
   if (type === 'updated') return `Updated ${detail.fields?.join(', ') || 'details'}`;
   if (type === 'note') return detail.text;
-  if (type === 'notification_failed') return 'Internal email notification failed';
+  if (type === 'notification_failed') {
+    return detail.email === 'date_request'
+      ? `Quote ${detail.quote}: internal email about the date request failed (${detail.status})`
+      : 'Internal email notification failed';
+  }
   if (type === 'quote_created') return `Quote ${detail.quote} created`;
   if (type === 'quote_updated') {
     const travel = detail.travel ? `. ${describeTravel(detail.travel)}` : '';
@@ -353,6 +360,16 @@ function describe(event) {
   if (type === 'quote_send_failed') return `Quote ${detail.quote} could not be sent (email service status ${detail.status})`;
   if (type === 'quote_revised') return `Quote ${detail.from} revised as ${detail.to}`;
   if (type === 'quote_discarded') return `Quote ${detail.quote} discarded`;
+  if (type === 'quote_link_created') return `Quote ${detail.quote}: ${detail.replaced ? 'new ' : ''}customer link created (key ${detail.keyId})`;
+  if (type === 'quote_link_revoked') return `Quote ${detail.quote}: customer link disabled`;
+  if (type === 'quote_viewed') return `Quote ${detail.quote} viewed by the customer${detail.first ? ' for the first time' : ''}`;
+  if (type === 'date_requested') {
+    return `Quote ${detail.quote}: date requested, ${slotText(detail)}${detail.note ? ', with a note' : ''}. Nothing is booked`;
+  }
+  if (type === 'date_request_replaced') return `Quote ${detail.quote}: earlier date request (${slotText(detail)}) replaced by the customer`;
+  if (type === 'date_request_closed') {
+    return `Quote ${detail.quote}: date request (${slotText(detail)}) closed${detail.reason === 'slot_closed' ? ' with its slot' : ''}`;
+  }
   return type;
 }
 
