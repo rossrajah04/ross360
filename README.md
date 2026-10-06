@@ -67,12 +67,16 @@ Setting it up in Cloudflare Pages:
    ```bash
    npx wrangler d1 execute <database-name> --remote --file=migrations/0001_admin_phase_a.sql
    npx wrangler d1 execute <database-name> --remote --file=migrations/0002_quotes.sql
+   npx wrangler d1 execute <database-name> --remote --file=migrations/0003_quote_travel.sql
    ```
 
    or paste the file into the database's Console in the Cloudflare dashboard. Each file records its
    version in `schema_migrations`, and the Admin refuses to run (and the quote form stores nothing)
-   until the database is at the version set in `server/admin/schema.js`. Every statement is safe to
-   run twice. A future change goes in a new numbered file, with `LATEST_SCHEMA_VERSION` raised to match.
+   until the database is at the version set in `server/admin/schema.js`. 0001 and 0002 are safe to
+   run twice. **0003 is not**: it adds columns, and a second run stops at once with "duplicate column
+   name" (changing nothing). Check `SELECT version, name FROM schema_migrations ORDER BY version;`
+   before applying it. A future change goes in a new numbered file, with `LATEST_SCHEMA_VERSION`
+   raised to match.
 4. **Set the account.** Settings -> Variables and Secrets:
 
 | Name | Where | Purpose |
@@ -130,6 +134,16 @@ validity (14 days by default) and internal notes. **Internal notes are never sho
 they are not in the preview, the email or the stored sent record. Totals are always recalculated on
 the server in whole pence. VAT is not charged, and the quote says so.
 
+**Travel** is either typed in as an amount, or **calculated from miles**:
+- Enter the one-way driving distance from Google Maps, to one decimal place.
+- The first 10 miles each way are free. The rest of the round trip is charged at 50p a mile, rounded up to the next whole pound: `max(0, one way − 10) × 2` miles. For example, 23.6 miles gives 27.2 miles, £13.60, so £14.
+- Over 300 miles one way, enter the amount by hand instead.
+- The calculated amount can be overridden, with an internal reason.
+- The server recalculates travel from the distance on every save and ignores any amount the browser sends, unless it is an override.
+- The rule is `MILEAGE_RULE` in `src/lib/admin/quotes.js`. Each quote records the rate and free distance it was calculated with.
+
+The customer sees only the final amount, as one Travel line. The distance, rate, working and override reason are shown only in the Admin. The timeline records calculator changes, but never the override reason.
+
 **Preview** shows the exact email, rendered by the server. **Send quote** (after a confirmation)
 emails it from `ROSS 360 <contact@ross360.co.uk>` (reply-to the same) to the customer, with a BCC
 to newquote@ross360.co.uk, using the existing `RESEND_API_KEY`. No new environment variables are
@@ -175,9 +189,10 @@ with a new reference; when that is sent, the original is marked Superseded. Draf
 discarded; they are kept, and their reference is not reused. Every action is on the enquiry's
 timeline. Acceptance, payment and booking are not built yet.
 
-**Deploy order:** this code needs schema version 2. Apply `migrations/0002_quotes.sql` to a
-database before this code runs against it (Preview first; Production before merging). Until then
-the Admin answers 503 and the quote form emails enquiries without saving them.
+**Deploy order:** this code needs schema version 3. Apply each missing migration to a database
+before this code runs against it (Preview first; Production before merging). Until then the Admin
+answers 503 and the quote form emails enquiries without saving them. Each migration is additive, and
+the code already deployed keeps working once it is applied, so apply it first and merge afterwards.
 
 ### Erasing an enquiry (manual procedure)
 

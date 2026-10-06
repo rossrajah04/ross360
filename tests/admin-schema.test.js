@@ -20,15 +20,21 @@ test('the migrations bring an empty database to the latest schema version', asyn
     'quotes',
     'schema_migrations',
   ]);
-  assert.equal(LATEST_SCHEMA_VERSION, 2);
+  assert.equal(LATEST_SCHEMA_VERSION, 3);
   db.close();
 });
 
-test('applying the migrations twice is harmless and keeps the reference counters', async () => {
+test('running 0001 and 0002 again is harmless; running 0003 again stops at once and changes nothing', async () => {
+  const { readFileSync } = await import('node:fs');
+  const sql = (name) => readFileSync(new URL(`../migrations/${name}`, import.meta.url), 'utf8');
   const db = new FakeD1();
   await db.prepare(`UPDATE counters SET value = 7 WHERE name = 'enquiry'`).run();
   await db.prepare(`UPDATE counters SET value = 3 WHERE name = 'quote'`).run();
-  applyMigrations(db);
+  db.db.exec(sql('0001_admin_phase_a.sql'));
+  db.db.exec(sql('0002_quotes.sql'));
+  // SQLite cannot add a column only if it is missing: the first ALTER fails, before anything else runs.
+  assert.throws(() => db.db.exec(sql('0003_quote_travel.sql')), /duplicate column name: travel_mode/);
+  assert.equal(await schemaVersion(db), 3);
   const counter = await db.prepare(`SELECT value FROM counters WHERE name = 'enquiry'`).first();
   assert.equal(counter.value, 7);
   const quoteCounter = await db.prepare(`SELECT value FROM counters WHERE name = 'quote'`).first();
@@ -69,7 +75,7 @@ test('an older schema version is refused rather than changed', async () => {
   db.close();
 });
 
-test('0002 brings a version 1 database with data to version 2 without touching Phase A records', async () => {
+test('0002 and 0003 bring a version 1 database with data to version 3 without touching Phase A records', async () => {
   const { readFileSync } = await import('node:fs');
   const { createEnquiry, getEnquiry } = await import('../server/admin/enquiries.js');
   const db = new FakeD1({ migrated: false });
@@ -81,7 +87,7 @@ test('0002 brings a version 1 database with data to version 2 without touching P
   const refused = await callAdmin(env, '/api/admin/session');
   assert.equal(refused.status, 503);
   assert.match(refused.data.message, /version 1/);
-  assert.match(refused.data.message, /0002_quotes\.sql/);
+  assert.match(refused.data.message, /0003_quote_travel\.sql/);
 
   // Records written by Phase A at version 1.
   const before = db.db.prepare(`SELECT COUNT(*) AS n FROM enquiries`).get().n;
@@ -92,11 +98,42 @@ test('0002 brings a version 1 database with data to version 2 without touching P
 
   db.db.exec(readFileSync(new URL('../migrations/0002_quotes.sql', import.meta.url), 'utf8'));
   assert.equal(await schemaVersion(db), 2);
+  db.db.exec(readFileSync(new URL('../migrations/0003_quote_travel.sql', import.meta.url), 'utf8'));
+  assert.equal(await schemaVersion(db), 3);
   assert.equal(db.db.prepare(`SELECT COUNT(*) AS n FROM enquiries`).get().n, before + 1);
   assert.equal((await getEnquiry(db, 'ROSS-0005')).name, 'Existing');
   assert.equal((await getEnquiry(db, 'ROSS-0005')).events.length, 1);
   const { reference } = await createEnquiry(db, { name: 'Next', email: 'n@example.test' }, { origin: 'admin', actor: 'test' });
   assert.equal(reference, 'ROSS-0006');
+  db.close();
+});
+
+test('0003 upgrades a version 2 database with a sent quote, leaving it as it was and still locked', async () => {
+  const { readFileSync } = await import('node:fs');
+  const db = new FakeD1({ migrated: false });
+  for (const file of ['0001_admin_phase_a.sql', '0002_quotes.sql']) {
+    db.db.exec(readFileSync(new URL(`../migrations/${file}`, import.meta.url), 'utf8'));
+  }
+  // As Production and Preview are today: an enquiry and a sent quote written by the version 2 code.
+  db.db.exec(`UPDATE counters SET value = 1 WHERE name IN ('enquiry', 'quote')`);
+  db.db.exec(`INSERT INTO enquiries (ref_number, reference, origin, name, created_at, updated_at, status_changed_at)
+              VALUES (1, 'ROSS-0001', 'website', 'Existing', 'a', 'a', 'a')`);
+  db.db.exec(`INSERT INTO quotes (quote_number, reference, enquiry_id, status, version, travel_pence, subtotal_pence, total_pence,
+                created_at, updated_at, sent_snapshot, sent_html)
+              VALUES (1, 'Q-0001', 1, 'sent', 3, 1000, 27400, 27900, 'a', 'a', '{"travelPence":1000}', '<p>sent</p>')`);
+  const before = db.db.prepare(`SELECT * FROM quotes WHERE reference = 'Q-0001'`).get();
+
+  db.db.exec(readFileSync(new URL('../migrations/0003_quote_travel.sql', import.meta.url), 'utf8'));
+  assert.equal(await schemaVersion(db), 3);
+  const after = db.db.prepare(`SELECT * FROM quotes WHERE reference = 'Q-0001'`).get();
+  for (const [column, value] of Object.entries(before)) assert.equal(after[column], value, column);
+  assert.equal(after.travel_mode, 'manual');
+  assert.equal(after.travel_override, 0);
+  assert.equal(after.travel_one_way_tenths, null);
+  // The new columns are locked on a sent quote, and so is everything that was locked before.
+  assert.throws(() => db.db.exec(`UPDATE quotes SET travel_mode = 'mileage' WHERE reference = 'Q-0001'`), /cannot be changed/);
+  assert.throws(() => db.db.exec(`UPDATE quotes SET travel_override_reason = 'x' WHERE reference = 'Q-0001'`), /cannot be changed/);
+  assert.throws(() => db.db.exec(`UPDATE quotes SET travel_pence = 0 WHERE reference = 'Q-0001'`), /cannot be changed/);
   db.close();
 });
 

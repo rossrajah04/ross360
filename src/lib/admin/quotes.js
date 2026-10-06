@@ -57,6 +57,7 @@ export const QUOTE_LIMITS = {
   serviceDescription: 2000,
   internalNotes: 2000,
   discountLabel: 100,
+  travelOverrideReason: 300,
 };
 
 // The text fields of a quote: API name -> { column, label, max }.
@@ -68,6 +69,8 @@ export const QUOTE_TEXT_FIELDS = {
   serviceDescription: { column: 'service_description', label: 'Service description', max: QUOTE_LIMITS.serviceDescription },
   internalNotes: { column: 'internal_notes', label: 'Internal notes', max: QUOTE_LIMITS.internalNotes },
   discountLabel: { column: 'discount_label', label: 'Discount description', max: QUOTE_LIMITS.discountLabel },
+  // Internal, like internal notes: never shown to the customer.
+  travelOverrideReason: { column: 'travel_override_reason', label: 'Travel override reason', max: QUOTE_LIMITS.travelOverrideReason },
 };
 
 export const QUOTE_NUMBER_FIELDS = {
@@ -75,6 +78,50 @@ export const QUOTE_NUMBER_FIELDS = {
   discountPence: { column: 'discount_pence', label: 'Discount' },
   validDays: { column: 'valid_days', label: 'Validity' },
 };
+
+// --- Travel from mileage ------------------------------------------------------------------------
+//
+// The administrator enters the one-way driving distance (from Google Maps). The first 10 miles each
+// way are free; the rest of the round trip is charged at 50p a mile, rounded up to the next whole
+// pound. Over 300 miles one way, travel is entered by hand instead. Distances are whole tenths of a
+// mile (23.6 miles = 236) and money whole pence, so the calculation is exact integer arithmetic.
+export const MILEAGE_RULE = {
+  ratePence: 50,
+  freeOneWayTenths: 100,
+  maxOneWayTenths: 3000,
+};
+export const TRAVEL_MODES = ['manual', 'mileage'];
+
+/**
+ * Travel for a one-way distance under a rule.
+ * Returns { chargeableTenths, exactPence, calculatedPence }:
+ *   chargeableTenths = max(0, one way − free) × 2
+ *   exactPence       = chargeable miles × rate (rounded up to a whole penny)
+ *   calculatedPence  = exactPence rounded up to the next whole pound
+ */
+export function mileageTravel(oneWayTenths, rule = MILEAGE_RULE) {
+  const chargeableTenths = Math.max(0, oneWayTenths - rule.freeOneWayTenths) * 2;
+  const tenthPence = chargeableTenths * rule.ratePence; // tenths of a mile × pence a mile = tenths of a penny
+  return {
+    chargeableTenths,
+    exactPence: Math.ceil(tenthPence / 10),
+    calculatedPence: Math.floor((tenthPence + 999) / 1000) * 100,
+  };
+}
+
+const MILES_RE = /^\d{1,5}(\.\d)?$/;
+
+/** Miles as typed ("23.6", "85") -> whole tenths of a mile; null when blank; NaN when not valid. */
+export function typedMilesTenths(value) {
+  const text = String(value ?? '').trim();
+  if (!text) return null;
+  if (!MILES_RE.test(text)) return NaN;
+  const [whole, tenth = '0'] = text.split('.');
+  return Number(whole) * 10 + Number(tenth);
+}
+
+/** 236 -> "23.6" */
+export const formatMiles = (tenths) => (tenths / 10).toFixed(1);
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const isInt = (value) => Number.isSafeInteger(value);
@@ -136,7 +183,15 @@ export function validateQuoteDraft(input = {}) {
     if (raw < min || raw > max) errors[key] = message;
     return raw;
   };
-  values.travelPence = integer('travelPence', 0, 0, QUOTE_LIMITS.maxTravelPence, 'Please enter a travel amount between £0 and £100,000.');
+  const mode = input.travelMode === undefined || input.travelMode === null ? 'manual' : input.travelMode;
+  if (!TRAVEL_MODES.includes(mode)) wrongType('travelMode');
+  const override = input.travelOverride === undefined || input.travelOverride === null ? false : input.travelOverride;
+  if (typeof override !== 'boolean') wrongType('travelOverride');
+  // The amount typed by hand: always in manual mode, and in mileage mode only when it overrides.
+  const typedTravel = mode !== 'mileage' || override === true;
+  values.travelPence = typedTravel
+    ? integer('travelPence', 0, 0, QUOTE_LIMITS.maxTravelPence, 'Please enter a travel amount between £0 and £100,000.')
+    : 0;
   values.discountPence = integer('discountPence', 0, 0, Number.MAX_SAFE_INTEGER, 'The discount cannot be negative.');
   values.validDays = integer(
     'validDays',
@@ -180,6 +235,39 @@ export function validateQuoteDraft(input = {}) {
       items.push({ kind, description, quantity: raw.quantity, unitPence: raw.unitPence });
     });
     if (packageLines > 1) errors.items = 'A quote can have only one package line.';
+  }
+
+  // Travel. Mileage is recalculated here from the distance, whatever amount the browser sent.
+  values.travelMode = TRAVEL_MODES.includes(mode) ? mode : 'manual';
+  values.travelOverride = false;
+  values.travelOneWayTenths = null;
+  values.travelRatePence = null;
+  values.travelFreeTenths = null;
+  values.travelCalculatedPence = null;
+  if (values.travelMode === 'mileage') {
+    const tenths = input.travelOneWayTenths;
+    if (tenths === undefined || tenths === null) {
+      errors.travelOneWayTenths = 'Please enter the one-way distance in miles.';
+    } else if (!isInt(tenths)) {
+      wrongType('travelOneWayTenths');
+    } else if (tenths < 0) {
+      errors.travelOneWayTenths = 'Please enter the one-way distance in miles.';
+    } else if (tenths > MILEAGE_RULE.maxOneWayTenths) {
+      errors.travelOneWayTenths = `Over ${MILEAGE_RULE.maxOneWayTenths / 10} miles one way: please enter the travel amount by hand instead.`;
+    } else {
+      const calc = mileageTravel(tenths);
+      values.travelOneWayTenths = tenths;
+      values.travelRatePence = MILEAGE_RULE.ratePence;
+      values.travelFreeTenths = MILEAGE_RULE.freeOneWayTenths;
+      values.travelCalculatedPence = calc.calculatedPence;
+      values.travelOverride = override === true;
+      if (!values.travelOverride) values.travelPence = calc.calculatedPence;
+    }
+  }
+  if (values.travelOverride) {
+    if (!values.travelOverrideReason) errors.travelOverrideReason = 'Please give a reason for overriding the calculated amount.';
+  } else {
+    values.travelOverrideReason = '';
   }
 
   const totals = calculateTotals({ items, travelPence: values.travelPence, discountPence: values.discountPence });
