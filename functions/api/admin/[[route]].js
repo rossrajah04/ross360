@@ -22,6 +22,21 @@ import {
   updateEnquiry,
 } from '../../../server/admin/enquiries.js';
 import { SchemaNotReady, requireSchema } from '../../../server/admin/schema.js';
+import {
+  createQuote,
+  discardQuote,
+  getQuote,
+  listQuotes,
+  previewOf,
+  reconcileQuote,
+  recordPreview,
+  reviseQuote,
+  sendQuote,
+  sentEmail,
+  updateQuote,
+} from '../../../server/admin/quotes.js';
+import { QUOTE_FROM, QUOTE_BCC } from '../../../server/admin/quoteRender.js';
+import { QUOTE_REFERENCE_RE } from '../../../src/lib/admin/quotes.js';
 import { STATUS_VALUES, REFERENCE_RE, parseStatusFilter, validateEnquiryPatch, validateManualEnquiry } from '../../../src/lib/admin/model.js';
 
 const UNCONFIGURED = 'The Admin is not set up yet. Set ADMIN_EMAIL, ADMIN_PASSWORD_HASH and the DB binding in Cloudflare.';
@@ -30,6 +45,75 @@ const UNCONFIGURED = 'The Admin is not set up yet. Set ADMIN_EMAIL, ADMIN_PASSWO
 const SIGN_IN_FAILED = 'Email address or password not recognised.';
 
 const notFound = () => json({ ok: false, message: 'Not found.' }, 404);
+
+// How each outcome of a quote action is answered. 409s carry the quote as it now is, so the Admin
+// can show the latest state.
+const QUOTE_OUTCOMES = {
+  not_draft: [409, 'This quote has been sent or discarded, so it can no longer be changed.'],
+  stale: [409, 'This quote has changed since you opened it. Reload it to see the latest version; nothing was saved or sent.'],
+  conflict: [409, 'This quote is already being sent, has been sent, or has changed since you previewed it. Nothing was sent again.'],
+  not_sent: [409, 'Only a sent quote can be revised.'],
+  not_previewed: [409, 'Preview this version of the quote before sending it. Nothing was sent.'],
+  preview_outdated: [409, 'The preview was for a different day, so its dates are out of date. Preview it again before sending. Nothing was sent.'],
+  not_unknown: [409, 'This quote does not have an unknown send to check.'],
+  window_passed: [
+    409,
+    'This send can no longer be checked automatically (more than 23 hours have passed). It stays locked: check Resend and the newquote@ copy, then reconcile it by hand as the README describes.',
+  ],
+  unconfigured: [503, 'Email sending is not set up (RESEND_API_KEY). Nothing was sent.'],
+};
+
+function quoteOutcome(outcome) {
+  if (outcome.result === 'not_found') return notFound();
+  if (outcome.result === 'open_revision') {
+    return json({ ok: false, message: `${outcome.revision} is already an open revision of this quote.`, revision: outcome.revision, quote: outcome.quote }, 409);
+  }
+  if (outcome.result === 'invalid') {
+    const { validation } = outcome;
+    return validation.badType
+      ? json({ ok: false, message: 'Invalid request.', errors: validation.errors }, 400)
+      : json({ ok: false, message: 'Please check the highlighted fields.', errors: validation.errors }, 422);
+  }
+  if (outcome.result === 'incomplete') {
+    return json({ ok: false, message: 'This quote is not ready to send.', problems: outcome.problems, quote: outcome.quote }, 422);
+  }
+  if (outcome.result === 'unknown') {
+    return json(
+      {
+        ok: false,
+        unknown: true,
+        message: `We could not confirm whether the email was sent (${outcome.status}). The quote is locked as "Send status unknown" and will not be sent again. Use "Check send status" to find out safely.`,
+        quote: outcome.quote,
+      },
+      502,
+    );
+  }
+  if (outcome.result === 'failed') {
+    return json(
+      {
+        ok: false,
+        message: `The quote was not sent: the email service did not accept it (status ${outcome.status}). It is still a draft, so you can try again.`,
+        quote: outcome.quote,
+      },
+      502,
+    );
+  }
+  const known = QUOTE_OUTCOMES[outcome.result];
+  if (known) return json({ ok: false, message: known[1], quote: outcome.quote }, known[0]);
+  return json({ ok: true, quote: outcome.quote });
+}
+
+// The quote preview is shown in a sandboxed frame inside the Admin. It is served with its own strict
+// policy: no scripts, no remote content, inline styles only, and framing only by the Admin itself.
+const PREVIEW_HEADERS = {
+  ...ADMIN_HEADERS,
+  'Content-Type': 'text/html; charset=utf-8',
+  'Content-Security-Policy':
+    "default-src 'none'; style-src 'unsafe-inline'; img-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'self'",
+  'X-Frame-Options': 'SAMEORIGIN',
+};
+
+const isVersion = (value) => Number.isSafeInteger(value) && value > 0;
 
 export async function onRequest(context) {
   try {
@@ -153,6 +237,18 @@ async function handle(context) {
       return json({ ok: false, message: 'Method not allowed.' }, 405);
     }
 
+    if (segments.length === 3 && segments[2] === 'quotes') {
+      if (method === 'GET') {
+        const quotes = await listQuotes(db, reference);
+        return quotes ? json({ ok: true, quotes }) : notFound();
+      }
+      if (method === 'POST') {
+        const quote = await createQuote(db, reference, actor);
+        return quote ? json({ ok: true, quote }, 201) : notFound();
+      }
+      return json({ ok: false, message: 'Method not allowed.' }, 405);
+    }
+
     if (segments.length === 3 && method === 'POST') {
       if (segments[2] === 'status') {
         const status = body.status;
@@ -169,6 +265,65 @@ async function handle(context) {
         return enquiry ? json({ ok: true, enquiry }) : notFound();
       }
     }
+  }
+
+  if (segments[0] === 'quotes' && (segments.length === 2 || segments.length === 3)) {
+    const reference = decodeURIComponent(segments[1]);
+    if (!QUOTE_REFERENCE_RE.test(reference)) return notFound();
+    const action = segments[2];
+
+    if (!action) {
+      if (method === 'GET') {
+        const quote = await getQuote(db, reference);
+        return quote ? json({ ok: true, quote }) : notFound();
+      }
+      if (method === 'PATCH') {
+        if (!isVersion(body.version)) return json({ ok: false, message: 'Invalid request.' }, 400);
+        return quoteOutcome(await updateQuote(db, reference, body, body.version, actor));
+      }
+      return json({ ok: false, message: 'Method not allowed.' }, 405);
+    }
+
+    if (action === 'preview' || action === 'preview.html') {
+      if (method !== 'GET') return json({ ok: false, message: 'Method not allowed.' }, 405);
+      const quote = await getQuote(db, reference);
+      if (!quote) return notFound();
+      // A draft (or discarded draft) is rendered now; anything sent or being sent shows exactly what
+      // was stored for sending.
+      const email = previewOf(quote) || (await sentEmail(db, reference));
+      if (action === 'preview.html') return new Response(email.html, { status: 200, headers: PREVIEW_HEADERS });
+      if (quote.status === 'draft') await recordPreview(db, reference, actor);
+      return json({
+        ok: true,
+        quote,
+        email: {
+          from: QUOTE_FROM,
+          to: quote.status === 'draft' || quote.status === 'discarded' ? quote.customerEmail : email.to,
+          bcc: QUOTE_BCC,
+          subject: email.subject,
+          text: email.text,
+        },
+        // The UK date the preview was rendered for; sending must happen on the same date.
+        issuedOn: quote.status === 'draft' ? email.snapshot.issuedOn : quote.issuedOn,
+      });
+    }
+
+    if (method !== 'POST') return json({ ok: false, message: 'Method not allowed.' }, 405);
+    if (action === 'send') {
+      if (body.confirm !== true || !isVersion(body.version) || typeof body.previewedOn !== 'string') {
+        return json({ ok: false, message: 'Invalid request.' }, 400);
+      }
+      return quoteOutcome(await sendQuote(env, reference, { version: body.version, previewedOn: body.previewedOn }, actor));
+    }
+    if (action === 'check-send') {
+      if (body.confirm !== true) return json({ ok: false, message: 'Invalid request.' }, 400);
+      return quoteOutcome(await reconcileQuote(env, reference, actor));
+    }
+    if (action === 'revise') {
+      const outcome = await reviseQuote(db, reference, actor);
+      return outcome.result === 'ok' ? json({ ok: true, quote: outcome.quote }, 201) : quoteOutcome(outcome);
+    }
+    if (action === 'discard') return quoteOutcome(await discardQuote(db, reference, actor));
   }
 
   return notFound();

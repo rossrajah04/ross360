@@ -8,10 +8,15 @@
 // Admin (never through the public quote form, so no email is sent), then changes, searches and reads
 // them, and checks that signed-out requests are refused. The password is read from the environment
 // and never printed.
+//
+// Quotes (Phase B): it creates a quote, saves lines, previews it and discards it. No quote is emailed
+// unless ADMIN_SMOKE_SEND_TO is set, in which case one quote is really sent, to that address only
+// (use your own), and a second send is checked to be refused.
 
 const base = (process.env.ADMIN_SMOKE_URL || '').replace(/\/+$/, '');
 const email = process.env.ADMIN_SMOKE_EMAIL || '';
 const password = process.env.ADMIN_SMOKE_PASSWORD || '';
+const sendTo = process.env.ADMIN_SMOKE_SEND_TO || '';
 if (!base || !email || !password) {
   console.error('Set ADMIN_SMOKE_URL, ADMIN_SMOKE_EMAIL and ADMIN_SMOKE_PASSWORD.');
   process.exit(2);
@@ -62,6 +67,16 @@ const routes = [
   ['PATCH', '/api/admin/enquiries/ROSS-0001'],
   ['POST', '/api/admin/enquiries/ROSS-0001/status'],
   ['POST', '/api/admin/enquiries/ROSS-0001/notes'],
+  ['GET', '/api/admin/enquiries/ROSS-0001/quotes'],
+  ['POST', '/api/admin/enquiries/ROSS-0001/quotes'],
+  ['GET', '/api/admin/quotes/Q-0001'],
+  ['PATCH', '/api/admin/quotes/Q-0001'],
+  ['GET', '/api/admin/quotes/Q-0001/preview'],
+  ['GET', '/api/admin/quotes/Q-0001/preview.html'],
+  ['POST', '/api/admin/quotes/Q-0001/send'],
+  ['POST', '/api/admin/quotes/Q-0001/revise'],
+  ['POST', '/api/admin/quotes/Q-0001/discard'],
+  ['POST', '/api/admin/quotes/Q-0001/check-send'],
 ];
 for (const [method, path] of routes) {
   const result = await call(path, { method, body: method === 'GET' ? undefined : {}, withCookie: false });
@@ -147,6 +162,88 @@ const byAddress = await call(`/api/admin/enquiries?q=LS1`);
 check('search by address', byAddress.data.enquiries?.some((x) => x.reference === ref2));
 const byStatus = await call(`/api/admin/enquiries?status=quoted`);
 check('filter by status', byStatus.data.enquiries?.some((x) => x.reference === ref1));
+
+// Quotes: create, save, preview and discard. Nothing is emailed here.
+const NOTE = 'Smoke internal note: never sent';
+const created = await call(`/api/admin/enquiries/${ref1}/quotes`, { method: 'POST', body: {} });
+const qref = created.data.quote?.reference;
+check('create quote', created.status === 201 && /^Q-\d{4,}$/.test(qref || ''), `status ${created.status} ${created.data.message || ''}`);
+check('quote copies the customer details', created.data.quote?.customerEmail === 'smoke-one@example.test');
+const lines = {
+  version: 1,
+  package: 'professional',
+  items: [
+    { kind: 'package', description: 'Professional 360° virtual tour', quantity: 1, unitPence: 34900 },
+    { kind: 'custom', description: 'Additional floor', quantity: 2, unitPence: 5000 },
+  ],
+  travelPence: 2500,
+  discountPence: 3000,
+  discountLabel: 'Smoke discount',
+  serviceDescription: 'Smoke test service description',
+  internalNotes: NOTE,
+  totalPence: 1,
+};
+const savedQuote = await call(`/api/admin/quotes/${qref}`, { method: 'PATCH', body: lines });
+check(
+  'save quote: totals calculated on the server',
+  savedQuote.status === 200 && savedQuote.data.quote?.totalPence === 44400 && savedQuote.data.quote?.version === 2,
+  `status ${savedQuote.status} total ${savedQuote.data.quote?.totalPence}`,
+);
+const stale = await call(`/api/admin/quotes/${qref}`, { method: 'PATCH', body: { ...lines, version: 1 } });
+check('stale save refused', stale.status === 409, `status ${stale.status}`);
+const badMoney = await call(`/api/admin/quotes/${qref}`, { method: 'PATCH', body: { version: 2, travelPence: 12.5 } });
+check('fractional pence refused', badMoney.status === 400, `status ${badMoney.status}`);
+
+const preview = await call(`/api/admin/quotes/${qref}/preview`);
+const mail = preview.data.email || {};
+check('preview', preview.status === 200 && mail.to === 'smoke-one@example.test' && mail.bcc === 'newquote@ross360.co.uk', `status ${preview.status}`);
+check('preview text has no internal notes', mail.text && !mail.text.includes(NOTE));
+const frame = await fetch(`${base}/api/admin/quotes/${qref}/preview.html`, { headers: { Cookie: cookie } });
+const frameHtml = await frame.text();
+check('preview HTML served with its own policy', /default-src 'none'/.test(frame.headers.get('Content-Security-Policy') || ''));
+check('preview HTML shows VAT wording and total', frameHtml.includes('VAT is not charged.') && frameHtml.includes('£444.00'));
+check('preview HTML has no internal notes', !frameHtml.includes(NOTE));
+const frameSignedOut = await fetch(`${base}/api/admin/quotes/${qref}/preview.html`);
+check('preview HTML refused when signed out', frameSignedOut.status === 401, `status ${frameSignedOut.status}`);
+
+const discarded = await call(`/api/admin/quotes/${qref}/discard`, { method: 'POST', body: {} });
+check('discard draft', discarded.data.quote?.status === 'discarded', `status ${discarded.status}`);
+const sendDiscarded = await call(`/api/admin/quotes/${qref}/send`, {
+  method: 'POST',
+  body: { version: 2, confirm: true, previewedOn: preview.data.issuedOn },
+});
+check('discarded quote cannot be sent', sendDiscarded.status === 409, `status ${sendDiscarded.status}`);
+const quoteEvents = ((await call(`/api/admin/enquiries/${ref1}`)).data.enquiry?.events || []).map((event) => event.type);
+check(
+  'timeline records quote created, updated, previewed and discarded',
+  ['quote_created', 'quote_updated', 'quote_previewed', 'quote_discarded'].every((t) => quoteEvents.includes(t)),
+  quoteEvents.join(','),
+);
+
+// Optional real send, to ADMIN_SMOKE_SEND_TO only.
+if (sendTo) {
+  const draft = await call(`/api/admin/enquiries/${ref1}/quotes`, { method: 'POST', body: {} });
+  const ref = draft.data.quote?.reference;
+  await call(`/api/admin/quotes/${ref}`, { method: 'PATCH', body: { ...lines, customerEmail: sendTo } });
+  const unpreviewed = await call(`/api/admin/quotes/${ref}/send`, {
+    method: 'POST',
+    body: { version: 2, confirm: true, previewedOn: preview.data.issuedOn },
+  });
+  check('send refused before this version is previewed', unpreviewed.status === 409, `status ${unpreviewed.status}`);
+  const sendPreview = await call(`/api/admin/quotes/${ref}/preview`);
+  const sent = await call(`/api/admin/quotes/${ref}/send`, {
+    method: 'POST',
+    body: { version: 2, confirm: true, previewedOn: sendPreview.data.issuedOn },
+  });
+  check(`send ${ref} to ${sendTo}`, sent.status === 200 && sent.data.quote?.status === 'sent', `status ${sent.status} ${sent.data.message || ''}`);
+  const again = await call(`/api/admin/quotes/${ref}/send`, {
+    method: 'POST',
+    body: { version: 2, confirm: true, previewedOn: sendPreview.data.issuedOn },
+  });
+  check('second send refused', again.status === 409, `status ${again.status}`);
+} else {
+  console.log('      (no quote emailed: set ADMIN_SMOKE_SEND_TO to your own address to test a real send)');
+}
 
 // Sign out
 const out = await call('/api/admin/session', { method: 'DELETE' });

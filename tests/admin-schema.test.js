@@ -16,17 +16,23 @@ test('the migrations bring an empty database to the latest schema version', asyn
     'counters',
     'enquiries',
     'enquiry_events',
+    'quote_items',
+    'quotes',
     'schema_migrations',
   ]);
+  assert.equal(LATEST_SCHEMA_VERSION, 2);
   db.close();
 });
 
-test('applying the migrations twice is harmless and keeps the reference counter', async () => {
+test('applying the migrations twice is harmless and keeps the reference counters', async () => {
   const db = new FakeD1();
   await db.prepare(`UPDATE counters SET value = 7 WHERE name = 'enquiry'`).run();
+  await db.prepare(`UPDATE counters SET value = 3 WHERE name = 'quote'`).run();
   applyMigrations(db);
   const counter = await db.prepare(`SELECT value FROM counters WHERE name = 'enquiry'`).first();
   assert.equal(counter.value, 7);
+  const quoteCounter = await db.prepare(`SELECT value FROM counters WHERE name = 'quote'`).first();
+  assert.equal(quoteCounter.value, 3);
   const versions = await db.prepare(`SELECT COUNT(*) AS n FROM schema_migrations`).first();
   assert.equal(versions.n, LATEST_SCHEMA_VERSION);
   db.close();
@@ -60,6 +66,37 @@ test('an older schema version is refused rather than changed', async () => {
   assert.equal(session.status, 503);
   assert.match(session.data.message, /version 0/);
   assert.deepEqual(db.tables(), ['schema_migrations']);
+  db.close();
+});
+
+test('0002 brings a version 1 database with data to version 2 without touching Phase A records', async () => {
+  const { readFileSync } = await import('node:fs');
+  const { createEnquiry, getEnquiry } = await import('../server/admin/enquiries.js');
+  const db = new FakeD1({ migrated: false });
+  db.db.exec(readFileSync(new URL('../migrations/0001_admin_phase_a.sql', import.meta.url), 'utf8'));
+  assert.equal(await schemaVersion(db), 1);
+
+  // Phase A code (the quote form and the Admin) refuses a version 1 database once this code is deployed.
+  const { env } = await adminEnv(db);
+  const refused = await callAdmin(env, '/api/admin/session');
+  assert.equal(refused.status, 503);
+  assert.match(refused.data.message, /version 1/);
+  assert.match(refused.data.message, /0002_quotes\.sql/);
+
+  // Records written by Phase A at version 1.
+  const before = db.db.prepare(`SELECT COUNT(*) AS n FROM enquiries`).get().n;
+  db.db.exec(`UPDATE counters SET value = 5 WHERE name = 'enquiry'`);
+  db.db.exec(`INSERT INTO enquiries (ref_number, reference, origin, name, created_at, updated_at, status_changed_at)
+              VALUES (5, 'ROSS-0005', 'website', 'Existing', 'a', 'a', 'a')`);
+  db.db.exec(`INSERT INTO enquiry_events (enquiry_id, created_at, actor, type) VALUES (1, 'a', 'website', 'created')`);
+
+  db.db.exec(readFileSync(new URL('../migrations/0002_quotes.sql', import.meta.url), 'utf8'));
+  assert.equal(await schemaVersion(db), 2);
+  assert.equal(db.db.prepare(`SELECT COUNT(*) AS n FROM enquiries`).get().n, before + 1);
+  assert.equal((await getEnquiry(db, 'ROSS-0005')).name, 'Existing');
+  assert.equal((await getEnquiry(db, 'ROSS-0005')).events.length, 1);
+  const { reference } = await createEnquiry(db, { name: 'Next', email: 'n@example.test' }, { origin: 'admin', actor: 'test' });
+  assert.equal(reference, 'ROSS-0006');
   db.close();
 });
 
@@ -108,24 +145,39 @@ test('the quote form still emails when the database has not been migrated, and c
   }
 });
 
-test('the README erasure procedure removes one enquiry and its timeline, and references are not reused', async () => {
+test('the README erasure procedure removes one enquiry, its quotes and its timeline, and references are not reused', async () => {
   const { createEnquiry, listEnquiries } = await import('../server/admin/enquiries.js');
+  const { createQuote, updateQuote, reviseQuote } = await import('../server/admin/quotes.js');
   const db = new FakeD1();
   for (const name of ['One', 'Two', 'Three']) {
     await createEnquiry(db, { name, email: 'a@example.test' }, { origin: 'admin', actor: 'test' });
   }
-  // The foreign key stops the enquiry being deleted before its timeline.
+  // ROSS-0002 has a sent quote (with lines, locked by the triggers) and a revision of it.
+  await createQuote(db, 'ROSS-0002', 'test');
+  await updateQuote(db, 'Q-0001', { items: [{ kind: 'custom', description: 'Tour', quantity: 1, unitPence: 100 }] }, 1, 'test');
+  db.db.exec(`UPDATE quotes SET status = 'sent' WHERE reference = 'Q-0001'`);
+  await reviseQuote(db, 'Q-0001', 'test');
+  await createQuote(db, 'ROSS-0003', 'test');
+
+  // The foreign keys stop the enquiry being deleted before its quotes and timeline.
   assert.throws(() => db.db.exec(`DELETE FROM enquiries WHERE reference = 'ROSS-0002'`), /FOREIGN KEY/);
 
-  // The two statements documented in the README, in order.
-  db.db.exec(`DELETE FROM enquiry_events WHERE enquiry_id = (SELECT id FROM enquiries WHERE reference = 'ROSS-0002');`);
+  // The statements documented in the README, in order.
+  const id = `(SELECT id FROM enquiries WHERE reference = 'ROSS-0002')`;
+  db.db.exec(`DELETE FROM quote_items WHERE quote_id IN (SELECT id FROM quotes WHERE enquiry_id = ${id});`);
+  db.db.exec(`DELETE FROM quotes WHERE enquiry_id = ${id};`);
+  db.db.exec(`DELETE FROM enquiry_events WHERE enquiry_id = ${id};`);
   db.db.exec(`DELETE FROM enquiries WHERE reference = 'ROSS-0002';`);
+  assert.deepEqual(
+    db.db.prepare('SELECT reference FROM quotes').all().map((r) => r.reference),
+    ['Q-0003'],
+  );
 
   assert.deepEqual(
     (await listEnquiries(db)).map((e) => e.reference),
     ['ROSS-0003', 'ROSS-0001'],
   );
-  assert.equal(db.db.prepare('SELECT COUNT(*) AS n FROM enquiry_events').get().n, 2);
+  assert.equal(db.db.prepare('SELECT COUNT(*) AS n FROM enquiry_events').get().n, 3);
   const { reference } = await createEnquiry(db, { name: 'Four', email: 'a@example.test' }, { origin: 'admin', actor: 'test' });
   assert.equal(reference, 'ROSS-0004');
   db.close();

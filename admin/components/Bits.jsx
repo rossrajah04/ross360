@@ -1,8 +1,13 @@
 import { Link } from 'react-router-dom';
 import { formatMoney, statusLabel } from '../../src/lib/admin/model.js';
+import { quoteStatusLabel } from '../../src/lib/admin/quotes.js';
 
 export const StatusTag = ({ status }) => (
   <span className={`ad-tag ad-tag--${status}`}>{statusLabel(status)}</span>
+);
+
+export const QuoteTag = ({ status }) => (
+  <span className={`ad-tag ad-tag--quote-${status}`}>{quoteStatusLabel(status)}</span>
 );
 
 export const Money = ({ pence }) => <>{formatMoney(pence)}</>;
