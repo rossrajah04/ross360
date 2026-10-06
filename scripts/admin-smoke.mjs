@@ -193,6 +193,31 @@ const stale = await call(`/api/admin/quotes/${qref}`, { method: 'PATCH', body: {
 check('stale save refused', stale.status === 409, `status ${stale.status}`);
 const badMoney = await call(`/api/admin/quotes/${qref}`, { method: 'PATCH', body: { version: 2, travelPence: 12.5 } });
 check('fractional pence refused', badMoney.status === 400, `status ${badMoney.status}`);
+// Travel from mileage: 23.6 miles one way -> 27.2 chargeable miles -> £13.60 -> £14, whatever is sent.
+const overLimit = await call(`/api/admin/quotes/${qref}`, {
+  method: 'PATCH',
+  body: { version: 2, travelMode: 'mileage', travelOneWayTenths: 3001 },
+});
+check('mileage over 300 miles refused', overLimit.status === 422, `status ${overLimit.status}`);
+const noReason = await call(`/api/admin/quotes/${qref}`, {
+  method: 'PATCH',
+  body: { version: 2, travelMode: 'mileage', travelOneWayTenths: 236, travelOverride: true, travelPence: 2000 },
+});
+check('mileage override without a reason refused', noReason.status === 422, `status ${noReason.status}`);
+const mileage = await call(`/api/admin/quotes/${qref}`, {
+  method: 'PATCH',
+  body: { version: 2, travelMode: 'mileage', travelOneWayTenths: 236, travelPence: 1 },
+});
+check(
+  'mileage travel calculated on the server',
+  mileage.status === 200 && mileage.data.quote?.travelPence === 1400 && mileage.data.quote?.totalPence === 43300,
+  `status ${mileage.status} travel ${mileage.data.quote?.travelPence} total ${mileage.data.quote?.totalPence}`,
+);
+const backToManual = await call(`/api/admin/quotes/${qref}`, {
+  method: 'PATCH',
+  body: { version: 3, travelMode: 'manual', travelPence: 2500 },
+});
+check('manual travel still available', backToManual.status === 200 && backToManual.data.quote?.totalPence === 44400, `status ${backToManual.status}`);
 
 const preview = await call(`/api/admin/quotes/${qref}/preview`);
 const mail = preview.data.email || {};
@@ -210,7 +235,7 @@ const discarded = await call(`/api/admin/quotes/${qref}/discard`, { method: 'POS
 check('discard draft', discarded.data.quote?.status === 'discarded', `status ${discarded.status}`);
 const sendDiscarded = await call(`/api/admin/quotes/${qref}/send`, {
   method: 'POST',
-  body: { version: 2, confirm: true, previewedOn: preview.data.issuedOn },
+  body: { version: 4, confirm: true, previewedOn: preview.data.issuedOn },
 });
 check('discarded quote cannot be sent', sendDiscarded.status === 409, `status ${sendDiscarded.status}`);
 const quoteEvents = ((await call(`/api/admin/enquiries/${ref1}`)).data.enquiry?.events || []).map((event) => event.type);

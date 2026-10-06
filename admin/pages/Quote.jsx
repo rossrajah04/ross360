@@ -3,12 +3,16 @@ import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { api, quotePreviewUrl } from '../api.js';
 import { formatMoney, penceToPounds } from '../../src/lib/admin/model.js';
 import {
+  MILEAGE_RULE,
   PACKAGES,
   QUOTE_LIMITS,
   calculateTotals,
+  formatMiles,
   longDate,
+  mileageTravel,
   packageById,
   packageItem,
+  typedMilesTenths,
   typedPence,
 } from '../../src/lib/admin/quotes.js';
 import { QuoteTag, when } from '../components/Bits.jsx';
@@ -24,6 +28,10 @@ function toForm(quote) {
     serviceDescription: quote.serviceDescription,
     internalNotes: quote.internalNotes,
     travel: penceToPounds(quote.travelPence || null),
+    travelMode: quote.travelMode,
+    travelMiles: quote.travelOneWayTenths === null ? '' : formatMiles(quote.travelOneWayTenths),
+    travelOverride: quote.travelOverride,
+    travelOverrideReason: quote.travelOverrideReason,
     discount: penceToPounds(quote.discountPence || null),
     discountLabel: quote.discountLabel,
     validDays: String(quote.validDays),
@@ -61,6 +69,24 @@ function fromForm(form) {
     };
   });
   if (!DAYS_RE.test(form.validDays.trim())) errors.validDays = 'Please enter a number of days.';
+
+  // Travel: typed by hand, or calculated from the one-way distance. The server recalculates it.
+  const mileage = form.travelMode === 'mileage';
+  const travelOneWayTenths = mileage ? typedMilesTenths(form.travelMiles) : null;
+  if (mileage) {
+    if (travelOneWayTenths === null) errors.travelOneWayTenths = 'Please enter the one-way distance in miles.';
+    else if (Number.isNaN(travelOneWayTenths)) errors.travelOneWayTenths = 'Please enter miles to one decimal place, like 23.6.';
+    else if (travelOneWayTenths > MILEAGE_RULE.maxOneWayTenths) {
+      errors.travelOneWayTenths = `Over ${MILEAGE_RULE.maxOneWayTenths / 10} miles one way: please enter the travel amount by hand instead.`;
+    }
+  }
+  const typedTravel = !mileage || form.travelOverride;
+  const travelPence = typedTravel
+    ? pence(form.travel, 'travelPence')
+    : errors.travelOneWayTenths
+      ? 0
+      : mileageTravel(travelOneWayTenths).calculatedPence;
+
   const values = {
     package: form.package || null,
     customerName: form.customerName,
@@ -69,7 +95,11 @@ function fromForm(form) {
     customerLocation: form.customerLocation,
     serviceDescription: form.serviceDescription,
     internalNotes: form.internalNotes,
-    travelPence: pence(form.travel, 'travelPence'),
+    travelMode: mileage ? 'mileage' : 'manual',
+    travelOneWayTenths: Number.isInteger(travelOneWayTenths) ? travelOneWayTenths : null,
+    travelOverride: mileage && form.travelOverride,
+    travelOverrideReason: mileage && form.travelOverride ? form.travelOverrideReason : '',
+    travelPence,
     discountPence: pence(form.discount, 'discountPence'),
     discountLabel: form.discountLabel,
     validDays: Number(form.validDays.trim()) || 0,
@@ -117,7 +147,7 @@ export default function Quote() {
     if (!form) return null;
     const { values, errors: local } = fromForm(form);
     if (Object.keys(local).length) return null;
-    return calculateTotals(values);
+    return { ...calculateTotals(values), travelPence: values.travelPence };
   }, [form]);
 
   if (error && !quote) {
@@ -438,8 +468,9 @@ export default function Quote() {
               </button>
             </div>
 
+            <TravelFields form={form} set={set} setForm={setForm} input={input} fieldError={fieldError} />
+
             <div className="ad-grid">
-              {input('travel', 'Travel (£)', { hint: 'Leave blank for none. Not shown when zero.' })}
               {input('validDays', 'Valid for (days)', { hint: 'Terms: 14 days unless the quotation says otherwise.' })}
               {input('discount', 'Discount (£, fixed amount)')}
               {input('discountLabel', 'Discount description (shown to the customer)')}
@@ -449,7 +480,7 @@ export default function Quote() {
               <dt>Subtotal</dt>
               <dd>{live ? formatMoney(live.subtotalPence) : '—'}</dd>
               <dt>Travel</dt>
-              <dd>{live ? formatMoney(typedPence(form.travel)) : '—'}</dd>
+              <dd>{live ? formatMoney(live.travelPence) : '—'}</dd>
               <dt>Discount</dt>
               <dd>{live ? `−${formatMoney(typedPence(form.discount))}` : '—'}</dd>
               <dt className="ad-totals__total">Total</dt>
@@ -495,6 +526,12 @@ export default function Quote() {
             sandbox=""
             src={quotePreviewUrl(quote.reference, quote.version)}
           />
+          {quote.travelMode === 'mileage' ? (
+            <div className="ad-section--internal ad-internal-read">
+              <h3 className="ad-h3">Travel working (never sent)</h3>
+              <TravelWorking quote={quote} />
+            </div>
+          ) : null}
           {quote.internalNotes ? (
             <div className="ad-section--internal ad-internal-read">
               <h3 className="ad-h3">Internal notes (never sent)</h3>
@@ -504,6 +541,126 @@ export default function Quote() {
         </section>
       )}
     </>
+  );
+}
+
+const wholePounds = (value) => (value % 100 === 0 ? `£${value / 100}` : formatMoney(value));
+const rate = (value) => (value < 100 ? `${value}p` : formatMoney(value));
+// 100 -> "10", 105 -> "10.5"
+const freeMiles = (tenths) => (tenths % 10 === 0 ? String(tenths / 10) : formatMiles(tenths));
+
+/**
+ * How a mileage travel amount is worked out, for the Admin only. `quote` holds the one-way distance in
+ * tenths and the rule (rate, free distance); the amount comes from the shared calculation.
+ */
+function TravelWorking({ quote, finalPence = quote.travelPence }) {
+  const rule = { ratePence: quote.travelRatePence, freeOneWayTenths: quote.travelFreeTenths };
+  const calc = mileageTravel(quote.travelOneWayTenths, rule);
+  return (
+    <>
+      <p className="ad-note ad-note--tight">
+        {formatMiles(quote.travelOneWayTenths)} miles each way, first {freeMiles(rule.freeOneWayTenths)} miles each way
+        free: {formatMiles(calc.chargeableTenths)} chargeable miles × {rate(rule.ratePence)} = {formatMoney(calc.exactPence)},
+        rounded up to {wholePounds(calc.calculatedPence)}.
+      </p>
+      {quote.travelOverride ? (
+        <p className="ad-note ad-note--tight">
+          Overridden: {formatMoney(finalPence)} in place of {wholePounds(calc.calculatedPence)}. Reason: {quote.travelOverrideReason}
+        </p>
+      ) : null}
+    </>
+  );
+}
+
+// Travel on a draft: an amount typed by hand, or calculated from the one-way distance with an optional
+// override. Only the resulting amount is shown to the customer.
+function TravelFields({ form, set, setForm, input, fieldError }) {
+  const mileage = form.travelMode === 'mileage';
+  const tenths = mileage ? typedMilesTenths(form.travelMiles) : null;
+  const calculable = Number.isInteger(tenths) && tenths <= MILEAGE_RULE.maxOneWayTenths;
+  const calc = calculable ? mileageTravel(tenths) : null;
+  const chooseMode = (mode) => setForm({ ...form, travelMode: mode });
+  const toggleOverride = (on) =>
+    setForm({
+      ...form,
+      travelOverride: on,
+      // Start the override from the calculated amount.
+      travel: on && calc ? penceToPounds(calc.calculatedPence) : form.travel,
+    });
+
+  return (
+    <fieldset className="ad-travel">
+      <legend className="ad-h3">Travel</legend>
+      <div className="ad-choice" role="radiogroup" aria-label="Travel">
+        <label className="ad-choice__option">
+          <input type="radio" name="travelMode" checked={!mileage} onChange={() => chooseMode('manual')} /> Enter amount
+        </label>
+        <label className="ad-choice__option">
+          <input type="radio" name="travelMode" checked={mileage} onChange={() => chooseMode('mileage')} /> Calculate from
+          miles
+        </label>
+      </div>
+
+      {mileage ? (
+        <>
+          <div className="ad-grid">
+            <div className="ad-field">
+              <label className="ad-label" htmlFor="q-travelMiles">
+                One-way driving distance (miles)
+              </label>
+              <input
+                id="q-travelMiles"
+                className="ad-input"
+                inputMode="decimal"
+                value={form.travelMiles}
+                onChange={(event) => set('travelMiles', event.target.value)}
+              />
+              <span className="ad-note ad-note--tight">From Google Maps, to one decimal place.</span>
+              {fieldError('travelOneWayTenths')}
+            </div>
+          </div>
+          <div className="ad-section--internal ad-internal-read">
+            {calc ? (
+              <TravelWorking
+                quote={{
+                  travelOneWayTenths: tenths,
+                  travelRatePence: MILEAGE_RULE.ratePence,
+                  travelFreeTenths: MILEAGE_RULE.freeOneWayTenths,
+                  travelOverride: false,
+                }}
+              />
+            ) : Number.isInteger(tenths) && tenths > MILEAGE_RULE.maxOneWayTenths ? (
+              <p className="ad-field__error">
+                Over {MILEAGE_RULE.maxOneWayTenths / 10} miles one way: choose Enter amount and type the travel amount by
+                hand.
+              </p>
+            ) : (
+              <p className="ad-note ad-note--tight">
+                The first {freeMiles(MILEAGE_RULE.freeOneWayTenths)} miles each way are free; the rest of the round
+                trip is {rate(MILEAGE_RULE.ratePence)} a mile, rounded up to the next whole pound. Over{' '}
+                {MILEAGE_RULE.maxOneWayTenths / 10} miles one way, enter the amount by hand.
+              </p>
+            )}
+            <p className="ad-note ad-note--tight">
+              Only the travel amount is shown to the customer, as one Travel line. The distance and working stay in the
+              Admin.
+            </p>
+          </div>
+          <label className="ad-check">
+            <input type="checkbox" checked={form.travelOverride} onChange={(event) => toggleOverride(event.target.checked)} />{' '}
+            Override the calculated amount
+          </label>
+          {form.travelOverride ? (
+            <div className="ad-grid">
+              {input('travel', 'Travel (£)')}
+              {input('travelOverrideReason', 'Reason for the override (internal, never shown to the customer)')}
+            </div>
+          ) : null}
+        </>
+      ) : (
+        <div className="ad-grid">{input('travel', 'Travel (£)', { hint: 'Leave blank for none. Not shown when zero.' })}</div>
+      )}
+    </fieldset>
   );
 }
 

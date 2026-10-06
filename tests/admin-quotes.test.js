@@ -797,7 +797,7 @@ test('every quote action is on the enquiry timeline, without email bodies, notes
   assert.ok(!details.includes('test-key-not-real'));
 });
 
-test('the render function never reads internal notes', () => {
+test('the render function never reads internal notes or the travel working', () => {
   const quote = new Proxy(
     {
       reference: 'Q-0001',
@@ -818,6 +818,8 @@ test('the render function never reads internal notes', () => {
     {
       get(target, key) {
         if (key === 'internalNotes') throw new Error('internal notes were read');
+        // Only the final travel amount reaches the customer, never how it was worked out.
+        if (typeof key === 'string' && key.startsWith('travel') && key !== 'travelPence') throw new Error(`${key} was read`);
         return target[key];
       },
     },

@@ -318,6 +318,16 @@ export default function Enquiry() {
   );
 }
 
+// Travel as recorded on the timeline. The override reason is never recorded here; it stays on the quote.
+function describeTravel(travel) {
+  if (travel.mode !== 'mileage') return `Travel entered by hand: ${formatMoney(travel.travelPence)}`;
+  const miles = `${(travel.oneWayTenths / 10).toFixed(1)} miles each way`;
+  if (travel.overridden) {
+    return `Travel: ${miles}, calculated ${formatMoney(travel.calculatedPence)}, overridden to ${formatMoney(travel.travelPence)}`;
+  }
+  return `Travel: ${miles}, calculated ${formatMoney(travel.travelPence)}`;
+}
+
 function describe(event) {
   const { type, detail } = event;
   if (type === 'created') return detail.origin === 'website' ? 'Enquiry received from the website' : 'Enquiry added';
@@ -327,7 +337,8 @@ function describe(event) {
   if (type === 'notification_failed') return 'Internal email notification failed';
   if (type === 'quote_created') return `Quote ${detail.quote} created`;
   if (type === 'quote_updated') {
-    return `Quote ${detail.quote} updated: ${detail.fields?.join(', ') || 'details'} (total ${formatMoney(detail.totalPence)})`;
+    const travel = detail.travel ? `. ${describeTravel(detail.travel)}` : '';
+    return `Quote ${detail.quote} updated: ${detail.fields?.join(', ') || 'details'} (total ${formatMoney(detail.totalPence)})${travel}`;
   }
   if (type === 'quote_previewed') return `Quote ${detail.quote} previewed`;
   if (type === 'quote_sent') {

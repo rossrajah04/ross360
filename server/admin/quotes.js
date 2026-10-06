@@ -47,6 +47,13 @@ function toApi(row, items, revisions = []) {
     version: row.version,
     package: row.package,
     travelPence: row.travel_pence,
+    // How the travel amount was arrived at (Admin only; the customer sees only travelPence).
+    travelMode: row.travel_mode ?? 'manual',
+    travelOneWayTenths: row.travel_one_way_tenths ?? null,
+    travelRatePence: row.travel_rate_pence ?? null,
+    travelFreeTenths: row.travel_free_tenths ?? null,
+    travelCalculatedPence: row.travel_calculated_pence ?? null,
+    travelOverride: row.travel_override === 1,
     discountPence: row.discount_pence,
     subtotalPence: row.subtotal_pence,
     totalPence: row.total_pence,
@@ -157,12 +164,41 @@ export async function createQuote(db, enquiryReference, actor) {
   return getQuote(db, created.reference);
 }
 
+// What the timeline records about travel when it changes. The override reason is deliberately left
+// out: it stays on the quote, in the Admin, like internal notes.
+function travelDetail(values) {
+  if (values.travelMode !== 'mileage') return { mode: 'manual', travelPence: values.travelPence };
+  return {
+    mode: 'mileage',
+    oneWayTenths: values.travelOneWayTenths,
+    ratePence: values.travelRatePence,
+    freeTenths: values.travelFreeTenths,
+    calculatedPence: values.travelCalculatedPence,
+    travelPence: values.travelPence,
+    overridden: values.travelOverride,
+  };
+}
+
 // The editable parts of a quote, in the form validateQuoteDraft takes.
-const EDITABLE = [...Object.keys(QUOTE_TEXT_FIELDS), 'package', 'travelPence', 'discountPence', 'validDays', 'items'];
+const EDITABLE = [
+  ...Object.keys(QUOTE_TEXT_FIELDS),
+  'package',
+  'travelMode',
+  'travelOneWayTenths',
+  'travelOverride',
+  'travelPence',
+  'discountPence',
+  'validDays',
+  'items',
+];
+const TRAVEL_KEYS = ['travelMode', 'travelOneWayTenths', 'travelOverride', 'travelOverrideReason', 'travelPence'];
 const CHANGE_LABELS = {
   ...Object.fromEntries(Object.entries(QUOTE_TEXT_FIELDS).map(([key, field]) => [key, field.label])),
   package: 'Package',
   travelPence: 'Travel',
+  travelMode: 'Travel method',
+  travelOneWayTenths: 'Travel distance',
+  travelOverride: 'Travel override',
   discountPence: 'Discount',
   validDays: 'Validity',
   items: 'Lines',
@@ -224,7 +260,12 @@ export async function updateQuote(db, reference, input, version, actor) {
         row.enquiry_id,
         at,
         actor,
-        JSON.stringify({ quote: reference, fields: changed.map((key) => CHANGE_LABELS[key]), totalPence: values.totalPence }),
+        JSON.stringify({
+          quote: reference,
+          fields: changed.map((key) => CHANGE_LABELS[key]),
+          totalPence: values.totalPence,
+          ...(changed.some((key) => TRAVEL_KEYS.includes(key)) ? { travel: travelDetail(values) } : {}),
+        }),
         row.id,
         version,
       ),
@@ -235,6 +276,8 @@ export async function updateQuote(db, reference, input, version, actor) {
       .prepare(
         `UPDATE quotes SET ${textColumns.map(([, field]) => `${field.column} = ?`).join(', ')},
            package = ?, travel_pence = ?, discount_pence = ?, valid_days = ?, subtotal_pence = ?, total_pence = ?,
+           travel_mode = ?, travel_one_way_tenths = ?, travel_rate_pence = ?, travel_free_tenths = ?,
+           travel_calculated_pence = ?, travel_override = ?,
            version = version + 1, updated_at = ?
          WHERE id = ? AND status = 'draft' AND version = ?
          RETURNING version`,
@@ -247,6 +290,12 @@ export async function updateQuote(db, reference, input, version, actor) {
         values.validDays,
         values.subtotalPence,
         values.totalPence,
+        values.travelMode,
+        values.travelOneWayTenths,
+        values.travelRatePence,
+        values.travelFreeTenths,
+        values.travelCalculatedPence,
+        values.travelOverride ? 1 : 0,
         at,
         row.id,
         version,
@@ -325,10 +374,14 @@ export async function reviseQuote(db, reference, actor) {
       .prepare(
         `INSERT INTO quotes (quote_number, reference, enquiry_id, revision_of, status, version, package,
            customer_name, customer_business, customer_email, customer_location, service_description, internal_notes,
-           travel_pence, discount_pence, discount_label, subtotal_pence, total_pence, valid_days, created_at, updated_at)
+           travel_pence, discount_pence, discount_label, subtotal_pence, total_pence, valid_days,
+           travel_mode, travel_one_way_tenths, travel_rate_pence, travel_free_tenths, travel_calculated_pence,
+           travel_override, travel_override_reason, created_at, updated_at)
          SELECT c.value, printf('Q-%04d', c.value), q.enquiry_id, q.id, 'draft', 1, q.package,
            q.customer_name, q.customer_business, q.customer_email, q.customer_location, q.service_description, q.internal_notes,
-           q.travel_pence, q.discount_pence, q.discount_label, q.subtotal_pence, q.total_pence, q.valid_days, ?, ?
+           q.travel_pence, q.discount_pence, q.discount_label, q.subtotal_pence, q.total_pence, q.valid_days,
+           q.travel_mode, q.travel_one_way_tenths, q.travel_rate_pence, q.travel_free_tenths, q.travel_calculated_pence,
+           q.travel_override, q.travel_override_reason, ?, ?
          FROM counters c, quotes q WHERE c.name = 'quote' AND q.id = ? AND q.status = 'sent'
          RETURNING reference`,
       )
