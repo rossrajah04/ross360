@@ -1,10 +1,12 @@
 // Shared set-up for the Phase C tests: a signed-in Admin, a sent quote with its customer link, and
-// calls to the customer page exactly as Cloudflare Pages makes them. Resend is never called for real.
+// calls to the customer page exactly as Cloudflare Pages makes them. Resend and Stripe are never
+// called for real (see services.js).
 
 import assert from 'node:assert/strict';
 import { FakeD1, adminEnv, callAdmin, cookieFrom } from './d1.js';
 import { createEnquiry } from '../../server/admin/enquiries.js';
 import { packageItem, ukToday, addDays } from '../../src/lib/admin/quotes.js';
+import { TEST_STRIPE } from './services.js';
 
 export const NOTE = 'INTERNAL-ONLY: margin is thin';
 export const OVERRIDE_REASON = 'PRIVATE-REASON: friend of the owner';
@@ -13,6 +15,7 @@ export async function setUp({ db = new FakeD1() } = {}) {
   const { env, email, password } = await adminEnv(db);
   env.RESEND_API_KEY = 'test-key-not-real';
   env.QUOTE_FROM_EMAIL = 'ROSS 360 <enquiries@ross360.test>';
+  Object.assign(env, TEST_STRIPE);
   const signIn = await callAdmin(env, '/api/admin/session', { method: 'POST', body: { email, password } });
   const cookie = cookieFrom(signIn.headers);
   const { reference: enquiry } = await createEnquiry(
@@ -94,17 +97,18 @@ export async function callPage(env, path, { method = 'GET', form, origin = 'http
     body = new URLSearchParams(form).toString();
   }
   const request = new Request(`https://ross360.test${path}`, { method, headers, body });
-  const segments = path.replace(/^\/q\/?/, '').split('/').filter(Boolean);
+  const segments = path.split('?')[0].replace(/^\/q\/?/, '').split('/').filter(Boolean);
   const response = await onRequest({ request, env, params: { path: segments } });
   const html = method === 'HEAD' ? '' : await response.text();
   return { status: response.status, html, headers: response.headers, location: response.headers.get('Location') };
 }
 
-/** The form nonce and the slot ids offered on a Choose a date page. */
+/** The form nonce, slot ids and payment choices on a booking page. */
 export function formOf(html) {
   const nonce = html.match(/name="nonce" value="([^"]+)"/)?.[1] ?? null;
   const slots = [...html.matchAll(/name="slot" value="(\d+)"/g)].map((m) => Number(m[1]));
-  return { nonce, slots };
+  const plans = [...html.matchAll(/name="plan" value="(\w+)"/g)].map((m) => m[1]);
+  return { nonce, slots, plans };
 }
 
 /** Add an open slot directly through the Admin API, `days` from today. Returns the slot. */
@@ -114,11 +118,24 @@ export async function addSlot(t, days, period = 'am') {
   return result.data.slot;
 }
 
-/** Send a date request for `slotId` through the customer page. Returns the page response. */
-export async function requestDate(t, token, slotId, note = '') {
-  const page = await callPage(t.env, `/q/${token}/date`);
+/**
+ * Go through the booking pages for a slot and submit the payment form (inside withServices).
+ * Returns the POST response; on success its location is Stripe's page.
+ */
+export async function checkout(env, token, slotId, plan = 'full', { agree = true } = {}) {
+  const page = await callPage(env, `/q/${token}/pay?slot=${slotId}`);
+  assert.equal(page.status, 200, page.html);
   const { nonce } = formOf(page.html);
-  return withResend(() => callPage(t.env, `/q/${token}/date`, { method: 'POST', form: { slot: String(slotId), note, nonce } }));
+  const form = { nonce, slot: String(slotId), plan };
+  if (agree) form.agree = 'yes';
+  return callPage(env, `/q/${token}/pay`, { method: 'POST', form });
+}
+
+/** Post a small form (release, balance, cancel) with a fresh nonce from `fromPath`. */
+export async function postForm(env, token, page, fromPath = `/q/${token}`) {
+  const from = await callPage(env, fromPath);
+  const { nonce } = formOf(from.html);
+  return callPage(env, `/q/${token}/${page}`, { method: 'POST', form: { nonce } });
 }
 
 /** Let a sent quote's dates be moved, for expiry tests only (the triggers lock them otherwise). */

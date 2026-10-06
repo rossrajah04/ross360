@@ -7,7 +7,7 @@
 // Raise this when a new migration file is added, to the version that file records.
 export const LATEST_SCHEMA_VERSION = 4;
 export const FIRST_MIGRATION = 'migrations/0001_admin_phase_a.sql';
-export const LATEST_MIGRATION = 'migrations/0004_customer_links.sql';
+export const LATEST_MIGRATION = 'migrations/0004_bookings.sql';
 
 export class SchemaNotReady extends Error {
   constructor(found) {

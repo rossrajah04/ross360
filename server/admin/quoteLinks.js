@@ -23,7 +23,7 @@ export const MIN_SECRET_LENGTH = 32;
 const LINK_ID_RE = /^[A-Za-z0-9_-]{22}$/;
 const SIGNATURE_RE = /^[A-Za-z0-9_-]{43}$/;
 
-// A sent quote's page stays viewable this long after its "valid until" date (date requests are off).
+// A sent quote's page stays viewable this long after its "valid until" date (no new bookings).
 export const VIEW_GRACE_DAYS = 90;
 
 const toBase64Url = (bytes) =>
@@ -128,7 +128,7 @@ export const FORM_NONCE_MS = 2 * 60 * 60 * 1000;
 export async function formNonce(env, linkId, at = Date.now()) {
   const { current } = linkKeys(env);
   if (!current) return null;
-  return `${at}.${await sign(current.secret, `date-form.${linkId}.${at}`)}`;
+  return `${at}.${await sign(current.secret, `booking-form.${linkId}.${at}`)}`;
 }
 
 export async function checkFormNonce(env, linkId, nonce, at = Date.now()) {
@@ -139,7 +139,7 @@ export async function checkFormNonce(env, linkId, nonce, at = Date.now()) {
   if (age < 0 || age > FORM_NONCE_MS) return false;
   const { current, previous } = linkKeys(env);
   for (const key of [current, previous]) {
-    if (key && (await verify(key.secret, `date-form.${linkId}.${issued}`, signature))) return true;
+    if (key && (await verify(key.secret, `booking-form.${linkId}.${issued}`, signature))) return true;
   }
   return false;
 }
@@ -264,7 +264,7 @@ export function viewable(status, validUntil, today = ukToday()) {
   return status === 'sent' && Boolean(validUntil) && today <= addDays(validUntil, VIEW_GRACE_DAYS);
 }
 
-/** The customer link of a quote as the Admin shows it, with its date requests. */
+/** The customer link of a quote as the Admin shows it, with its bookings. */
 export async function customerLinkInfo(env, reference) {
   const db = env.DB;
   const row = await quoteRow(db, reference);
@@ -275,11 +275,12 @@ export async function customerLinkInfo(env, reference) {
     .prepare(`SELECT created_at, revoked_at, revoked_by, key_id, view_count FROM quote_links WHERE quote_id = ? AND revoked_at IS NOT NULL ORDER BY id DESC`)
     .bind(row.id)
     .all();
-  const { results: requests } = await db
+  const { results: bookings } = await db
     .prepare(
-      `SELECT r.id, r.status, r.customer_note, r.created_at, r.updated_at, s.slot_date, s.period, s.status AS slot_status
-       FROM date_requests r JOIN availability_slots s ON s.id = r.slot_id
-       WHERE r.quote_id = ? ORDER BY r.id DESC`,
+      `SELECT b.id, b.status, b.plan, b.total_pence, b.paid_pence, b.refunded_pence, b.balance_due_on, b.cancel_reason, b.created_at,
+         b.hold_expires_at, s.slot_date, s.period
+       FROM bookings b JOIN availability_slots s ON s.id = b.slot_id
+       WHERE b.quote_id = ? AND b.status <> 'expired' ORDER BY b.id DESC LIMIT 20`,
     )
     .bind(row.id)
     .all();
@@ -307,20 +308,22 @@ export async function customerLinkInfo(env, reference) {
       revokedBy: r.revoked_by,
       viewCount: r.view_count,
     })),
-    dateRequests: requests.map(requestToApi),
+    bookings: bookings.map((b) => ({
+      id: b.id,
+      status: b.status,
+      plan: b.plan,
+      totalPence: b.total_pence,
+      paidPence: b.paid_pence,
+      refundedPence: b.refunded_pence,
+      balanceDueOn: b.balance_due_on,
+      cancelReason: b.cancel_reason,
+      holdExpiresAt: b.hold_expires_at,
+      createdAt: b.created_at,
+      date: b.slot_date,
+      period: b.period,
+    })),
   };
 }
-
-export const requestToApi = (r) => ({
-  id: r.id,
-  status: r.status,
-  note: r.customer_note,
-  createdAt: r.created_at,
-  updatedAt: r.updated_at,
-  date: r.slot_date,
-  period: r.period,
-  slotStatus: r.slot_status,
-});
 
 /**
  * Links by signing key, for rotating QUOTE_LINK_SECRET. Only links customers can still use count:

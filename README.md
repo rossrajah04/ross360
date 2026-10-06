@@ -68,7 +68,7 @@ Setting it up in Cloudflare Pages:
    npx wrangler d1 execute <database-name> --remote --file=migrations/0001_admin_phase_a.sql
    npx wrangler d1 execute <database-name> --remote --file=migrations/0002_quotes.sql
    npx wrangler d1 execute <database-name> --remote --file=migrations/0003_quote_travel.sql
-   npx wrangler d1 execute <database-name> --remote --file=migrations/0004_customer_links.sql
+   npx wrangler d1 execute <database-name> --remote --file=migrations/0004_bookings.sql
    ```
 
    or paste the file into the database's Console in the Cloudflare dashboard. Each file records its
@@ -201,16 +201,20 @@ There is no delete button or delete endpoint. When an enquiry must be removed (a
 spam, or a test record), an authorised administrator deletes it directly in D1, in the Cloudflare
 dashboard (Workers & Pages -> D1 -> the database -> Console) or with
 `npx wrangler d1 execute <database-name> --remote --command "..."`. Its quote lines, quotes and
-timeline entries (and, since Phase C, its date requests and customer links) must be deleted first,
+timeline entries (and, since Phase C, its bookings, their payments and refunds, and its customer links)
+must be deleted first,
 in this order, because each refers to the one after it:
 
 ```sql
 -- 1. Check it is the right record.
 SELECT id, reference, name, business, email FROM enquiries WHERE reference = 'ROSS-0007';
 
--- 2. Delete its date requests, customer links, quote lines, quotes and timeline entries, then the
---    enquiry itself.
-DELETE FROM date_requests WHERE quote_id IN (SELECT id FROM quotes WHERE enquiry_id = (SELECT id FROM enquiries WHERE reference = 'ROSS-0007'));
+-- 2. Delete its booking refunds, booking payments, bookings, customer links, quote lines, quotes and
+--    timeline entries, then the enquiry itself. (Payment records may need to be kept for your
+--    accounts first: export them, or keep the enquiry, if so. Stripe keeps its own records.)
+DELETE FROM booking_refunds WHERE booking_id IN (SELECT id FROM bookings WHERE quote_id IN (SELECT id FROM quotes WHERE enquiry_id = (SELECT id FROM enquiries WHERE reference = 'ROSS-0007')));
+DELETE FROM booking_payments WHERE booking_id IN (SELECT id FROM bookings WHERE quote_id IN (SELECT id FROM quotes WHERE enquiry_id = (SELECT id FROM enquiries WHERE reference = 'ROSS-0007')));
+DELETE FROM bookings WHERE quote_id IN (SELECT id FROM quotes WHERE enquiry_id = (SELECT id FROM enquiries WHERE reference = 'ROSS-0007'));
 DELETE FROM quote_links WHERE quote_id IN (SELECT id FROM quotes WHERE enquiry_id = (SELECT id FROM enquiries WHERE reference = 'ROSS-0007'));
 DELETE FROM quote_items WHERE quote_id IN (SELECT id FROM quotes WHERE enquiry_id = (SELECT id FROM enquiries WHERE reference = 'ROSS-0007'));
 DELETE FROM quotes WHERE enquiry_id = (SELECT id FROM enquiries WHERE reference = 'ROSS-0007');
@@ -294,7 +298,7 @@ date requests only (`POST` to `/q/*`, for example 5 per minute per IP, blocked f
 matching by request method, which Cloudflare's feature table lists for Business and above: add it only
 if your dashboard offers request method as a match field. Check what your own plan offers.
 
-**Deploy order:** apply `0004_customer_links.sql` to Preview D1 and set the link secrets in Preview;
+**Deploy order:** apply `0004_bookings.sql` to Preview D1 and set the link secrets in Preview;
 test the branch preview; then set the Production secrets, apply 0004 to Production D1 (the code
 already deployed keeps working with it), and merge. Customer pages run as a Pages Function: `/q/*` is
 in `public/_routes.json`.

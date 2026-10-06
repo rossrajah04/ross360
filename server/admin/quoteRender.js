@@ -108,8 +108,8 @@ export function renderQuote(quote, { enquiryReference, issuedOn, quoteUrl = null
     quoteEmail.vat,
     validity,
     '',
-    ...(quoteUrl ? [quoteEmail.linkLine, quoteUrl, ''] : []),
     quoteEmail.nextSteps,
+    ...(quoteUrl ? ['', `${quoteEmail.bookButton}: ${quoteUrl}`] : []),
     '',
     quoteEmail.closing,
     '',
@@ -184,8 +184,10 @@ export function renderQuote(quote, { enquiryReference, issuedOn, quoteUrl = null
     totalRows +
     '</table>' +
     p(`${escapeHtml(quoteEmail.vat)}<br>${escapeHtml(validity)}`) +
-    (quoteUrl ? p(`<a href="${escapeHtml(quoteUrl)}" style="color:${INK};font-weight:600">${escapeHtml(quoteEmail.linkLine)}</a>`) : '') +
     p(escapeHtml(quoteEmail.nextSteps)) +
+    (quoteUrl
+      ? `<p style="margin:4px 0 24px"><a href="${escapeHtml(quoteUrl)}" style="display:inline-block;padding:12px 20px;border-radius:6px;background:${INK};color:#ffffff;font-family:${FONT};font-size:15px;font-weight:600;text-decoration:none">${escapeHtml(quoteEmail.bookButton)}</a></p>`
+      : '') +
     p(escapeHtml(quoteEmail.closing)) +
     `<p style="margin:28px 0 0;padding-top:16px;border-top:1px solid ${LINE};font-family:${FONT};font-size:13px;line-height:1.6;color:${MUTED}">` +
     `${escapeHtml(site.brand)}<br>` +

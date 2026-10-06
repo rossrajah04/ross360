@@ -79,15 +79,15 @@ test('forged, unknown, revoked, malformed and wrong-key links all get the same a
 
 // --- The page ----------------------------------------------------------------------------------
 
-test('the emailed link opens the quotation exactly as sent, with Choose a date, and nothing internal', async () => {
+test('the emailed link opens the quotation exactly as sent, with Book a slot, and nothing internal', async () => {
   const t = await setUp();
   const { token, email, reference } = await sentQuote(t);
   const page = await callPage(t.env, `/q/${token}`);
   assert.equal(page.status, 200);
   const { html } = page;
   assert.ok(html.includes(`Quotation ${reference}`));
-  assert.ok(html.includes('Choose a date'));
-  assert.ok(html.includes(`href="/q/${token}/date"`));
+  assert.ok(html.includes('Book a slot'));
+  assert.ok(html.includes(`href="/q/${token}/book"`));
   // Every amount on the page is in the email that was sent.
   const amounts = [...html.matchAll(/£[\d,]+\.\d\d/g)].map((m) => m[0]);
   assert.ok(amounts.length >= 5);
@@ -108,9 +108,11 @@ test('the emailed link opens the quotation exactly as sent, with Choose a date, 
   assert.equal(page.headers.get('Referrer-Policy'), 'same-origin');
   assert.equal(page.headers.get('X-Frame-Options'), 'DENY');
   const csp = page.headers.get('Content-Security-Policy');
-  for (const part of ["default-src 'none'", "form-action 'self'", "frame-ancestors 'none'", "base-uri 'none'"]) assert.ok(csp.includes(part), part);
+  for (const part of ["default-src 'none'", "form-action 'self' https://checkout.stripe.com", "frame-ancestors 'none'", "base-uri 'none'"]) {
+    assert.ok(csp.includes(part), part);
+  }
   assert.ok(!csp.includes('script-src'));
-  // The wording never claims a booking.
+  // Nothing is booked until payment, and the page does not say otherwise.
   assert.ok(!/booking confirmed|booked for|is confirmed/i.test(html));
 });
 
@@ -139,7 +141,8 @@ test('the page is drawn only from the sent snapshot, never from the quote as it 
   for (const forbidden of ['internalNotes', 'travelOverrideReason', 'travelOneWayTenths', 'travelMode']) {
     assert.ok(!allowed.has(forbidden), forbidden);
   }
-  assert.doesNotThrow(() => renderQuotePage({ snapshot: guarded, state: 'valid', pending: null, datesUrl: '/q/x/date' }));
+  const urls = { self: '/q/x', book: '/q/x/book', pay: '/q/x/pay', release: '/q/x/release', balance: '/q/x/balance', cancel: '/q/x/cancel' };
+  assert.doesNotThrow(() => renderQuotePage({ snapshot: guarded, state: 'valid', booking: null, latest: null, urls }));
 });
 
 test('every quote state gets the right page', async () => {
@@ -171,11 +174,11 @@ test('every quote state gets the right page', async () => {
   assert.ok(replaced.html.includes('This quotation has been replaced by a newer one.'));
   assert.ok(!replaced.html.includes(rev.reference));
   assert.ok(!replaced.html.includes('/q/k1.'));
-  const replacedDates = await callPage(t2.env, `/q/${first.token}/date`);
-  assert.ok(replacedDates.html.includes('replaced'));
+  const replacedBook = await callPage(t2.env, `/q/${first.token}/book`);
+  assert.ok(replacedBook.html.includes('replaced'));
 });
 
-test('expiry: valid through "valid until", then viewable for 90 days without dates, then gone', async () => {
+test('expiry: valid through "valid until", then viewable for 90 days without booking, then gone', async () => {
   const today = ukToday();
   const cases = [
     [today, 'valid'],
@@ -188,19 +191,19 @@ test('expiry: valid through "valid until", then viewable for 90 days without dat
     const { token, reference } = await sentQuote(t);
     setSentDates(t.db, reference, { issuedOn: addDays(validUntil, -14), validUntil });
     const page = await callPage(t.env, `/q/${token}`);
-    const dates = await callPage(t.env, `/q/${token}/date`);
+    const dates = await callPage(t.env, `/q/${token}/book`);
     if (expected === 'valid') {
       assert.equal(page.status, 200);
-      assert.ok(page.html.includes('Choose a date'));
+      assert.ok(page.html.includes('Book a slot'));
       assert.equal(dates.status, 200);
     } else if (expected === 'expired') {
       assert.equal(page.status, 200, validUntil);
       assert.ok(page.html.includes(`This quotation expired on ${longDate(validUntil)}.`));
-      assert.ok(!page.html.includes(`/q/${token}/date`));
+      assert.ok(!page.html.includes(`/q/${token}/book`));
       assert.equal(dates.status, 303);
-      assert.equal(dates.location, `https://ross360.test/q/${token}`);
-      const post = await callPage(t.env, `/q/${token}/date`, { method: 'POST', form: { slot: '1', nonce: 'x' } });
-      assert.equal(post.status, 303);
+      assert.equal(dates.location, `/q/${token}`);
+      const pay = await callPage(t.env, `/q/${token}/pay?slot=1`);
+      assert.equal(pay.status, 303);
     } else {
       assert.equal(page.status, 404, validUntil);
       assert.ok(page.html.includes('This link is no longer available.'));
@@ -334,7 +337,7 @@ test('a draft cannot be given a new link by hand; its link comes from the previe
 
 // --- Email -----------------------------------------------------------------------------------------
 
-test('the email sent carries the link line, the approved next steps and the same link as the preview', async () => {
+test('the email sent carries the Book a slot button, the next steps and the same link as the preview', async () => {
   const t = await setUp();
   const { quote, preview } = await previewedDraft(t);
   const frame = await t.call(`/quotes/${quote.reference}/preview.html`);
@@ -344,12 +347,8 @@ test('the email sent carries the link line, the approved next steps and the same
     assert.equal(sent.text, preview.email.text);
     assert.equal(sent.html, frame.data.raw);
     for (const content of [sent.text, sent.html]) {
-      assert.ok(content.includes('View your quotation and choose a preferred date online.'));
-      assert.ok(
-        content.includes(
-          'To go ahead, choose a preferred date online or reply to this email. Nothing is booked until ROSS 360 confirms the date with you.',
-        ),
-      );
+      assert.ok(content.includes('Book a slot'));
+      assert.ok(content.includes('To go ahead, book a slot and pay online. Your booking is confirmed once payment is received.'));
       assert.ok(content.includes('Thanks for the opportunity to provide a quotation for your 360° virtual tour project.'));
       assert.ok(content.includes('We look forward to working with you.'));
     }
@@ -376,7 +375,7 @@ test('views are counted; the timeline records the first view, then at most one a
   const { token, reference } = await sentQuote(t);
   await callPage(t.env, `/q/${token}`);
   await callPage(t.env, `/q/${token}`);
-  await callPage(t.env, `/q/${token}/date`); // the date list is not counted as a view
+  await callPage(t.env, `/q/${token}/book`); // the slot list is not counted as a view
   const info = await t.call(`/quotes/${reference}/customer`);
   assert.equal(info.data.customer.link.viewCount, 2);
   assert.ok(info.data.customer.link.firstViewedAt);
@@ -414,7 +413,13 @@ test('every Phase C Admin route refuses requests without a session or from anoth
     ['PATCH', '/availability/1'],
     ['POST', '/availability/1/close'],
     ['POST', '/availability/1/reopen'],
-    ['POST', '/date-requests/1/close'],
+    ['GET', '/bookings'],
+    ['GET', '/bookings/1'],
+    ['POST', '/bookings/1/cancel'],
+    ['POST', '/bookings/1/move'],
+    ['POST', '/bookings/1/refunds/1/retry'],
+    ['GET', '/payments'],
+    ['POST', '/scheduler/run'],
     ['GET', `/quotes/${reference}/customer`],
     ['POST', `/quotes/${reference}/link/new`],
     ['POST', `/quotes/${reference}/link/revoke`],
@@ -443,7 +448,9 @@ test('the customer page refuses other methods and unknown paths', async () => {
   assert.equal((await callPage(t.env, `/q/${token}`, { method: 'PUT' })).status, 405);
   assert.equal((await callPage(t.env, `/q/${token}`, { method: 'POST', form: {} })).status, 405);
   assert.equal((await callPage(t.env, `/q/${token}/other`)).status, 404);
-  assert.equal((await callPage(t.env, `/q/${token}/date/x`)).status, 404);
+  assert.equal((await callPage(t.env, `/q/${token}/book/x`)).status, 404);
+  assert.equal((await callPage(t.env, `/q/${token}/date`)).status, 404);
+  assert.equal((await callPage(t.env, `/q/${token}/book`, { method: 'POST', form: {} })).status, 405);
   assert.equal((await callPage(t.env, '/q')).status, 404);
 });
 

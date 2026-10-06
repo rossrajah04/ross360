@@ -278,12 +278,8 @@ test('the preview shows the customer quote with the agreed wording, and never th
   for (const content of [html, email.text]) {
     assert.ok(content.includes('Thanks for the opportunity to provide a quotation for your 360° virtual tour project.'));
     assert.ok(content.includes('VAT is not charged.'));
-    assert.ok(
-      content.includes(
-        'To go ahead, choose a preferred date online or reply to this email. Nothing is booked until ROSS 360 confirms the date with you.',
-      ),
-    );
-    assert.ok(content.includes('View your quotation and choose a preferred date online.'));
+    assert.ok(content.includes('To go ahead, book a slot and pay online. Your booking is confirmed once payment is received.'));
+    assert.ok(content.includes('Book a slot'));
     assert.match(content, /https:\/\/ross360\.test\/q\/k1\.[A-Za-z0-9_-]{22}\.[A-Za-z0-9_-]{43}/);
     assert.ok(content.includes('We look forward to working with you.'));
     assert.ok(content.includes(q.reference));

@@ -11,6 +11,7 @@ import { requireSchema } from './schema.js';
 import { renderQuote, QUOTE_FROM, QUOTE_BCC } from './quoteRender.js';
 import { safeResendDetail } from '../../functions/api/quote.js';
 import { activeLink, ensureDraftLink, linksConfigured, quoteUrl } from './quoteLinks.js';
+import { customerEmailAllowed } from '../booking/mail.js';
 import {
   QUOTE_TEXT_FIELDS,
   SEND_UNKNOWN_AFTER_MS,
@@ -374,6 +375,12 @@ export async function reviseQuote(db, reference, actor) {
     .bind(row.id)
     .first();
   if (open) return { result: 'open_revision', revision: open.reference, quote: await loadQuote(db, row) };
+  // A booked quote cannot be replaced: its booking page would disappear.
+  const booked = await db
+    .prepare(`SELECT 1 FROM bookings WHERE quote_id = ? AND status IN ('holding', 'confirmed', 'cancel_requested')`)
+    .bind(row.id)
+    .first();
+  if (booked) return { result: 'has_booking', quote: await loadQuote(db, row) };
 
   const at = now();
   const newId = `(SELECT id FROM quotes WHERE quote_number = (SELECT value FROM counters WHERE name = 'quote'))`;
@@ -557,7 +564,7 @@ async function markUnknown(db, row, actor, reference, status, type = 'quote_send
  *
  * Returns { result, quote?, problems?, status? } where result is one of 'sent', 'not_found',
  * 'not_draft', 'stale', 'not_previewed', 'preview_outdated', 'incomplete', 'unconfigured',
- * 'link_unconfigured', 'conflict',
+ * 'link_unconfigured', 'recipient_not_allowed', 'conflict',
  * 'failed' (definitely not sent; back to draft) or 'unknown' (may have been sent; locked).
  */
 export async function sendQuote(env, reference, { version, previewedOn }, actor) {
@@ -577,6 +584,11 @@ export async function sendQuote(env, reference, { version, previewedOn }, actor)
   if (!env.RESEND_API_KEY) {
     console.error('Quote not sent: RESEND_API_KEY is not set.');
     return { result: 'unconfigured', quote };
+  }
+  // Preview: customer emails go only to approved test addresses (EMAIL_TEST_ALLOWLIST).
+  if (!customerEmailAllowed(env, quote.customerEmail).ok) {
+    console.error('Quote not sent: the customer address is not allowed in test mode.');
+    return { result: 'recipient_not_allowed', quote };
   }
   // Every quote email carries the customer's link, so none can go out unsigned.
   if (!linksConfigured(env)) {
@@ -600,6 +612,7 @@ export async function sendQuote(env, reference, { version, previewedOn }, actor)
       `UPDATE quotes SET status = 'sending', sending_started_at = ?, updated_at = ?, issued_on = ?, valid_until = ?,
          sent_to = ?, sent_subject = ?, sent_html = ?, sent_text = ?, sent_snapshot = ?
        WHERE id = ? AND status = 'draft' AND version = ? AND previewed_version = ?
+         AND NOT EXISTS (SELECT 1 FROM bookings b WHERE b.quote_id = quotes.revision_of AND b.status IN ('holding', 'confirmed', 'cancel_requested'))
        RETURNING id`,
     )
     .bind(
@@ -617,7 +630,15 @@ export async function sendQuote(env, reference, { version, previewedOn }, actor)
       version,
     )
     .first();
-  if (!claimed) return { result: 'conflict', quote: await getQuote(db, reference) };
+  if (!claimed) {
+    const booked = row.revision_of
+      ? await db
+          .prepare(`SELECT 1 FROM bookings WHERE quote_id = ? AND status IN ('holding', 'confirmed', 'cancel_requested')`)
+          .bind(row.revision_of)
+          .first()
+      : null;
+    return { result: booked ? 'revision_booked' : 'conflict', quote: await getQuote(db, reference) };
+  }
 
   // 2. Send.
   const sent = await callResend(

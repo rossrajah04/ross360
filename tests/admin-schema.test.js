@@ -14,8 +14,10 @@ test('the migrations bring an empty database to the latest schema version', asyn
     'admin_login_failures',
     'admin_sessions',
     'availability_slots',
+    'booking_payments',
+    'booking_refunds',
+    'bookings',
     'counters',
-    'date_requests',
     'enquiries',
     'enquiry_events',
     'quote_items',
@@ -37,7 +39,7 @@ test('running 0001, 0002 and 0004 again is harmless; running 0003 again stops at
   db.db.exec(sql('0002_quotes.sql'));
   // SQLite cannot add a column only if it is missing: the first ALTER fails, before anything else runs.
   assert.throws(() => db.db.exec(sql('0003_quote_travel.sql')), /duplicate column name: travel_mode/);
-  db.db.exec(sql('0004_customer_links.sql'));
+  db.db.exec(sql('0004_bookings.sql'));
   assert.equal(await schemaVersion(db), 4);
   const counter = await db.prepare(`SELECT value FROM counters WHERE name = 'enquiry'`).first();
   assert.equal(counter.value, 7);
@@ -91,7 +93,7 @@ test('0002, 0003 and 0004 bring a version 1 database with data to version 4 with
   const refused = await callAdmin(env, '/api/admin/session');
   assert.equal(refused.status, 503);
   assert.match(refused.data.message, /version 1/);
-  assert.match(refused.data.message, /0004_customer_links\.sql/);
+  assert.match(refused.data.message, /0004_bookings\.sql/);
 
   // Records written by Phase A at version 1.
   const before = db.db.prepare(`SELECT COUNT(*) AS n FROM enquiries`).get().n;
@@ -104,7 +106,7 @@ test('0002, 0003 and 0004 bring a version 1 database with data to version 4 with
   assert.equal(await schemaVersion(db), 2);
   db.db.exec(readFileSync(new URL('../migrations/0003_quote_travel.sql', import.meta.url), 'utf8'));
   assert.equal(await schemaVersion(db), 3);
-  db.db.exec(readFileSync(new URL('../migrations/0004_customer_links.sql', import.meta.url), 'utf8'));
+  db.db.exec(readFileSync(new URL('../migrations/0004_bookings.sql', import.meta.url), 'utf8'));
   assert.equal(await schemaVersion(db), 4);
   assert.equal(db.db.prepare(`SELECT COUNT(*) AS n FROM enquiries`).get().n, before + 1);
   assert.equal((await getEnquiry(db, 'ROSS-0005')).name, 'Existing');
@@ -202,11 +204,13 @@ test('the README erasure procedure removes one enquiry, its quotes and its timel
   await reviseQuote(db, 'Q-0001', 'test');
   await createQuote(db, 'ROSS-0003', 'test');
 
-  // Phase C: a customer link, an availability slot and a date request on the sent quote.
+  // Phase C: a customer link, an availability slot, and a booking with a payment and a refund.
   const at = 'a';
   db.db.exec(`INSERT INTO quote_links (quote_id, link_id, key_id, created_at, created_by) VALUES (1, 'link-1', 'k1', '${at}', 'test')`);
   db.db.exec(`INSERT INTO availability_slots (slot_date, period, status, created_at, updated_at) VALUES ('2099-01-01', 'am', 'open', '${at}', '${at}')`);
-  db.db.exec(`INSERT INTO date_requests (quote_id, slot_id, customer_note, created_at, updated_at) VALUES (1, 1, 'note', '${at}', '${at}')`);
+  db.db.exec(`INSERT INTO bookings (quote_id, slot_id, status, plan, total_pence, paid_pence, refunded_pence, created_at, updated_at) VALUES (1, 1, 'cancelled', 'full', 100, 100, 100, '${at}', '${at}')`);
+  db.db.exec(`INSERT INTO booking_payments (booking_id, kind, amount_pence, status, created_at, updated_at) VALUES (1, 'full', 100, 'paid', '${at}', '${at}')`);
+  db.db.exec(`INSERT INTO booking_refunds (booking_id, payment_id, amount_pence, status, created_at, updated_at) VALUES (1, 1, 100, 'succeeded', '${at}', '${at}')`);
   assert.throws(() => db.db.exec(`DELETE FROM quotes WHERE id = 1`), /FOREIGN KEY/);
 
   // The foreign keys stop the enquiry being deleted before its quotes and timeline.
@@ -214,7 +218,10 @@ test('the README erasure procedure removes one enquiry, its quotes and its timel
 
   // The statements documented in the README, in order.
   const id = `(SELECT id FROM enquiries WHERE reference = 'ROSS-0002')`;
-  db.db.exec(`DELETE FROM date_requests WHERE quote_id IN (SELECT id FROM quotes WHERE enquiry_id = ${id});`);
+  const bookingIds = `(SELECT id FROM bookings WHERE quote_id IN (SELECT id FROM quotes WHERE enquiry_id = ${id}))`;
+  db.db.exec(`DELETE FROM booking_refunds WHERE booking_id IN ${bookingIds};`);
+  db.db.exec(`DELETE FROM booking_payments WHERE booking_id IN ${bookingIds};`);
+  db.db.exec(`DELETE FROM bookings WHERE quote_id IN (SELECT id FROM quotes WHERE enquiry_id = ${id});`);
   db.db.exec(`DELETE FROM quote_links WHERE quote_id IN (SELECT id FROM quotes WHERE enquiry_id = ${id});`);
   db.db.exec(`DELETE FROM quote_items WHERE quote_id IN (SELECT id FROM quotes WHERE enquiry_id = ${id});`);
   db.db.exec(`DELETE FROM quotes WHERE enquiry_id = ${id};`);

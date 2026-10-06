@@ -1,12 +1,13 @@
-// HTML for the customer's quotation page (/q/<token>) and its date list. Server-rendered, with no
+// HTML for the customer's quotation page (/q/<token>) and its booking pages. Server-rendered, with no
 // scripts. The quotation is drawn only from the sent snapshot: what was emailed to the customer.
 
 import { site } from '../../src/content/site.js';
 import { quoteEmail } from '../../src/content/quoteEmail.js';
 import { customerQuote as C } from '../../src/content/customerQuote.js';
+import { booking as B } from '../../src/content/booking.js';
 import { formatMoney } from '../../src/lib/admin/model.js';
 import { longDate } from '../../src/lib/admin/quotes.js';
-import { CUSTOMER_NOTE_MAX, periodLabel, weekdayDate } from '../../src/lib/admin/availability.js';
+import { periodLabel, weekdayDate } from '../../src/lib/admin/availability.js';
 
 const escapeHtml = (value) =>
   String(value ?? '')
@@ -50,6 +51,16 @@ legend{padding:0;margin:0 0 8px;font-weight:600}
 .slot{border-bottom:1px solid #dddbd6}
 .slot label{display:flex;gap:12px;align-items:center;padding:12px 0;cursor:pointer}
 .slot input{width:20px;height:20px;margin:0;flex:none;accent-color:#141413}
+.slot .sub{display:block;color:#64625d;font-size:14px}
+.check{display:flex;gap:12px;align-items:flex-start;margin:0 0 20px}
+.check input{width:20px;height:20px;margin:2px 0 0;flex:none;accent-color:#141413}
+.facts{margin:0 0 20px}
+.facts div{display:flex;justify-content:space-between;gap:16px;padding:8px 0;border-bottom:1px solid #dddbd6;font-size:15px}
+.facts dt{color:#64625d}
+.facts dd{margin:0;text-align:right}
+.linkbutton{padding:0;border:0;background:none;color:#141413;font:inherit;text-decoration:underline;cursor:pointer}
+ul.terms{margin:0 0 20px;padding-left:20px}
+ul.terms li{margin:0 0 6px}
 textarea{display:block;width:100%;min-height:96px;margin:6px 0 4px;padding:10px 12px;border:1px solid #c9c6bf;border-radius:6px;font:inherit;color:inherit;resize:vertical}
 .foot{margin-top:40px;padding-top:16px;border-top:1px solid #dddbd6;color:#64625d;font-size:13px;line-height:1.7}
 .foot a{color:#64625d}
@@ -118,55 +129,196 @@ function quotation(s) {
   );
 }
 
-/**
- * The quotation page. `state` is 'valid' or 'expired'; `pending` is the customer's pending date
- * request ({ slot_date, period }) or null; `datesUrl` is the Choose a date page.
- */
-export function renderQuotePage({ snapshot, state, pending, datesUrl }) {
-  let action = '';
-  if (state === 'expired') {
-    action = `<div class="notice" role="status"><p>${escapeHtml(C.expired(longDate(snapshot.validUntil)))}</p></div>`;
-  } else if (pending) {
-    action =
-      '<div class="notice" role="status">' +
-      `<p>${escapeHtml(C.received)}</p>` +
-      `<p><span class="label">${escapeHtml(C.yourDate)}</span>${escapeHtml(slotText(pending.slot_date, pending.period))}</p>` +
-      `<p class="small"><a href="${escapeHtml(datesUrl)}">${escapeHtml(C.changeDate)}</a></p>` +
-      '</div>';
-  } else {
-    action = `<p><a class="button" href="${escapeHtml(datesUrl)}">${escapeHtml(C.chooseDate)}</a></p>`;
-  }
-  return shell(`${quoteEmail.title} ${snapshot.reference}`, quotation(snapshot) + action);
+const money = formatMoney;
+const ukTime = (isoString) =>
+  new Date(isoString).toLocaleTimeString('en-GB', { timeZone: 'Europe/London', hour: '2-digit', minute: '2-digit' });
+
+const facts = (rows) =>
+  `<dl class="facts">${rows.map(([dt, dd]) => `<div><dt>${escapeHtml(dt)}</dt><dd>${escapeHtml(dd)}</dd></div>`).join('')}</dl>`;
+
+const errorBox = (error) => (error ? `<div class="notice notice--error" role="alert"><p>${escapeHtml(error)}</p></div>` : '');
+const noticeBox = (...lines) =>
+  `<div class="notice" role="status">${lines.filter(Boolean).map((l) => `<p>${l}</p>`).join('')}</div>`;
+const postButton = (action, nonce, label, cls = 'button') =>
+  `<form method="post" action="${escapeHtml(action)}"><input type="hidden" name="nonce" value="${escapeHtml(nonce)}">` +
+  `<button class="${cls}" type="submit">${escapeHtml(label)}</button></form>`;
+
+function bookingFacts(b) {
+  const balance = Math.max(0, b.totalPence - b.paidPence);
+  const rows = [
+    [B.labels.slot, slotText(b.slotDate, b.period)],
+    [B.labels.total, money(b.totalPence)],
+    [B.labels.paid, money(b.paidPence)],
+  ];
+  if (b.plan === 'deposit' && balance > 0) rows.push([B.labels.balance, money(balance)], [B.labels.balanceDue, `End of ${longDate(b.balanceDueOn)}`]);
+  return facts(rows);
 }
 
 /**
- * The Choose a date page: open slots as a list of choices, an optional note and the submit button.
- * `error` is shown above the form; `values` keeps what the customer entered after a refusal.
+ * The quotation page, with the booking box.
+ * state: 'valid' | 'expired'. booking: the quote's active booking or null. latest: its most recent
+ * booking of any status (to show a cancellation). urls: { book, pay, release, balance, cancel, self }.
+ * notice: 'released' | 'confirming' | null. paymentsOn: whether online booking is available.
+ * nonce: the signed form nonce (for the release button).
  */
-export function renderDatesPage({ snapshot, slots, nonce, quoteUrl, error = '', values = {} }) {
+export function renderQuotePage({ snapshot, state, booking, latest, urls, notice = null, paymentsOn = true, nonce = '', now = new Date() }) {
+  const parts = [];
+  if (notice === 'released') parts.push(noticeBox(escapeHtml(B.checkoutCancelled)));
+  if (notice === 'confirming' && (!booking || booking.status === 'holding')) {
+    parts.push(noticeBox(escapeHtml(B.confirming), `<a href="${escapeHtml(urls.self)}">${escapeHtml(B.refresh)}</a>`));
+  }
+
+  if (booking && booking.status === 'holding' && Date.parse(booking.holdExpiresAt) > now.getTime()) {
+    parts.push(
+      `<h2>${escapeHtml(B.bookingHeading)}</h2>` +
+        noticeBox(escapeHtml(B.holding(ukTime(booking.holdExpiresAt)))) +
+        facts([[B.labels.slot, slotText(booking.slotDate, booking.period)]]) +
+        (booking.sessionUrl ? `<p><a class="button" href="${escapeHtml(booking.sessionUrl)}">${escapeHtml(B.continuePayment)}</a></p>` : '') +
+        postButton(urls.release, nonce, B.chooseDifferent, 'linkbutton'),
+    );
+  } else if (booking && booking.status === 'confirmed') {
+    const balance = Math.max(0, booking.totalPence - booking.paidPence);
+    parts.push(
+      `<h2>${escapeHtml(B.bookingHeading)}</h2>` +
+        `<p>${escapeHtml(B.confirmed)}${balance === 0 ? ` ${escapeHtml(B.paidInFull)}` : ''}</p>` +
+        bookingFacts(booking) +
+        (balance > 0 ? `<p><a class="button" href="${escapeHtml(urls.balance)}">${escapeHtml(B.payBalance)}</a></p>` : '') +
+        `<p class="small"><a href="${escapeHtml(urls.cancel)}">${escapeHtml(B.cancelBooking)}</a></p>`,
+    );
+  } else if (booking && booking.status === 'cancel_requested') {
+    parts.push(`<h2>${escapeHtml(B.bookingHeading)}</h2>` + noticeBox(escapeHtml(B.cancelRequested)) + bookingFacts(booking));
+  } else {
+    if (latest && latest.status === 'cancelled') {
+      const refunded = latest.refundedPence;
+      const owed = latest.paidPence - latest.retainedPence;
+      const lines = [escapeHtml(latest.cancelReason === 'slot_unavailable' ? B.lateRefund : B.cancelled(longDate(latest.cancelledAt.slice(0, 10))))];
+      if (latest.cancelReason !== 'slot_unavailable' && owed > 0) {
+        lines.push(escapeHtml(refunded >= owed ? B.refundIssued(money(refunded)) : B.refundPending(money(owed))));
+      }
+      parts.push(`<h2>${escapeHtml(B.bookingHeading)}</h2>` + noticeBox(...lines));
+    }
+    if (state === 'expired') {
+      parts.push(noticeBox(escapeHtml(C.expired(longDate(snapshot.validUntil)))));
+    } else if (!paymentsOn) {
+      parts.push(noticeBox(escapeHtml(B.paymentsOff)));
+    } else {
+      parts.push(`<p><a class="button" href="${escapeHtml(urls.book)}">${escapeHtml(latest?.status === 'cancelled' ? B.bookAgain : B.bookSlot)}</a></p>`);
+    }
+  }
+  return shell(`${quoteEmail.title} ${snapshot.reference}`, quotation(snapshot) + parts.join(''));
+}
+
+/** Choose a slot: open slots as choices; the form goes (GET) to the payment summary. */
+export function renderSlotsPage({ snapshot, slots, urls, error = '' }) {
   const body =
-    `<p class="muted small"><a href="${escapeHtml(quoteUrl)}">${escapeHtml(C.back)}</a></p>` +
-    `<h1>${escapeHtml(C.datesHeading)}</h1>` +
+    `<p class="muted small"><a href="${escapeHtml(urls.self)}">${escapeHtml(B.back)}</a></p>` +
+    `<h1>${escapeHtml(B.slotsHeading)}</h1>` +
     `<p class="meta">${escapeHtml(quoteEmail.title)} ${escapeHtml(snapshot.reference)}</p>` +
-    `<p>${escapeHtml(C.datesIntro)}</p>` +
-    (error ? `<div class="notice notice--error" role="alert"><p>${escapeHtml(error)}</p></div>` : '') +
+    `<p>${escapeHtml(B.slotsIntro)}</p>` +
+    errorBox(error) +
     (slots.length
-      ? '<form method="post">' +
-        `<input type="hidden" name="nonce" value="${escapeHtml(nonce)}">` +
-        `<fieldset><legend>${escapeHtml(C.chooseDate)}</legend><ul class="slots">` +
+      ? `<form method="get" action="${escapeHtml(urls.pay)}">` +
+        `<fieldset><legend>${escapeHtml(B.slotsHeading)}</legend><ul class="slots">` +
         slots
           .map(
             (slot) =>
-              `<li class="slot"><label><input type="radio" name="slot" value="${slot.id}" required${
-                String(values.slot) === String(slot.id) ? ' checked' : ''
-              }><span>${escapeHtml(slotText(slot.slot_date, slot.period))}</span></label></li>`,
+              `<li class="slot"><label><input type="radio" name="slot" value="${slot.id}" required><span>${escapeHtml(
+                slotText(slot.slot_date, slot.period),
+              )}</span></label></li>`,
           )
           .join('') +
         '</ul></fieldset>' +
-        `<label for="note">${escapeHtml(C.noteLabel)}</label>` +
-        `<textarea id="note" name="note" maxlength="${CUSTOMER_NOTE_MAX}">${escapeHtml(values.note || '')}</textarea>` +
-        `<p><button class="button" type="submit">${escapeHtml(C.submit)}</button></p>` +
+        `<p><button class="button" type="submit">${escapeHtml(B.continue)}</button></p>` +
         '</form>'
-      : `<div class="notice" role="status"><p>${escapeHtml(C.noDates)}</p></div>`);
-  return shell(C.datesHeading, body);
+      : noticeBox(escapeHtml(B.noSlots)));
+  return shell(B.slotsHeading, body);
+}
+
+/**
+ * The payment summary for one slot: the total, the choice of payment in full or the deposit (when
+ * allowed), what is due now and later, the cancellation terms, and the button to Stripe.
+ * options: paymentOptions() from src/lib/admin/booking.js.
+ */
+export function renderPayPage({ snapshot, slot, options, nonce, urls, termsUrl, error = '', values = {} }) {
+  const deposit = options.deposit;
+  const chosen = values.plan || (deposit ? '' : 'full');
+  const planChoice = deposit
+    ? `<fieldset><legend>${escapeHtml(B.payHeading)}</legend><ul class="slots">` +
+      `<li class="slot"><label><input type="radio" name="plan" value="full" required${chosen === 'full' ? ' checked' : ''}><span>${escapeHtml(
+        B.payFull,
+      )}<span class="sub">${escapeHtml(B.fullOption(money(options.totalPence)))}</span></span></label></li>` +
+      `<li class="slot"><label><input type="radio" name="plan" value="deposit" required${chosen === 'deposit' ? ' checked' : ''}><span>${escapeHtml(
+        B.payDeposit,
+      )}<span class="sub">${escapeHtml(B.depositOption(money(deposit.depositPence), money(deposit.balancePence), longDate(deposit.balanceDueOn)))}</span></span></label></li>` +
+      '</ul></fieldset>'
+    : `<input type="hidden" name="plan" value="full">` +
+      facts([[B.labels.dueNow, money(options.totalPence)]]) +
+      `<p class="small muted">${escapeHtml(B.fullOnly[options.noDeposit] || '')}</p>`;
+  const body =
+    `<p class="muted small"><a href="${escapeHtml(urls.book)}">${escapeHtml(B.chooseDifferent)}</a></p>` +
+    `<h1>${escapeHtml(B.payHeading)}</h1>` +
+    `<p class="meta">${escapeHtml(quoteEmail.title)} ${escapeHtml(snapshot.reference)}</p>` +
+    errorBox(error) +
+    facts([
+      [B.labels.slot, slotText(slot.slot_date, slot.period)],
+      [B.labels.total, money(options.totalPence)],
+    ]) +
+    `<form method="post" action="${escapeHtml(urls.pay)}">` +
+    `<input type="hidden" name="nonce" value="${escapeHtml(nonce)}">` +
+    `<input type="hidden" name="slot" value="${slot.id}">` +
+    planChoice +
+    `<h2>${escapeHtml(B.cancellationHeading)}</h2>` +
+    `<ul class="terms">${B.cancellationTerms.map((t) => `<li>${escapeHtml(t)}</li>`).join('')}${
+      deposit ? `<li>${escapeHtml(B.depositTerm(longDate(deposit.balanceDueOn)))}</li>` : ''
+    }</ul>` +
+    `<label class="check"><input type="checkbox" name="agree" value="yes" required${values.agree ? ' checked' : ''}><span>${escapeHtml(B.agree)} <a href="${escapeHtml(
+      termsUrl,
+    )}" rel="noreferrer" target="_blank">${escapeHtml(B.agreeLink)}</a>.</span></label>` +
+    `<p class="small muted">${escapeHtml(B.holdNote)} ${escapeHtml(B.stripeNote)}</p>` +
+    `<p><button class="button" type="submit">${escapeHtml(B.toPayment)}</button></p>` +
+    '</form>';
+  return shell(B.payHeading, body);
+}
+
+/** Pay the balance of a deposit booking. */
+export function renderBalancePage({ snapshot, booking, nonce, urls, error = '', state = 'due' }) {
+  const balance = Math.max(0, booking.totalPence - booking.paidPence);
+  let action;
+  if (state === 'too_late') action = noticeBox(escapeHtml(B.balanceTooLate));
+  else if (balance === 0) action = noticeBox(escapeHtml(B.balanceNothingDue));
+  else {
+    action =
+      `<p>${escapeHtml(B.balanceIntro(money(balance), longDate(booking.balanceDueOn)))}</p>` +
+      `<p class="small muted">${escapeHtml(B.stripeNote)}</p>` +
+      postButton(urls.balance, nonce, B.toPayment);
+  }
+  const body =
+    `<p class="muted small"><a href="${escapeHtml(urls.self)}">${escapeHtml(B.back)}</a></p>` +
+    `<h1>${escapeHtml(B.balanceHeading)}</h1>` +
+    `<p class="meta">${escapeHtml(quoteEmail.title)} ${escapeHtml(snapshot.reference)}</p>` +
+    errorBox(error) +
+    bookingFacts(booking) +
+    action;
+  return shell(B.balanceHeading, body);
+}
+
+/** Cancel a booking: what will happen, then the confirmation button. window: free | late | started. */
+export function renderCancelPage({ snapshot, booking, window, maxRetentionPence, nonce, urls, error = '' }) {
+  let action;
+  if (window === 'started') action = noticeBox(escapeHtml(B.cancelStarted));
+  else if (window === 'free') {
+    action =
+      `<p>${escapeHtml(booking.paidPence > 0 ? B.cancelFree(money(booking.paidPence)) : B.cancelFreeNothingPaid)}</p>` +
+      postButton(urls.cancel, nonce, B.confirmCancel);
+  } else {
+    action = `<p>${escapeHtml(B.cancelLate(money(maxRetentionPence)))}</p>` + postButton(urls.cancel, nonce, B.confirmCancelRequest);
+  }
+  const body =
+    `<p class="muted small"><a href="${escapeHtml(urls.self)}">${escapeHtml(B.keepBooking)}</a></p>` +
+    `<h1>${escapeHtml(B.cancelHeading)}</h1>` +
+    `<p class="meta">${escapeHtml(quoteEmail.title)} ${escapeHtml(snapshot.reference)}</p>` +
+    errorBox(error) +
+    bookingFacts(booking) +
+    action;
+  return shell(B.cancelHeading, body);
 }

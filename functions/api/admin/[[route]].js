@@ -37,16 +37,20 @@ import {
 } from '../../../server/admin/quotes.js';
 import { QUOTE_FROM, QUOTE_BCC } from '../../../server/admin/quoteRender.js';
 import { createLink, customerLinkInfo, linkKeyReport, linksConfigured, revokeLink } from '../../../server/admin/quoteLinks.js';
+import { addSlot, closeSlot, listSlots, reopenSlot, setSlotNote, validateSlot } from '../../../server/admin/availability.js';
 import {
-  addSlot,
-  closeDateRequest,
-  closeSlot,
-  listSlots,
-  pendingDateRequestCount,
-  reopenSlot,
-  setSlotNote,
-  validateSlot,
-} from '../../../server/admin/availability.js';
+  bookingCounts,
+  bookingDetail,
+  cancelBooking,
+  listBookings,
+  moveBooking,
+  moveTargets,
+  paymentsAvailable,
+  retryRefund,
+  runScheduled,
+} from '../../../server/booking/bookings.js';
+import { stripeMode, stripeProblem } from '../../../server/booking/stripe.js';
+import { allowlist } from '../../../server/booking/mail.js';
 import { SLOT_NOTE_MAX } from '../../../src/lib/admin/availability.js';
 import { QUOTE_REFERENCE_RE } from '../../../src/lib/admin/quotes.js';
 import { STATUS_VALUES, REFERENCE_RE, parseStatusFilter, validateEnquiryPatch, validateManualEnquiry } from '../../../src/lib/admin/model.js';
@@ -73,6 +77,12 @@ const QUOTE_OUTCOMES = {
     'This send can no longer be checked automatically (more than 23 hours have passed). It stays locked: check Resend and the newquote@ copy, then reconcile it by hand as the README describes.',
   ],
   unconfigured: [503, 'Email sending is not set up (RESEND_API_KEY). Nothing was sent.'],
+  recipient_not_allowed: [
+    409,
+    "Test mode: the customer's address is not on EMAIL_TEST_ALLOWLIST, so the quote was not sent. Use an approved test address, or add it to the list in Cloudflare.",
+  ],
+  has_booking: [409, 'This quote has a booking. Cancel the booking before revising the quote.'],
+  revision_booked: [409, 'The customer has booked the original quote, so this revision was not sent. Cancel that booking first if the revision should replace it.'],
   link_unconfigured: [503, 'Customer links are not set up (QUOTE_LINK_SECRET and QUOTE_LINK_KEY_ID). Nothing was sent.'],
 };
 
@@ -128,7 +138,25 @@ const PREVIEW_HEADERS = {
 
 const isVersion = (value) => Number.isSafeInteger(value) && value > 0;
 const isId = (value) => /^\d{1,10}$/.test(value || '');
-const isCount = (value) => Number.isSafeInteger(value) && value >= 0;
+const isPence = (value) => Number.isSafeInteger(value) && value >= 0;
+
+// How each outcome of a booking action is answered (Phase C).
+const BOOKING_OUTCOMES = {
+  changed: [409, 'This booking has changed since you opened it. Reload it to see the latest state; nothing was changed.'],
+  invalid_retention: [422, 'The amount to keep must be between £0 and 50% of the booking price (and no more than was paid), and only on a cancellation within 48 hours.'],
+  slot_unavailable: [409, 'That slot is no longer available. Choose another.'],
+  balance_first: [409, 'The balance must be paid before this booking can move to a date whose balance deadline has passed.'],
+  past: [422, 'That date has passed.'],
+  not_failed: [409, 'This refund is not marked as failed.'],
+};
+
+async function bookingOutcome(env, outcome, id) {
+  if (outcome.result === 'not_found') return notFound();
+  const known = BOOKING_OUTCOMES[outcome.result];
+  const booking = await bookingDetail(env, id);
+  if (known) return json({ ok: false, message: known[1], booking }, known[0]);
+  return json({ ok: true, booking });
+}
 
 // How each outcome of an availability action is answered (Phase C).
 const OVERLAP_MESSAGES = {
@@ -138,15 +166,19 @@ const OVERLAP_MESSAGES = {
 };
 function slotOutcome(outcome, okStatus = 200) {
   const { result, slot } = outcome;
-  if (result === 'ok') return json({ ok: true, slot, closedRequests: outcome.closedRequests }, okStatus);
+  if (result === 'ok') return json({ ok: true, slot }, okStatus);
   if (result === 'not_found') return notFound();
   if (result === 'overlap') return json({ ok: false, message: OVERLAP_MESSAGES[outcome.period], slot }, 409);
   if (result === 'exists') return json({ ok: false, message: 'This slot is already open.', slot }, 409);
   if (result === 'past') return json({ ok: false, message: 'This date has passed.', slot }, 422);
   if (result === 'already_closed') return json({ ok: false, message: 'This slot is already closed.', slot }, 409);
-  if (result === 'changed') {
+  if (result === 'booked') {
     return json(
-      { ok: false, changed: true, message: 'A new date request has arrived for this slot. Review it and close the slot again.', slot },
+      {
+        ok: false,
+        message: 'This slot has a booking, or a customer is paying for it now. Move or cancel the booking first, or wait for the checkout to end.',
+        slot,
+      },
       409,
     );
   }
@@ -231,7 +263,7 @@ async function handle(context) {
   const url = new URL(request.url);
 
   if (segments[0] === 'dashboard' && segments.length === 1 && method === 'GET') {
-    return json({ ok: true, ...(await dashboard(db)), pendingDateRequests: await pendingDateRequestCount(db) });
+    return json({ ok: true, ...(await dashboard(db)), bookings: await bookingCounts(db) });
   }
 
   // --- Customer links and availability (Phase C) --------------------------------------------------
@@ -263,25 +295,59 @@ async function handle(context) {
     }
     if (segments.length === 3 && method === 'POST') {
       if (segments[2] === 'reopen') return slotOutcome(await reopenSlot(db, id));
-      if (segments[2] === 'close') {
-        if (!['close', 'keep'].includes(body.requests) || !isCount(body.pendingCount) || !isCount(body.pendingMaxId)) {
-          return json({ ok: false, message: 'Invalid request.' }, 400);
-        }
-        return slotOutcome(
-          await closeSlot(db, id, { requests: body.requests, pendingCount: body.pendingCount, pendingMaxId: body.pendingMaxId }, actor),
-        );
-      }
+      if (segments[2] === 'close') return slotOutcome(await closeSlot(db, id));
     }
     return notFound();
   }
 
-  if (segments[0] === 'date-requests' && segments.length === 3 && segments[2] === 'close') {
+  // --- Bookings and payments (Phase C) ------------------------------------------------------------
+  if (segments[0] === 'payments' && segments.length === 1 && method === 'GET') {
+    return json({
+      ok: true,
+      available: paymentsAvailable(env),
+      mode: stripeMode(env.STRIPE_SECRET_KEY),
+      problem: stripeProblem(env),
+      emailAllowlist: allowlist(env).length,
+      scheduler: (env.SCHEDULER_SECRET || '').length >= 32,
+    });
+  }
+
+  if (segments[0] === 'scheduler' && segments[1] === 'run' && segments.length === 2) {
     if (method !== 'POST') return json({ ok: false, message: 'Method not allowed.' }, 405);
+    return json({ ok: true, summary: await runScheduled(env) });
+  }
+
+  if (segments[0] === 'bookings') {
+    if (segments.length === 1) {
+      if (method !== 'GET') return json({ ok: false, message: 'Method not allowed.' }, 405);
+      return json({ ok: true, bookings: await listBookings(db) });
+    }
     if (!isId(segments[1])) return notFound();
-    const outcome = await closeDateRequest(db, Number(segments[1]), actor);
-    if (outcome.result === 'not_found') return notFound();
-    if (outcome.result === 'not_pending') return json({ ok: false, message: 'This date request is no longer pending.' }, 409);
-    return json({ ok: true });
+    const id = Number(segments[1]);
+    if (segments.length === 2) {
+      if (method !== 'GET') return json({ ok: false, message: 'Method not allowed.' }, 405);
+      const booking = await bookingDetail(env, id);
+      return booking ? json({ ok: true, booking, moveTargets: await moveTargets(db) }) : notFound();
+    }
+    if (method !== 'POST') return json({ ok: false, message: 'Method not allowed.' }, 405);
+    if (segments.length === 3 && segments[2] === 'cancel') {
+      // reason: customer_late (a request within 48 hours: keep up to 50%), customer (on the customer's
+      // behalf, outside 48 hours: full refund) or ross360 (full refund). expect: the status shown.
+      const reasons = ['customer_late', 'customer', 'ross360'];
+      if (body.confirm !== true || !reasons.includes(body.reason) || !isPence(body.retainPence) || !['confirmed', 'cancel_requested'].includes(body.expect)) {
+        return json({ ok: false, message: 'Invalid request.' }, 400);
+      }
+      return bookingOutcome(env, await cancelBooking(env, id, { reason: body.reason, retainPence: body.retainPence, actor, expect: body.expect }), id);
+    }
+    if (segments.length === 3 && segments[2] === 'move') {
+      if (body.confirm !== true || !Number.isSafeInteger(body.slotId) || body.slotId < 1) return json({ ok: false, message: 'Invalid request.' }, 400);
+      return bookingOutcome(env, await moveBooking(env, id, body.slotId, actor), id);
+    }
+    if (segments.length === 5 && segments[2] === 'refunds' && isId(segments[3]) && segments[4] === 'retry') {
+      const outcome = await retryRefund(env, Number(segments[3]), id);
+      return bookingOutcome(env, outcome, id);
+    }
+    return notFound();
   }
 
   if (segments[0] === 'enquiries') {
