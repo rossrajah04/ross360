@@ -27,6 +27,7 @@ const TOTAL = 43900; // the test quote: Professional £349 + £100 extra + £20 
 const DEPOSIT = 7000;
 const one = (t, sql, ...params) => t.db.db.prepare(sql).get(...params);
 const rows = (t, sql, ...params) => t.db.db.prepare(sql).all(...params);
+const plain = (list) => list.map((row) => ({ ...row }));
 const events = async (t, type) => (await getEnquiry(t.db, t.enquiry)).events.filter((e) => !type || e.type === type);
 const at = (date, time) => ukInstant(date, time);
 const sessionOf = (location) => location.split('/').pop();
@@ -326,6 +327,131 @@ test('a payment completed after its hold ran out and the slot was taken is refun
 });
 
 // --- The webhook ---------------------------------------------------------------------------------
+
+// --- Webhook and customer return at the same moment ----------------------------------------------
+
+/**
+ * Holds each payment-completion batch until `n` have arrived, so concurrent callers have all read
+ * the payment as unpaid before any of them writes: the worst case for a race. Returns the count.
+ */
+function holdCompletions(db, n) {
+  const original = db.batch.bind(db);
+  const waiting = [];
+  const held = { count: 0 };
+  db.batch = (statements) => {
+    if (!statements.some((st) => /SET status = 'paid'/.test(st.sql)) || held.count >= n) return original(statements);
+    held.count += 1;
+    return new Promise((resolve) => {
+      waiting.push(resolve);
+      if (waiting.length === n) waiting.splice(0).forEach((go) => go());
+    }).then(() => original(statements));
+  };
+  return held;
+}
+
+/** Stripe's webhook and the customer's return for the same paid session, concurrently. */
+async function completeTwiceAtOnce(t, stripe, token, sessionId) {
+  const held = holdCompletions(t.db, 2);
+  const [hook, back] = await Promise.all([
+    deliverWebhook(t.env, 'checkout.session.completed', stripe.session(sessionId)),
+    callPage(t.env, `/q/${token}/paid?session_id=${sessionId}`),
+  ]);
+  assert.equal(held.count, 2, 'both callers reached the write having read the payment as unpaid');
+  assert.equal(hook.status, 200);
+  assert.equal(back.status, 303);
+}
+
+for (const plan of ['full', 'deposit']) {
+  test(`webhook and customer return at once for a ${plan === 'full' ? 'payment in full' : 'deposit'}: recorded once, confirmed, no refund, one set of emails`, async () => {
+    const { t, slot, token } = await ready(20);
+    await withServices(async ({ stripe, emails }) => {
+      const res = await checkout(t.env, token, slot.id, plan);
+      const id = sessionOf(res.location);
+      stripe.pay(id);
+      await completeTwiceAtOnce(t, stripe, token, id);
+
+      const amount = plan === 'full' ? TOTAL : DEPOSIT;
+      const b = one(t, `SELECT * FROM bookings`);
+      assert.equal(b.status, 'confirmed');
+      assert.equal(b.paid_pence, amount);
+      assert.equal(b.refunded_pence, 0);
+      assert.equal(b.cancel_reason, null);
+      assert.deepEqual(plain(rows(t, `SELECT kind, status, amount_pence FROM booking_payments`)), [{ kind: plan, status: 'paid', amount_pence: amount }]);
+      assert.equal(one(t, `SELECT COUNT(*) AS n FROM booking_refunds`).n, 0);
+      assert.equal(stripe.refunds.length, 0);
+      assert.equal((await events(t, 'booking_confirmed')).length, 1);
+      assert.equal((await events(t, 'payment_refunded_late')).length, 0);
+      assert.equal(emails.filter((e) => e.subject.startsWith('ROSS 360 booking confirmed')).length, 1);
+      assert.equal(emails.filter((e) => e.subject.startsWith('Booking confirmed:')).length, 1);
+      assert.equal(emails.filter((e) => /refund/i.test(e.subject)).length, 0);
+      assert.equal((await getEnquiry(t.db, t.enquiry)).status, 'booked');
+
+      // A later duplicate (Stripe retries the event) changes nothing either.
+      const again = await deliverWebhook(t.env, 'checkout.session.completed', stripe.session(id));
+      assert.equal(again.status, 200);
+      assert.equal(one(t, `SELECT paid_pence FROM bookings`).paid_pence, amount);
+      assert.equal(emails.filter((e) => e.subject.startsWith('ROSS 360 booking confirmed')).length, 1);
+    });
+  });
+}
+
+test('webhook and customer return at once for a balance payment: counted once, no refund, one set of emails', async () => {
+  const { t, slot, token } = await ready(20);
+  await withServices(async ({ stripe, emails }) => {
+    await bookAndPay(t, stripe, token, slot.id, 'deposit');
+    await postForm(t.env, token, 'balance', `/q/${token}/balance`);
+    const s = stripe.lastSession();
+    assert.equal(s.metadata.kind, 'balance');
+    stripe.pay(s.id);
+    await completeTwiceAtOnce(t, stripe, token, s.id);
+
+    const b = one(t, `SELECT * FROM bookings`);
+    assert.equal(b.status, 'confirmed');
+    assert.equal(b.paid_pence, TOTAL);
+    assert.equal(b.refunded_pence, 0);
+    assert.deepEqual(
+      plain(rows(t, `SELECT kind, status, amount_pence FROM booking_payments ORDER BY id`)),
+      [
+        { kind: 'deposit', status: 'paid', amount_pence: DEPOSIT },
+        { kind: 'balance', status: 'paid', amount_pence: TOTAL - DEPOSIT },
+      ],
+    );
+    assert.equal(one(t, `SELECT COUNT(*) AS n FROM booking_refunds`).n, 0);
+    assert.equal(stripe.refunds.length, 0);
+    assert.equal((await events(t, 'balance_paid')).length, 1);
+    assert.equal((await events(t, 'payment_refunded_late')).length, 0);
+    assert.equal(emails.filter((e) => e.subject === 'ROSS 360 balance received').length, 1);
+    assert.equal(emails.filter((e) => /refund/i.test(e.subject)).length, 0);
+  });
+});
+
+test('a genuinely late payment completed twice at once is refunded once', async () => {
+  const { t, slot, token } = await ready(20);
+  const t2 = await setUp({ db: t.db });
+  const q2 = await sentQuote(t2);
+  await withServices(async ({ stripe, emails }) => {
+    const first = sessionOf((await checkout(t.env, token, slot.id, 'full')).location);
+    const hold = one(t, `SELECT hold_expires_at FROM bookings`).hold_expires_at;
+    await runScheduled(t.env, new Date(Date.parse(hold) + 1000));
+    await bookAndPay(t2, stripe, q2.token, slot.id, 'full');
+    // The first customer's payment arrives late, and the webhook and their return race.
+    stripe.sessions.get(first).status = 'open';
+    const late = stripe.pay(first);
+    const refundsBefore = stripe.refunds.length;
+    await completeTwiceAtOnce(t, stripe, token, first);
+
+    const b = one(t, `SELECT * FROM bookings WHERE id = ?`, Number(late.metadata.booking_id));
+    assert.equal(b.status, 'cancelled');
+    assert.equal(b.cancel_reason, 'slot_unavailable');
+    assert.equal(b.paid_pence, TOTAL);
+    assert.equal(b.refunded_pence, TOTAL);
+    assert.equal(one(t, `SELECT COUNT(*) AS n FROM booking_refunds WHERE booking_id = ?`, b.id).n, 1);
+    assert.equal(stripe.refunds.length - refundsBefore, 1);
+    assert.equal(emails.filter((e) => e.subject === 'ROSS 360 payment refunded').length, 1);
+    assert.equal((await events(t, 'payment_refunded_late')).length, 1);
+    assert.equal(rows(t, `SELECT * FROM bookings WHERE slot_id = ? AND status = 'confirmed'`, slot.id).length, 1);
+  });
+});
 
 test('the webhook: only correctly signed, recent events; repeated events do nothing twice', async () => {
   const { t, slot, token } = await ready(20);

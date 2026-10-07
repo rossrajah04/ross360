@@ -454,7 +454,15 @@ async function paymentForSession(db, session) {
 
 /**
  * A Checkout session was paid (from the webhook, the customer's return, or a check). Safe to call
- * any number of times: only the first records the payment. Returns { result }.
+ * any number of times, including at the same moment: only the call that records the payment acts on
+ * it. Returns { result }.
+ *
+ * How the race is closed: each batch below runs as one transaction, and D1 runs batches one at a
+ * time. Every statement in a batch is conditional on the payment still being unpaid at that point
+ * (`unpaid`), and the statement that marks it paid comes last and reports whether it did. So of two
+ * calls that both read the payment as unpaid, the first batch applies everything; the second finds
+ * the payment already paid, changes nothing, and returns 'duplicate': no second count of the amount,
+ * no refund, no emails.
  */
 export async function handleCheckoutCompleted(env, session, now = new Date()) {
   const db = env.DB;
@@ -473,15 +481,9 @@ export async function handleCheckoutCompleted(env, session, now = new Date()) {
   const booking = await getBooking(db, payment.booking_id);
   const at = iso(now);
   const intent = typeof session.payment_intent === 'string' ? session.payment_intent : session.payment_intent?.id || null;
-  const markPaid = db
-    .prepare(
-      `UPDATE booking_payments SET status = 'paid', paid_at = ?, stripe_payment_intent = ?, stripe_session_id = COALESCE(stripe_session_id, ?), updated_at = ?
-       WHERE id = ? AND status <> 'paid'`,
-    )
-    .bind(at, intent, session.id, at, payment.id);
-  const paidNow = `EXISTS (SELECT 1 FROM booking_payments WHERE id = ${Number(payment.id)} AND status = 'paid' AND paid_at = '${at}')`;
+  const claim = { db, payment, at, intent, sessionId: session.id };
 
-  if (payment.kind === 'balance') return completeBalance(env, booking, payment, { markPaid, paidNow, at, now });
+  if (payment.kind === 'balance') return completeBalance(env, booking, payment, claim, now);
 
   // Deposit or payment in full: confirm the booking. A hold that had run out is confirmed too if the
   // slot is still free; otherwise the database refuses and the payment is refunded below.
@@ -489,21 +491,24 @@ export async function handleCheckoutCompleted(env, session, now = new Date()) {
   const deposit = booking.plan === 'deposit';
   const due = deposit ? balanceDueOn(booking.slotDate) : null;
   const reminders = deposit ? reminderDates(booking.slotDate, bookedOn) : { r14: null, r8: null };
+  const unpaid = unpaidSql(payment.id);
+  // Confirmed by this batch: the booking update above it ran (its confirmed_at is this call's time).
+  const confirmedHere = `${unpaid} AND EXISTS (SELECT 1 FROM bookings WHERE id = ${Number(booking.id)} AND status = 'confirmed' AND confirmed_at = '${at}')`;
+  let results;
   try {
-    const results = await db.batch([
-      markPaid,
+    results = await db.batch([
       db
         .prepare(
           `UPDATE bookings SET status = 'confirmed', paid_pence = paid_pence + ?, confirmed_at = ?, booked_on = ?, hold_expires_at = NULL,
              balance_due_on = ?, reminder_14_on = ?, reminder_8_on = ?, updated_at = ?
-           WHERE id = ? AND status IN ('holding', 'expired') AND ${paidNow}
+           WHERE id = ? AND status IN ('holding', 'expired') AND ${unpaid}
            RETURNING id`,
         )
         .bind(payment.amount_pence, at, bookedOn, due, reminders.r14, reminders.r8, at, booking.id),
       db
         .prepare(
           `INSERT INTO enquiry_events (enquiry_id, created_at, actor, type, detail)
-           SELECT ?, ?, 'customer', 'booking_confirmed', ? WHERE ${paidNow}`,
+           SELECT ?, ?, 'customer', 'booking_confirmed', ? WHERE ${confirmedHere}`,
         )
         .bind(
           booking.enquiryId,
@@ -514,24 +519,27 @@ export async function handleCheckoutCompleted(env, session, now = new Date()) {
         .prepare(
           `INSERT INTO enquiry_events (enquiry_id, created_at, actor, type, detail)
            SELECT id, ?, 'system', 'status', json_object('from', status, 'to', 'booked')
-           FROM enquiries WHERE id = ? AND status IN ('new', 'reviewing', 'quoted', 'accepted', 'payment_pending') AND ${paidNow}`,
+           FROM enquiries WHERE id = ? AND status IN ('new', 'reviewing', 'quoted', 'accepted', 'payment_pending') AND ${confirmedHere}`,
         )
         .bind(at, booking.enquiryId),
       db
         .prepare(
           `UPDATE enquiries SET status = 'booked', status_changed_at = ?, updated_at = ?
-           WHERE id = ? AND status IN ('new', 'reviewing', 'quoted', 'accepted', 'payment_pending') AND ${paidNow}`,
+           WHERE id = ? AND status IN ('new', 'reviewing', 'quoted', 'accepted', 'payment_pending') AND ${confirmedHere}`,
         )
         .bind(at, at, booking.enquiryId),
+      markPaidSql(claim),
     ]);
-    if (!results[1].results?.[0]) {
-      // Paid, but the booking is no longer waiting for this payment (it was cancelled meanwhile).
-      return refundLatePayment(env, booking, payment, { at, now, intent, session });
-    }
   } catch (error) {
     if (!constraintOf(error)) throw error;
-    // The hold had run out and the slot (or this quote) has another booking now.
-    return refundLatePayment(env, booking, payment, { at, now, intent, session });
+    // The hold had run out and the slot (or this quote) has another booking now. Nothing was written.
+    return refundLatePayment(env, booking, payment, claim, now);
+  }
+  if (!results[results.length - 1].results?.[0]) return { result: 'duplicate' };
+  if (!results[0].results?.[0]) {
+    // This call recorded the payment, but the booking is no longer waiting for it (it was cancelled
+    // meanwhile).
+    return refundLatePayment(env, booking, payment, { ...claim, recorded: true }, now);
   }
 
   const confirmed = await getBooking(db, booking.id);
@@ -541,24 +549,40 @@ export async function handleCheckoutCompleted(env, session, now = new Date()) {
   return { result: 'confirmed', bookingId: booking.id };
 }
 
-async function completeBalance(env, booking, payment, { markPaid, paidNow, at, now }) {
-  const db = env.DB;
+/** True while the payment is not yet marked paid (evaluated inside a batch, before markPaidSql). */
+const unpaidSql = (paymentId) => `EXISTS (SELECT 1 FROM booking_payments WHERE id = ${Number(paymentId)} AND status <> 'paid')`;
+
+/** Marks the payment paid; the last statement of a batch. Returns a row only for the call that did. */
+const markPaidSql = ({ db, payment, at, intent, sessionId }) =>
+  db
+    .prepare(
+      `UPDATE booking_payments SET status = 'paid', paid_at = ?, stripe_payment_intent = ?, stripe_session_id = COALESCE(stripe_session_id, ?), updated_at = ?
+       WHERE id = ? AND status <> 'paid'
+       RETURNING id`,
+    )
+    .bind(at, intent, sessionId, at, payment.id);
+
+async function completeBalance(env, booking, payment, claim, now) {
+  const { db, at } = claim;
+  const unpaid = unpaidSql(payment.id);
+  const active = `EXISTS (SELECT 1 FROM bookings WHERE id = ${Number(booking.id)} AND status IN ('confirmed', 'cancel_requested'))`;
   const results = await db.batch([
-    markPaid,
     db
       .prepare(
         `UPDATE bookings SET paid_pence = paid_pence + ?, updated_at = ?
-         WHERE id = ? AND status IN ('confirmed', 'cancel_requested') AND ${paidNow}
+         WHERE id = ? AND status IN ('confirmed', 'cancel_requested') AND ${unpaid}
          RETURNING id`,
       )
       .bind(payment.amount_pence, at, booking.id),
     db
-      .prepare(`INSERT INTO enquiry_events (enquiry_id, created_at, actor, type, detail) SELECT ?, ?, 'customer', 'balance_paid', ? WHERE ${paidNow}`)
+      .prepare(`INSERT INTO enquiry_events (enquiry_id, created_at, actor, type, detail) SELECT ?, ?, 'customer', 'balance_paid', ? WHERE ${unpaid} AND ${active}`)
       .bind(booking.enquiryId, at, JSON.stringify({ quote: booking.quoteReference, paidPence: payment.amount_pence })),
+    markPaidSql(claim),
   ]);
-  if (!results[1].results?.[0]) {
+  if (!results[results.length - 1].results?.[0]) return { result: 'duplicate' };
+  if (!results[0].results?.[0]) {
     // The booking was cancelled (for example at the balance deadline) before this payment completed.
-    return refundLatePayment(env, booking, payment, { at, now, alreadyMarked: true });
+    return refundLatePayment(env, booking, payment, { ...claim, recorded: true }, now);
   }
   const updated = await getBooking(db, booking.id);
   const pageUrl = await customerPageUrl(env, updated.quoteId);
@@ -571,18 +595,15 @@ async function completeBalance(env, booking, payment, { markPaid, paidNow, at, n
  * A payment that completed after its booking had ended: record it, refund it in full, and tell the
  * customer and ROSS 360. A booking whose hold ran out is cancelled ('slot_unavailable') so the
  * payment and its refund belong to it.
+ *
+ * `claim.recorded` is true when this call has just marked the payment paid itself. Otherwise this
+ * batch records it, last and only if still unpaid, so a concurrent duplicate refunds nothing.
  */
-async function refundLatePayment(env, booking, payment, { at, now, intent = null, alreadyMarked = false }) {
-  const db = env.DB;
-  const statements = [];
-  if (!alreadyMarked) {
-    statements.push(
-      db
-        .prepare(`UPDATE booking_payments SET status = 'paid', paid_at = ?, stripe_payment_intent = ?, updated_at = ? WHERE id = ? AND status <> 'paid'`)
-        .bind(at, intent, at, payment.id),
-    );
-  }
-  statements.push(
+async function refundLatePayment(env, booking, payment, claim, now) {
+  const { db, at, recorded = false } = claim;
+  const once = recorded ? '1 = 1' : unpaidSql(payment.id);
+  const noRefund = `NOT EXISTS (SELECT 1 FROM booking_refunds WHERE payment_id = ${Number(payment.id)})`;
+  const statements = [
     db
       .prepare(
         `UPDATE bookings SET paid_pence = paid_pence + ?, updated_at = ?,
@@ -590,18 +611,27 @@ async function refundLatePayment(env, booking, payment, { at, now, intent = null
            cancel_reason = CASE WHEN status = 'expired' THEN 'slot_unavailable' ELSE cancel_reason END,
            cancelled_at = CASE WHEN status = 'expired' THEN ? ELSE cancelled_at END,
            cancelled_by = CASE WHEN status = 'expired' THEN 'system' ELSE cancelled_by END
-         WHERE id = ? AND NOT EXISTS (SELECT 1 FROM booking_refunds WHERE payment_id = ?)`,
+         WHERE id = ? AND ${once} AND ${noRefund}`,
       )
-      .bind(payment.amount_pence, at, at, booking.id, payment.id),
+      .bind(payment.amount_pence, at, at, booking.id),
+    db
+      .prepare(
+        `INSERT INTO enquiry_events (enquiry_id, created_at, actor, type, detail)
+         SELECT ?, ?, 'system', 'payment_refunded_late', ? WHERE ${once} AND ${noRefund}`,
+      )
+      .bind(booking.enquiryId, at, JSON.stringify({ quote: booking.quoteReference, paidPence: payment.amount_pence, kind: payment.kind })),
     db
       .prepare(
         `INSERT INTO booking_refunds (booking_id, payment_id, amount_pence, status, created_at, updated_at)
-         SELECT ?, ?, ?, 'pending', ?, ? WHERE NOT EXISTS (SELECT 1 FROM booking_refunds WHERE payment_id = ?)`,
+         SELECT ?, ?, ?, 'pending', ?, ? WHERE ${once} AND ${noRefund}
+         RETURNING id`,
       )
-      .bind(booking.id, payment.id, payment.amount_pence, at, at, payment.id),
-    event(db, booking.enquiryId, at, 'system', 'payment_refunded_late', { quote: booking.quoteReference, paidPence: payment.amount_pence, kind: payment.kind }),
-  );
-  await db.batch(statements);
+      .bind(booking.id, payment.id, payment.amount_pence, at, at),
+  ];
+  if (!recorded) statements.push(markPaidSql(claim));
+  const results = await db.batch(statements);
+  if (!recorded && !results[results.length - 1].results?.[0]) return { result: 'duplicate' };
+  if (!results[2].results?.[0]) return { result: 'duplicate' };
   await executeRefunds(env, { bookingId: booking.id, now });
   const updated = await getBooking(db, booking.id);
   const pageUrl = await customerPageUrl(env, updated.quoteId);
