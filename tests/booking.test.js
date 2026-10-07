@@ -13,6 +13,7 @@ import {
   activeBooking,
   cancelBooking,
   customerCancel,
+  executeRefunds,
   getBooking,
   handleCheckoutCompleted,
   refundsOf,
@@ -334,12 +335,12 @@ test('a payment completed after its hold ran out and the slot was taken is refun
  * Holds each payment-completion batch until `n` have arrived, so concurrent callers have all read
  * the payment as unpaid before any of them writes: the worst case for a race. Returns the count.
  */
-function holdCompletions(db, n) {
+function holdCompletions(db, n, pattern = /SET status = 'paid'/) {
   const original = db.batch.bind(db);
   const waiting = [];
   const held = { count: 0 };
   db.batch = (statements) => {
-    if (!statements.some((st) => /SET status = 'paid'/.test(st.sql)) || held.count >= n) return original(statements);
+    if (!statements.some((st) => pattern.test(st.sql)) || held.count >= n) return original(statements);
     held.count += 1;
     return new Promise((resolve) => {
       waiting.push(resolve);
@@ -699,6 +700,83 @@ test('a refund with no answer from Stripe stays pending and is retried with the 
     assert.equal(new Set(keys).size, 1);
     await runScheduled(t.env, new Date(Date.now() + 10 * 60_000));
     assert.equal(stripe.refunds.length, 1);
+  });
+});
+
+/**
+ * A confirmed booking cancelled by ROSS 360 whose refund got no answer from Stripe: pending. The
+ * amount is set to part of the payment, as after a late cancellation where ROSS 360 kept some, so
+ * that counting it twice would still fit within the amount paid (the database's own check stops a
+ * full refund being counted twice, which would hide the race).
+ */
+const PART = 20000;
+async function pendingRefund(t, stripe, token, slotId) {
+  const b = await bookAndPay(t, stripe, token, slotId, 'full');
+  stripe.fail = ({ path }) => (path === '/v1/refunds' ? new Response('{}', { status: 503 }) : null);
+  await cancelBooking(t.env, b.id, { reason: 'ross360', retainPence: 0, actor: 'admin', expect: 'confirmed' });
+  stripe.fail = null;
+  t.db.db.prepare(`UPDATE booking_refunds SET amount_pence = ?`).run(PART);
+  const refund = one(t, `SELECT * FROM booking_refunds`);
+  assert.equal(refund.status, 'pending');
+  return { booking: b, refund };
+}
+
+/** Two attempts at the same pending refund, both having read it as pending before either finishes. */
+async function refundTwiceAtOnce(t, pattern) {
+  const held = holdCompletions(t.db, 2, pattern);
+  const later = new Date(Date.now() + 5 * 60_000);
+  const results = await Promise.all([runScheduled(t.env, later), executeRefunds(t.env, { now: later })]);
+  assert.equal(held.count, 2, 'both attempts reached the write having read the refund as pending');
+  return results;
+}
+
+for (const clock of ['the same instant', 'different instants']) {
+  test(`two attempts at one pending refund at once (${clock}): same Stripe key, counted once, one event`, async (ctx) => {
+    const { t, slot, token } = await ready(20);
+    await withServices(async ({ stripe, emails }) => {
+      const { booking, refund } = await pendingRefund(t, stripe, token, slot.id);
+      const emailsBefore = emails.length;
+      // With the clock stopped, both attempts stamp the refund with the same time.
+      if (clock === 'the same instant') ctx.mock.timers.enable({ apis: ['Date'], now: Date.now() });
+      await refundTwiceAtOnce(t, /SET status = 'succeeded'/);
+      if (clock === 'the same instant') ctx.mock.timers.reset();
+
+      const calls = stripe.calls.filter((c) => c.method === 'POST' && c.path === '/v1/refunds');
+      assert.equal(calls.length, 3, 'the first attempt (no answer) and the two concurrent ones');
+      assert.deepEqual([...new Set(calls.map((c) => c.key))], [`refund-${refund.id}`]);
+      assert.equal(stripe.refunds.length, 1, 'Stripe refunds once for one key');
+      const r = one(t, `SELECT * FROM booking_refunds WHERE id = ?`, refund.id);
+      assert.equal(r.status, 'succeeded');
+      assert.equal(r.stripe_refund_id, stripe.refunds[0].id);
+      const b = one(t, `SELECT * FROM bookings WHERE id = ?`, booking.id);
+      assert.equal(b.refunded_pence, PART);
+      assert.equal(b.paid_pence, TOTAL);
+      assert.equal((await events(t, 'refund_issued')).length, 1);
+      assert.equal((await events(t, 'refund_failed')).length, 0);
+      assert.equal(emails.length, emailsBefore, 'no emails from the retries');
+
+      // A further attempt finds nothing pending.
+      assert.deepEqual(await executeRefunds(t.env, { now: new Date(Date.now() + 10 * 60_000) }), { succeeded: 0, failed: 0, pending: 0 });
+      assert.equal(one(t, `SELECT refunded_pence FROM bookings WHERE id = ?`, booking.id).refunded_pence, PART);
+    });
+  });
+}
+
+test('two attempts at one pending refund that Stripe refuses: marked failed once, one event, one email', async () => {
+  const { t, slot, token } = await ready(20);
+  await withServices(async ({ stripe, emails }) => {
+    const { booking, refund } = await pendingRefund(t, stripe, token, slot.id);
+    stripe.fail = ({ path }) =>
+      path === '/v1/refunds' ? new Response(JSON.stringify({ error: { message: 'Charge already refunded' } }), { status: 400 }) : null;
+    const emailsBefore = emails.length;
+    await refundTwiceAtOnce(t, /SET status = 'failed'/);
+
+    const r = one(t, `SELECT * FROM booking_refunds WHERE id = ?`, refund.id);
+    assert.equal(r.status, 'failed');
+    assert.equal(one(t, `SELECT refunded_pence FROM bookings WHERE id = ?`, booking.id).refunded_pence, 0);
+    assert.equal((await events(t, 'refund_failed')).length, 1);
+    assert.equal((await events(t, 'refund_issued')).length, 0);
+    assert.equal(emails.slice(emailsBefore).filter((e) => e.to[0] === 'newquote@ross360.co.uk').length, 1);
   });
 });
 

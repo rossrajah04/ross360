@@ -927,6 +927,11 @@ export async function cancelBooking(env, bookingId, { reason, retainPence = 0, a
  * Send pending refunds to Stripe (all of them, or one booking's). Each uses Idempotency-Key
  * refund-<id>, so a retry after a lost answer never refunds twice. A definite refusal marks the refund
  * failed (shown in the Admin); no answer leaves it pending for the next run.
+ *
+ * Two attempts at the same refund can overlap (the hourly run, an Admin action, a late payment). Only
+ * the attempt that moves the refund out of 'pending' records the outcome: in each batch, the booking
+ * total and the event are written only while the refund is still pending, and the status change comes
+ * last and reports whether it happened. The other attempt changes nothing and sends nothing.
  */
 export async function executeRefunds(env, { bookingId = null, refundId = null, olderThanMs = 0, now = new Date() } = {}) {
   const db = env.DB;
@@ -953,8 +958,11 @@ export async function executeRefunds(env, { bookingId = null, refundId = null, o
     const t = iso(new Date());
     await db.prepare(`UPDATE booking_refunds SET attempts = attempts + 1, updated_at = ? WHERE id = ?`).bind(t, r.id).run();
     if (!r.stripe_payment_intent) {
-      await db.prepare(`UPDATE booking_refunds SET status = 'failed', last_error = ?, updated_at = ? WHERE id = ? AND status = 'pending'`).bind('No Stripe payment to refund.', t, r.id).run();
-      outcome.failed += 1;
+      const marked = await db
+        .prepare(`UPDATE booking_refunds SET status = 'failed', last_error = ?, updated_at = ? WHERE id = ? AND status = 'pending' RETURNING id`)
+        .bind('No Stripe payment to refund.', t, r.id)
+        .first();
+      if (marked) outcome.failed += 1;
       continue;
     }
     try {
@@ -964,39 +972,45 @@ export async function executeRefunds(env, { bookingId = null, refundId = null, o
         `refund-${r.id}`,
       );
       if (refund?.status === 'failed' || refund?.status === 'canceled') throw new StripeError(`Refund ${refund.status}.`, { definite: true });
-      await db.batch([
+      const pending = `EXISTS (SELECT 1 FROM booking_refunds WHERE id = ${Number(r.id)} AND status = 'pending')`;
+      const results = await db.batch([
         db
-          .prepare(`UPDATE booking_refunds SET status = 'succeeded', stripe_refund_id = ?, last_error = NULL, updated_at = ? WHERE id = ? AND status = 'pending'`)
-          .bind(refund?.id || null, t, r.id),
-        db
-          .prepare(
-            `UPDATE bookings SET refunded_pence = refunded_pence + ?, updated_at = ?
-             WHERE id = ? AND EXISTS (SELECT 1 FROM booking_refunds WHERE id = ? AND status = 'succeeded' AND updated_at = ?)`,
-          )
-          .bind(r.amount_pence, t, r.booking_id, r.id, t),
+          .prepare(`UPDATE bookings SET refunded_pence = refunded_pence + ?, updated_at = ? WHERE id = ? AND ${pending}`)
+          .bind(r.amount_pence, t, r.booking_id),
         db
           .prepare(
             `INSERT INTO enquiry_events (enquiry_id, created_at, actor, type, detail)
              SELECT q.enquiry_id, ?, 'system', 'refund_issued', json_object('quote', q.reference, 'amountPence', ?)
-             FROM bookings b JOIN quotes q ON q.id = b.quote_id WHERE b.id = ?`,
+             FROM bookings b JOIN quotes q ON q.id = b.quote_id WHERE b.id = ? AND ${pending}`,
           )
           .bind(t, r.amount_pence, r.booking_id),
+        db
+          .prepare(
+            `UPDATE booking_refunds SET status = 'succeeded', stripe_refund_id = ?, last_error = NULL, updated_at = ?
+             WHERE id = ? AND status = 'pending'
+             RETURNING id`,
+          )
+          .bind(refund?.id || null, t, r.id),
       ]);
-      outcome.succeeded += 1;
+      // Counted only by the attempt that recorded it; a concurrent attempt has changed nothing.
+      if (results[results.length - 1].results?.[0]) outcome.succeeded += 1;
     } catch (error) {
       if (error instanceof StripeError && error.definite) {
-        await db.batch([
-          db
-            .prepare(`UPDATE booking_refunds SET status = 'failed', last_error = ?, updated_at = ? WHERE id = ? AND status = 'pending'`)
-            .bind(String(error.message).slice(0, 300), t, r.id),
+        const pending = `EXISTS (SELECT 1 FROM booking_refunds WHERE id = ${Number(r.id)} AND status = 'pending')`;
+        const results = await db.batch([
           db
             .prepare(
               `INSERT INTO enquiry_events (enquiry_id, created_at, actor, type, detail)
                SELECT q.enquiry_id, ?, 'system', 'refund_failed', json_object('quote', q.reference, 'amountPence', ?)
-               FROM bookings b JOIN quotes q ON q.id = b.quote_id WHERE b.id = ?`,
+               FROM bookings b JOIN quotes q ON q.id = b.quote_id WHERE b.id = ? AND ${pending}`,
             )
             .bind(t, r.amount_pence, r.booking_id),
+          db
+            .prepare(`UPDATE booking_refunds SET status = 'failed', last_error = ?, updated_at = ? WHERE id = ? AND status = 'pending' RETURNING id`)
+            .bind(String(error.message).slice(0, 300), t, r.id),
         ]);
+        // Another attempt recorded this refund first.
+        if (!results[results.length - 1].results?.[0]) continue;
         const b = await getBooking(db, r.booking_id);
         await notifyInternal(env, b, 'refund_failed', { key: `internal-refund-failed-${r.id}-${r.attempts + 1}`, refunds: await refundsOf(db, b.id) });
         outcome.failed += 1;
