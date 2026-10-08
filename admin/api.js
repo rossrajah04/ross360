@@ -56,6 +56,25 @@ export const api = {
   checkSend: (reference) => call(`/quotes/${encodeURIComponent(reference)}/check-send`, { method: 'POST', body: { confirm: true } }),
   reviseQuote: (reference) => call(`/quotes/${encodeURIComponent(reference)}/revise`, { method: 'POST', body: {} }),
   discardQuote: (reference) => call(`/quotes/${encodeURIComponent(reference)}/discard`, { method: 'POST', body: {} }),
+
+  // Customer links and availability (Phase C)
+  customerLink: (reference) => call(`/quotes/${encodeURIComponent(reference)}/customer`),
+  newLink: (reference) => call(`/quotes/${encodeURIComponent(reference)}/link/new`, { method: 'POST', body: { confirm: true } }),
+  revokeLink: (reference) => call(`/quotes/${encodeURIComponent(reference)}/link/revoke`, { method: 'POST', body: { confirm: true } }),
+  links: () => call('/links'),
+  availability: () => call('/availability'),
+  addSlot: (values) => call('/availability', { method: 'POST', body: values }),
+  slotNote: (id, note) => call(`/availability/${id}`, { method: 'PATCH', body: { note } }),
+  closeSlot: (id) => call(`/availability/${id}/close`, { method: 'POST', body: {} }),
+  reopenSlot: (id) => call(`/availability/${id}/reopen`, { method: 'POST', body: {} }),
+  // Bookings and payments (Phase C)
+  bookings: () => call('/bookings'),
+  booking: (id) => call(`/bookings/${id}`),
+  cancelBooking: (id, body) => call(`/bookings/${id}/cancel`, { method: 'POST', body: { ...body, confirm: true } }),
+  moveBooking: (id, slotId) => call(`/bookings/${id}/move`, { method: 'POST', body: { slotId, confirm: true } }),
+  retryRefund: (id, refundId) => call(`/bookings/${id}/refunds/${refundId}/retry`, { method: 'POST', body: {} }),
+  payments: () => call('/payments'),
+  runScheduler: () => call('/scheduler/run', { method: 'POST', body: {} }),
 };
 
 // The customer email of a quote, for the preview frame.

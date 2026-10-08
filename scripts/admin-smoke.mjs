@@ -12,6 +12,12 @@
 // Quotes (Phase B): it creates a quote, saves lines, previews it and discards it. No quote is emailed
 // unless ADMIN_SMOKE_SEND_TO is set, in which case one quote is really sent, to that address only
 // (use your own), and a second send is checked to be refused.
+//
+// Customer links and availability (Phase C): it checks the signed-out refusals, the overlap rule, the
+// preview's link and the pages for a draft and a forged link. With ADMIN_SMOKE_SEND_TO set, it also
+// opens the sent quote's page, sends date requests and checks both orderings of a request against a
+// slot being closed. Each date request sends the internal email to newquote@ (or QUOTE_TO_EMAIL); no
+// email goes to any customer.
 
 const base = (process.env.ADMIN_SMOKE_URL || '').replace(/\/+$/, '');
 const email = process.env.ADMIN_SMOKE_EMAIL || '';
@@ -77,6 +83,16 @@ const routes = [
   ['POST', '/api/admin/quotes/Q-0001/revise'],
   ['POST', '/api/admin/quotes/Q-0001/discard'],
   ['POST', '/api/admin/quotes/Q-0001/check-send'],
+  ['GET', '/api/admin/quotes/Q-0001/customer'],
+  ['POST', '/api/admin/quotes/Q-0001/link/new'],
+  ['POST', '/api/admin/quotes/Q-0001/link/revoke'],
+  ['GET', '/api/admin/links'],
+  ['GET', '/api/admin/availability'],
+  ['POST', '/api/admin/availability'],
+  ['PATCH', '/api/admin/availability/1'],
+  ['POST', '/api/admin/availability/1/close'],
+  ['POST', '/api/admin/availability/1/reopen'],
+  ['POST', '/api/admin/date-requests/1/close'],
 ];
 for (const [method, path] of routes) {
   const result = await call(path, { method, body: method === 'GET' ? undefined : {}, withCookie: false });
@@ -172,6 +188,7 @@ check('quote copies the customer details', created.data.quote?.customerEmail ===
 const lines = {
   version: 1,
   package: 'professional',
+  customerType: 'business',
   items: [
     { kind: 'package', description: 'Professional 360° virtual tour', quantity: 1, unitPence: 34900 },
     { kind: 'custom', description: 'Additional floor', quantity: 2, unitPence: 5000 },
@@ -221,6 +238,18 @@ check('manual travel still available', backToManual.status === 200 && backToManu
 
 const preview = await call(`/api/admin/quotes/${qref}/preview`);
 const mail = preview.data.email || {};
+// The preview carries the customer link the email will be sent with.
+const draftLink = (mail.text || '').match(/https?:\/\/\S+\/q\/[A-Za-z0-9._-]+/)?.[0] || '';
+check('preview carries the customer link and the approved lines', Boolean(draftLink) &&
+  mail.text.includes('View your quotation and choose a preferred date online.') &&
+  mail.text.includes('To go ahead, choose a preferred date online or reply to this email. Nothing is booked until ROSS 360 confirms the date with you.'),
+  draftLink || 'no link');
+const draftToken = draftLink.split('/q/')[1] || 'none';
+const draftPage = await fetch(`${base}/q/${draftToken}`, { redirect: 'manual' });
+check('a draft quote is not shown online', (await draftPage.text()).includes('available online'), `status ${draftPage.status}`);
+check('customer page never cached or indexed', draftPage.headers.get('Cache-Control') === 'no-store' && /noindex/.test(draftPage.headers.get('X-Robots-Tag') || ''));
+const forged = await fetch(`${base}/q/${draftToken.slice(0, -2)}AA`, { redirect: 'manual' });
+check('a forged link is answered "no longer available"', forged.status === 404 && (await forged.text()).includes('no longer available'), `status ${forged.status}`);
 check('preview', preview.status === 200 && mail.to === 'smoke-one@example.test' && mail.bcc === 'newquote@ross360.co.uk', `status ${preview.status}`);
 check('preview text has no internal notes', mail.text && !mail.text.includes(NOTE));
 const frame = await fetch(`${base}/api/admin/quotes/${qref}/preview.html`, { headers: { Cookie: cookie } });
@@ -245,6 +274,27 @@ check(
   quoteEvents.join(','),
 );
 
+// Availability: the overlap rule.
+const addDays = (n) => {
+  const d = new Date(Date.now() + n * 86400000);
+  return d.toISOString().slice(0, 10);
+};
+const slotDay = addDays(20 + (Date.now() % 20));
+const slotAm = await call('/api/admin/availability', { method: 'POST', body: { date: slotDay, period: 'am' } });
+const slotPm = await call('/api/admin/availability', { method: 'POST', body: { date: slotDay, period: 'pm' } });
+check('add Morning and Afternoon on one date', slotAm.status === 201 && slotPm.status === 201, `${slotAm.status} ${slotPm.status} ${slotAm.data.message || ''}`);
+const slotDayRefused = await call('/api/admin/availability', { method: 'POST', body: { date: slotDay, period: 'day' } });
+check('Full day refused while Morning or Afternoon is open', slotDayRefused.status === 409, `status ${slotDayRefused.status}`);
+const closeEmpty = async (slot) =>
+  call(`/api/admin/availability/${slot.id}/close`, { method: 'POST', body: {} });
+await closeEmpty(slotAm.data.slot);
+await closeEmpty(slotPm.data.slot);
+const slotFull = await call('/api/admin/availability', { method: 'POST', body: { date: slotDay, period: 'day' } });
+check('Full day allowed once both are closed', slotFull.status === 201, `status ${slotFull.status}`);
+const reopenAm = await call(`/api/admin/availability/${slotAm.data.slot?.id}/reopen`, { method: 'POST', body: {} });
+check('reopening Morning refused while Full day is open', reopenAm.status === 409, `status ${reopenAm.status}`);
+if (slotFull.data.slot) await closeEmpty(slotFull.data.slot);
+
 // Optional real send, to ADMIN_SMOKE_SEND_TO only.
 if (sendTo) {
   const draft = await call(`/api/admin/enquiries/${ref1}/quotes`, { method: 'POST', body: {} });
@@ -266,6 +316,58 @@ if (sendTo) {
     body: { version: 2, confirm: true, previewedOn: sendPreview.data.issuedOn },
   });
   check('second send refused', again.status === 409, `status ${again.status}`);
+
+  // The customer's page and booking, up to Stripe's test Checkout page. Nothing is paid: the hold is released.
+  const quoteUrl = (sendPreview.data.email?.text || '').match(/https?:\/\/\S+\/q\/[A-Za-z0-9._-]+/)?.[0] || '';
+  const path = quoteUrl ? new URL(quoteUrl).pathname : '/q/none';
+  const quotePage = await fetch(`${base}${path}`, { redirect: 'manual' });
+  const quoteHtml = await quotePage.text();
+  check('sent quote page shows the quote', quotePage.status === 200 && quoteHtml.includes(ref), `status ${quotePage.status}`);
+  check('sent quote page has no internal notes', !quoteHtml.includes(NOTE));
+  const payments = (await call('/api/admin/payments')).data;
+  if (payments.available && payments.mode === 'test') {
+    check('quote page offers Book a slot', quoteHtml.includes('Book a slot'));
+    const slotA = (await call('/api/admin/availability', { method: 'POST', body: { date: addDays(10), period: 'am' } })).data.slot;
+    const slotB = (await call('/api/admin/availability', { method: 'POST', body: { date: addDays(11), period: 'pm' } })).data.slot;
+    const book = await (await fetch(`${base}${path}/book`, { redirect: 'manual' })).text();
+    check('booking page lists the open slots', book.includes(`value="${slotA?.id}"`) && book.includes(`value="${slotB?.id}"`));
+    const payPage = async (slotId) => {
+      const res = await fetch(`${base}${path}/pay?slot=${slotId}`, { redirect: 'manual' });
+      const html = await res.text();
+      return { status: res.status, html, nonce: html.match(/name="nonce" value="([^"]+)"/)?.[1] || '' };
+    };
+    const pay = (slotId, nonce) =>
+      fetch(`${base}${path}/pay`, {
+        method: 'POST',
+        redirect: 'manual',
+        headers: { Origin: base, 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({ slot: String(slotId), plan: 'full', agree: 'yes', nonce }),
+      });
+    const pageA = await payPage(slotA.id);
+    await closeEmpty(slotA);
+    const refused = await pay(slotA.id, pageA.nonce);
+    check('payment for a closed slot is refused', refused.status === 409, `status ${refused.status}`);
+    const pageB = await payPage(slotB.id);
+    check('payment page shows the total and amount due now', pageB.status === 200 && pageB.html.includes('Pay'), `status ${pageB.status}`);
+    const started = await pay(slotB.id, pageB.nonce);
+    const location = started.headers.get('Location') || '';
+    check('payment opens Stripe test Checkout', started.status === 303 && location.startsWith('https://checkout.stripe.com/'), `status ${started.status} ${location}`);
+    const held = await closeEmpty(slotB);
+    check('a held slot cannot be closed', held.status === 409, `status ${held.status}`);
+    const page = await (await fetch(`${base}${path}`, { redirect: 'manual' })).text();
+    const releaseNonce = page.match(/name="nonce" value="([^"]+)"/)?.[1] || '';
+    const released = await fetch(`${base}${path}/release`, {
+      method: 'POST',
+      redirect: 'manual',
+      headers: { Origin: base, 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ nonce: releaseNonce }),
+    });
+    check('leaving checkout releases the slot', released.status === 303, `status ${released.status}`);
+    const closedB = await closeEmpty(slotB);
+    check('released slot can be closed', closedB.status === 200, `status ${closedB.status}`);
+  } else {
+    console.log(`      (booking not tested: online payment is ${payments.available ? `in ${payments.mode} mode` : 'off'}; it runs only with a Stripe test key)`);
+  }
 } else {
   console.log('      (no quote emailed: set ADMIN_SMOKE_SEND_TO to your own address to test a real send)');
 }

@@ -10,6 +10,8 @@
 import { requireSchema } from './schema.js';
 import { renderQuote, QUOTE_FROM, QUOTE_BCC } from './quoteRender.js';
 import { safeResendDetail } from '../../functions/api/quote.js';
+import { activeLink, ensureDraftLink, linksConfigured, quoteUrl } from './quoteLinks.js';
+import { customerEmailAllowed } from '../booking/mail.js';
 import {
   QUOTE_TEXT_FIELDS,
   SEND_UNKNOWN_AFTER_MS,
@@ -46,6 +48,7 @@ function toApi(row, items, revisions = []) {
     status: row.status,
     version: row.version,
     package: row.package,
+    customerType: row.customer_type ?? null,
     travelPence: row.travel_pence,
     // How the travel amount was arrived at (Admin only; the customer sees only travelPence).
     travelMode: row.travel_mode ?? 'manual',
@@ -183,6 +186,7 @@ function travelDetail(values) {
 const EDITABLE = [
   ...Object.keys(QUOTE_TEXT_FIELDS),
   'package',
+  'customerType',
   'travelMode',
   'travelOneWayTenths',
   'travelOverride',
@@ -195,6 +199,7 @@ const TRAVEL_KEYS = ['travelMode', 'travelOneWayTenths', 'travelOverride', 'trav
 const CHANGE_LABELS = {
   ...Object.fromEntries(Object.entries(QUOTE_TEXT_FIELDS).map(([key, field]) => [key, field.label])),
   package: 'Package',
+  customerType: 'Customer type',
   travelPence: 'Travel',
   travelMode: 'Travel method',
   travelOneWayTenths: 'Travel distance',
@@ -275,7 +280,7 @@ export async function updateQuote(db, reference, input, version, actor) {
     db
       .prepare(
         `UPDATE quotes SET ${textColumns.map(([, field]) => `${field.column} = ?`).join(', ')},
-           package = ?, travel_pence = ?, discount_pence = ?, valid_days = ?, subtotal_pence = ?, total_pence = ?,
+           package = ?, customer_type = ?, travel_pence = ?, discount_pence = ?, valid_days = ?, subtotal_pence = ?, total_pence = ?,
            travel_mode = ?, travel_one_way_tenths = ?, travel_rate_pence = ?, travel_free_tenths = ?,
            travel_calculated_pence = ?, travel_override = ?,
            version = version + 1, updated_at = ?
@@ -285,6 +290,7 @@ export async function updateQuote(db, reference, input, version, actor) {
       .bind(
         ...textColumns.map(([key]) => values[key]),
         values.package,
+        values.customerType,
         values.travelPence,
         values.discountPence,
         values.validDays,
@@ -308,12 +314,20 @@ export async function updateQuote(db, reference, input, version, actor) {
   return { result: 'ok', quote };
 }
 
-/** Render the customer email for a quote as it stands. Drafts use today's UK date. */
-export function previewOf(quote) {
-  if (quote.status === 'draft' || quote.status === 'discarded') {
-    return renderQuote(quote, { enquiryReference: quote.enquiryReference, issuedOn: ukToday() });
-  }
-  return null;
+/**
+ * Render the customer email for a draft (or discarded draft) as it stands, with today's UK date, or
+ * null for any other quote (its stored email is shown instead). Previewing a draft creates its
+ * customer link, so the preview carries exactly the link the email will be sent with.
+ */
+export async function previewOf(env, quote, actor) {
+  if (quote.status !== 'draft' && quote.status !== 'discarded') return null;
+  const row = await findQuoteRow(env.DB, quote.reference);
+  const link =
+    quote.status === 'draft'
+      ? await ensureDraftLink(env, { id: row.id, enquiryId: row.enquiry_id, reference: quote.reference }, actor)
+      : await activeLink(env.DB, row.id);
+  const url = link ? await quoteUrl(env, link.key_id, link.link_id) : null;
+  return renderQuote(quote, { enquiryReference: quote.enquiryReference, issuedOn: ukToday(), quoteUrl: url });
 }
 
 /** The stored email of a quote that has been (or is being) sent. */
@@ -365,6 +379,12 @@ export async function reviseQuote(db, reference, actor) {
     .bind(row.id)
     .first();
   if (open) return { result: 'open_revision', revision: open.reference, quote: await loadQuote(db, row) };
+  // A booked quote cannot be replaced: its booking page would disappear.
+  const booked = await db
+    .prepare(`SELECT 1 FROM bookings WHERE quote_id = ? AND status IN ('holding', 'confirmed', 'cancel_requested')`)
+    .bind(row.id)
+    .first();
+  if (booked) return { result: 'has_booking', quote: await loadQuote(db, row) };
 
   const at = now();
   const newId = `(SELECT id FROM quotes WHERE quote_number = (SELECT value FROM counters WHERE name = 'quote'))`;
@@ -376,12 +396,12 @@ export async function reviseQuote(db, reference, actor) {
            customer_name, customer_business, customer_email, customer_location, service_description, internal_notes,
            travel_pence, discount_pence, discount_label, subtotal_pence, total_pence, valid_days,
            travel_mode, travel_one_way_tenths, travel_rate_pence, travel_free_tenths, travel_calculated_pence,
-           travel_override, travel_override_reason, created_at, updated_at)
+           travel_override, travel_override_reason, customer_type, created_at, updated_at)
          SELECT c.value, printf('Q-%04d', c.value), q.enquiry_id, q.id, 'draft', 1, q.package,
            q.customer_name, q.customer_business, q.customer_email, q.customer_location, q.service_description, q.internal_notes,
            q.travel_pence, q.discount_pence, q.discount_label, q.subtotal_pence, q.total_pence, q.valid_days,
            q.travel_mode, q.travel_one_way_tenths, q.travel_rate_pence, q.travel_free_tenths, q.travel_calculated_pence,
-           q.travel_override, q.travel_override_reason, ?, ?
+           q.travel_override, q.travel_override_reason, q.customer_type, ?, ?
          FROM counters c, quotes q WHERE c.name = 'quote' AND q.id = ? AND q.status = 'sent'
          RETURNING reference`,
       )
@@ -547,7 +567,8 @@ async function markUnknown(db, row, actor, reference, status, type = 'quote_send
  * - an answer that does not prove whether the email went locks the quote as "send status unknown".
  *
  * Returns { result, quote?, problems?, status? } where result is one of 'sent', 'not_found',
- * 'not_draft', 'stale', 'not_previewed', 'preview_outdated', 'incomplete', 'unconfigured', 'conflict',
+ * 'not_draft', 'stale', 'not_previewed', 'preview_outdated', 'incomplete', 'unconfigured',
+ * 'link_unconfigured', 'recipient_not_allowed', 'conflict',
  * 'failed' (definitely not sent; back to draft) or 'unknown' (may have been sent; locked).
  */
 export async function sendQuote(env, reference, { version, previewedOn }, actor) {
@@ -568,8 +589,23 @@ export async function sendQuote(env, reference, { version, previewedOn }, actor)
     console.error('Quote not sent: RESEND_API_KEY is not set.');
     return { result: 'unconfigured', quote };
   }
+  // Preview: customer emails go only to approved test addresses (EMAIL_TEST_ALLOWLIST).
+  if (!customerEmailAllowed(env, quote.customerEmail).ok) {
+    console.error('Quote not sent: the customer address is not allowed in test mode.');
+    return { result: 'recipient_not_allowed', quote };
+  }
+  // Every quote email carries the customer's link, so none can go out unsigned.
+  if (!linksConfigured(env)) {
+    console.error('Quote not sent: QUOTE_LINK_SECRET and QUOTE_LINK_KEY_ID are not set.');
+    return { result: 'link_unconfigured', quote };
+  }
+  // The link is created by the preview; without it (or if its key has since been removed) the preview
+  // did not show what would be sent.
+  const link = await activeLink(db, row.id);
+  const url = link ? await quoteUrl(env, link.key_id, link.link_id) : null;
+  if (!url) return { result: 'not_previewed', quote };
 
-  const email = renderQuote(quote, { enquiryReference: quote.enquiryReference, issuedOn });
+  const email = renderQuote(quote, { enquiryReference: quote.enquiryReference, issuedOn, quoteUrl: url });
   const snapshot = { ...email.snapshot, subject: email.subject, from: QUOTE_FROM, to: quote.customerEmail, bcc: QUOTE_BCC };
   const startedAt = now();
 
@@ -580,6 +616,7 @@ export async function sendQuote(env, reference, { version, previewedOn }, actor)
       `UPDATE quotes SET status = 'sending', sending_started_at = ?, updated_at = ?, issued_on = ?, valid_until = ?,
          sent_to = ?, sent_subject = ?, sent_html = ?, sent_text = ?, sent_snapshot = ?
        WHERE id = ? AND status = 'draft' AND version = ? AND previewed_version = ?
+         AND NOT EXISTS (SELECT 1 FROM bookings b WHERE b.quote_id = quotes.revision_of AND b.status IN ('holding', 'confirmed', 'cancel_requested'))
        RETURNING id`,
     )
     .bind(
@@ -597,7 +634,15 @@ export async function sendQuote(env, reference, { version, previewedOn }, actor)
       version,
     )
     .first();
-  if (!claimed) return { result: 'conflict', quote: await getQuote(db, reference) };
+  if (!claimed) {
+    const booked = row.revision_of
+      ? await db
+          .prepare(`SELECT 1 FROM bookings WHERE quote_id = ? AND status IN ('holding', 'confirmed', 'cancel_requested')`)
+          .bind(row.revision_of)
+          .first()
+      : null;
+    return { result: booked ? 'revision_booked' : 'conflict', quote: await getQuote(db, reference) };
+  }
 
   // 2. Send.
   const sent = await callResend(

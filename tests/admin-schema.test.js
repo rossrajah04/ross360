@@ -13,18 +13,24 @@ test('the migrations bring an empty database to the latest schema version', asyn
   assert.deepEqual(db.tables(), [
     'admin_login_failures',
     'admin_sessions',
+    'availability_slots',
+    'booking_payments',
+    'booking_refunds',
+    'bookings',
     'counters',
+    'date_requests',
     'enquiries',
     'enquiry_events',
     'quote_items',
+    'quote_links',
     'quotes',
     'schema_migrations',
   ]);
-  assert.equal(LATEST_SCHEMA_VERSION, 3);
+  assert.equal(LATEST_SCHEMA_VERSION, 6);
   db.close();
 });
 
-test('running 0001 and 0002 again is harmless; running 0003 again stops at once and changes nothing', async () => {
+test('running 0001, 0002, 0004 and 0005 again is harmless; running 0003 or 0006 again stops at once and changes nothing', async () => {
   const { readFileSync } = await import('node:fs');
   const sql = (name) => readFileSync(new URL(`../migrations/${name}`, import.meta.url), 'utf8');
   const db = new FakeD1();
@@ -34,7 +40,10 @@ test('running 0001 and 0002 again is harmless; running 0003 again stops at once 
   db.db.exec(sql('0002_quotes.sql'));
   // SQLite cannot add a column only if it is missing: the first ALTER fails, before anything else runs.
   assert.throws(() => db.db.exec(sql('0003_quote_travel.sql')), /duplicate column name: travel_mode/);
-  assert.equal(await schemaVersion(db), 3);
+  db.db.exec(sql('0004_customer_links.sql'));
+  db.db.exec(sql('0005_bookings.sql'));
+  assert.throws(() => db.db.exec(sql('0006_quote_customer_type.sql')), /duplicate column name: customer_type/);
+  assert.equal(await schemaVersion(db), 6);
   const counter = await db.prepare(`SELECT value FROM counters WHERE name = 'enquiry'`).first();
   assert.equal(counter.value, 7);
   const quoteCounter = await db.prepare(`SELECT value FROM counters WHERE name = 'quote'`).first();
@@ -75,7 +84,7 @@ test('an older schema version is refused rather than changed', async () => {
   db.close();
 });
 
-test('0002 and 0003 bring a version 1 database with data to version 3 without touching Phase A records', async () => {
+test('0002 to 0006 bring a version 1 database with data to version 6 without touching Phase A records', async () => {
   const { readFileSync } = await import('node:fs');
   const { createEnquiry, getEnquiry } = await import('../server/admin/enquiries.js');
   const db = new FakeD1({ migrated: false });
@@ -87,7 +96,7 @@ test('0002 and 0003 bring a version 1 database with data to version 3 without to
   const refused = await callAdmin(env, '/api/admin/session');
   assert.equal(refused.status, 503);
   assert.match(refused.data.message, /version 1/);
-  assert.match(refused.data.message, /0003_quote_travel\.sql/);
+  assert.match(refused.data.message, /0006_quote_customer_type\.sql/);
 
   // Records written by Phase A at version 1.
   const before = db.db.prepare(`SELECT COUNT(*) AS n FROM enquiries`).get().n;
@@ -100,6 +109,12 @@ test('0002 and 0003 bring a version 1 database with data to version 3 without to
   assert.equal(await schemaVersion(db), 2);
   db.db.exec(readFileSync(new URL('../migrations/0003_quote_travel.sql', import.meta.url), 'utf8'));
   assert.equal(await schemaVersion(db), 3);
+  db.db.exec(readFileSync(new URL('../migrations/0004_customer_links.sql', import.meta.url), 'utf8'));
+  assert.equal(await schemaVersion(db), 4);
+  db.db.exec(readFileSync(new URL('../migrations/0005_bookings.sql', import.meta.url), 'utf8'));
+  assert.equal(await schemaVersion(db), 5);
+  db.db.exec(readFileSync(new URL('../migrations/0006_quote_customer_type.sql', import.meta.url), 'utf8'));
+  assert.equal(await schemaVersion(db), 6);
   assert.equal(db.db.prepare(`SELECT COUNT(*) AS n FROM enquiries`).get().n, before + 1);
   assert.equal((await getEnquiry(db, 'ROSS-0005')).name, 'Existing');
   assert.equal((await getEnquiry(db, 'ROSS-0005')).events.length, 1);
@@ -196,11 +211,28 @@ test('the README erasure procedure removes one enquiry, its quotes and its timel
   await reviseQuote(db, 'Q-0001', 'test');
   await createQuote(db, 'ROSS-0003', 'test');
 
+  // Phase C: a customer link, an availability slot, and a booking with a payment and a refund.
+  const at = 'a';
+  db.db.exec(`INSERT INTO quote_links (quote_id, link_id, key_id, created_at, created_by) VALUES (1, 'link-1', 'k1', '${at}', 'test')`);
+  db.db.exec(`INSERT INTO availability_slots (slot_date, period, status, created_at, updated_at) VALUES ('2099-01-01', 'am', 'open', '${at}', '${at}')`);
+  db.db.exec(`INSERT INTO bookings (quote_id, slot_id, status, plan, total_pence, paid_pence, refunded_pence, created_at, updated_at) VALUES (1, 1, 'cancelled', 'full', 100, 100, 100, '${at}', '${at}')`);
+  db.db.exec(`INSERT INTO booking_payments (booking_id, kind, amount_pence, status, created_at, updated_at) VALUES (1, 'full', 100, 'paid', '${at}', '${at}')`);
+  db.db.exec(`INSERT INTO booking_refunds (booking_id, payment_id, amount_pence, status, created_at, updated_at) VALUES (1, 1, 100, 'succeeded', '${at}', '${at}')`);
+  // A date request left from the earlier Phase C preview (0004_customer_links).
+  db.db.exec(`INSERT INTO date_requests (quote_id, slot_id, status, created_at, updated_at) VALUES (1, 1, 'closed', '${at}', '${at}')`);
+  assert.throws(() => db.db.exec(`DELETE FROM quotes WHERE id = 1`), /FOREIGN KEY/);
+
   // The foreign keys stop the enquiry being deleted before its quotes and timeline.
   assert.throws(() => db.db.exec(`DELETE FROM enquiries WHERE reference = 'ROSS-0002'`), /FOREIGN KEY/);
 
   // The statements documented in the README, in order.
   const id = `(SELECT id FROM enquiries WHERE reference = 'ROSS-0002')`;
+  const bookingIds = `(SELECT id FROM bookings WHERE quote_id IN (SELECT id FROM quotes WHERE enquiry_id = ${id}))`;
+  db.db.exec(`DELETE FROM booking_refunds WHERE booking_id IN ${bookingIds};`);
+  db.db.exec(`DELETE FROM booking_payments WHERE booking_id IN ${bookingIds};`);
+  db.db.exec(`DELETE FROM bookings WHERE quote_id IN (SELECT id FROM quotes WHERE enquiry_id = ${id});`);
+  db.db.exec(`DELETE FROM date_requests WHERE quote_id IN (SELECT id FROM quotes WHERE enquiry_id = ${id});`);
+  db.db.exec(`DELETE FROM quote_links WHERE quote_id IN (SELECT id FROM quotes WHERE enquiry_id = ${id});`);
   db.db.exec(`DELETE FROM quote_items WHERE quote_id IN (SELECT id FROM quotes WHERE enquiry_id = ${id});`);
   db.db.exec(`DELETE FROM quotes WHERE enquiry_id = ${id};`);
   db.db.exec(`DELETE FROM enquiry_events WHERE enquiry_id = ${id};`);
@@ -217,5 +249,54 @@ test('the README erasure procedure removes one enquiry, its quotes and its timel
   assert.equal(db.db.prepare('SELECT COUNT(*) AS n FROM enquiry_events').get().n, 3);
   const { reference } = await createEnquiry(db, { name: 'Four', email: 'a@example.test' }, { origin: 'admin', actor: 'test' });
   assert.equal(reference, 'ROSS-0004');
+  db.close();
+});
+
+test('Preview as it is today (version 4 from 0004_customer_links, with test data) upgrades forward to 6, keeping everything', async () => {
+  const { readFileSync } = await import('node:fs');
+  const sql = (name) => readFileSync(new URL(`../migrations/${name}`, import.meta.url), 'utf8');
+  const db = new FakeD1({ migrated: false });
+  for (const file of ['0001_admin_phase_a.sql', '0002_quotes.sql', '0003_quote_travel.sql', '0004_customer_links.sql']) db.db.exec(sql(file));
+  assert.equal(await schemaVersion(db), 4);
+  assert.equal(db.db.prepare(`SELECT name FROM schema_migrations WHERE version = 4`).get().name, '0004_customer_links');
+  // Test data written by the earlier Phase C preview: a sent quote, its link, slots and date requests.
+  db.db.exec(`UPDATE counters SET value = 1 WHERE name IN ('enquiry', 'quote')`);
+  db.db.exec(`INSERT INTO enquiries (ref_number, reference, origin, name, created_at, updated_at, status_changed_at)
+              VALUES (1, 'ROSS-0001', 'website', 'Existing', 'a', 'a', 'a')`);
+  db.db.exec(`INSERT INTO quotes (quote_number, reference, enquiry_id, status, version, total_pence, created_at, updated_at, sent_snapshot)
+              VALUES (1, 'Q-0001', 1, 'sent', 2, 43900, 'a', 'a', '{"totalPence":43900}')`);
+  db.db.exec(`INSERT INTO quote_links (quote_id, link_id, key_id, created_at, created_by, view_count) VALUES (1, 'link-1', 'k1', 'a', 'test', 3)`);
+  db.db.exec(`INSERT INTO availability_slots (slot_date, period, status, created_at, updated_at) VALUES ('2099-01-01', 'am', 'open', 'a', 'a')`);
+  db.db.exec(`INSERT INTO availability_slots (slot_date, period, status, created_at, updated_at) VALUES ('2099-01-02', 'day', 'closed', 'a', 'a')`);
+  db.db.exec(`INSERT INTO date_requests (quote_id, slot_id, status, created_at, updated_at) VALUES (1, 1, 'pending', 'a', 'a')`);
+  const snapshot = () =>
+    Object.fromEntries(
+      ['quotes', 'quote_links', 'availability_slots', 'date_requests', 'enquiries'].map((t) => [t, db.db.prepare(`SELECT * FROM ${t} ORDER BY id`).all()]),
+    );
+  const before = snapshot();
+
+  db.db.exec(sql('0005_bookings.sql'));
+  assert.equal(await schemaVersion(db), 5);
+  db.db.exec(sql('0006_quote_customer_type.sql'));
+  assert.equal(await schemaVersion(db), 6);
+  const after = snapshot();
+  for (const table of Object.keys(before)) {
+    assert.equal(after[table].length, before[table].length, table);
+    after[table].forEach((row, i) => {
+      for (const [column, value] of Object.entries(before[table][i])) assert.equal(row[column], value, `${table}.${column}`);
+    });
+  }
+  assert.equal(after.quotes[0].customer_type, null); // an earlier sent quote: booked by email, as before
+  assert.deepEqual(
+    db.db.prepare(`SELECT version, name FROM schema_migrations ORDER BY version`).all().map((r) => `${r.version} ${r.name}`),
+    ['1 0001_admin_phase_a', '2 0002_quotes', '3 0003_quote_travel', '4 0004_customer_links', '5 0005_bookings', '6 0006_quote_customer_type'],
+  );
+  // The sent quote is still locked, including its new column; a booking can be made on the open slot.
+  assert.throws(() => db.db.exec(`UPDATE quotes SET customer_type = 'business' WHERE id = 1`), /cannot be changed/);
+  db.db.exec(`INSERT INTO bookings (quote_id, slot_id, status, plan, total_pence, created_at, updated_at) VALUES (1, 1, 'holding', 'full', 43900, 'a', 'a')`);
+  assert.throws(
+    () => db.db.exec(`INSERT INTO bookings (quote_id, slot_id, status, plan, total_pence, created_at, updated_at) VALUES (1, 2, 'holding', 'full', 43900, 'a', 'a')`),
+    /slot_not_open|UNIQUE/,
+  );
   db.close();
 });

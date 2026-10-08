@@ -1,0 +1,19 @@
+# ROSS 360 booking scheduler (Cron Worker). Separate from the website (a Pages project) and from the
+# older dashboard Worker. Deploy each environment once from this folder:
+#   npx wrangler@4 deploy --env preview
+#   npx wrangler@4 secret put SCHEDULER_SECRET --env preview
+# (and the same with --env production, only when Production is approved). See README: Booking scheduler.
+name = "ross360-scheduler"
+main = "index.js"
+compatibility_date = "2026-10-01"
+workers_dev = false
+
+[env.preview]
+name = "ross360-scheduler-preview"
+vars = { SCHEDULER_TARGET = "https://phase-c-customer-links.ross360.pages.dev" }
+triggers = { crons = ["5 * * * *"] }
+
+[env.production]
+name = "ross360-scheduler-production"
+vars = { SCHEDULER_TARGET = "https://ross360.co.uk" }
+triggers = { crons = ["5 * * * *"] }

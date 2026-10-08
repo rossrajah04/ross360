@@ -51,6 +51,7 @@ async function readyDraft(t, extra = {}) {
     body: {
       version: 1,
       package: 'professional',
+      customerType: 'business',
       items: [packageItem('professional'), { kind: 'custom', description: 'Additional floor', quantity: 2, unitPence: 5000 }],
       travelPence: 2500,
       discountPence: 3000,
@@ -278,8 +279,9 @@ test('the preview shows the customer quote with the agreed wording, and never th
   for (const content of [html, email.text]) {
     assert.ok(content.includes('Thanks for the opportunity to provide a quotation for your 360° virtual tour project.'));
     assert.ok(content.includes('VAT is not charged.'));
-    assert.ok(content.includes('If you'.concat("'d like to go ahead, simply reply to this email and we'll arrange the next steps with you.")) ||
-      content.includes('If you&#39;d like to go ahead, simply reply to this email and we&#39;ll arrange the next steps with you.'));
+    assert.ok(content.includes('To go ahead, book a slot and pay online. Your booking is confirmed once payment is received.'));
+    assert.ok(content.includes('Book a slot'));
+    assert.match(content, /https:\/\/ross360\.test\/q\/k1\.[A-Za-z0-9_-]{22}\.[A-Za-z0-9_-]{43}/);
     assert.ok(content.includes('We look forward to working with you.'));
     assert.ok(content.includes(q.reference));
     assert.ok(content.includes(t.enquiry));
