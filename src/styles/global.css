@@ -1568,6 +1568,23 @@ textarea.input {
   color: #ffffff;
 }
 
+.footer__contact {
+  margin: 0 0 6px;
+}
+
+.footer__phone {
+  margin: 0;
+}
+
+.footer__phone a {
+  color: #ffffff;
+}
+
+.footer__sep {
+  margin: 0 10px;
+  color: var(--muted-on-dark);
+}
+
 .footer__heading {
   margin-bottom: 14px;
   font-size: 0.75rem;
