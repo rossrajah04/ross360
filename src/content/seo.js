@@ -86,6 +86,7 @@ const organization = {
   name: site.brand,
   url: site.url,
   email: site.email,
+  telephone: site.phone.tel,
   description: 'Professional 360° photography and interactive virtual tours for commercial premises and property, UK-wide.',
   areaServed: { '@type': 'Country', name: 'United Kingdom' },
 };

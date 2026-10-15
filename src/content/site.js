@@ -9,6 +9,12 @@ export const site = {
   // Public contact address. Customer acknowledgements are sent from it; internal quote enquiries go to
   // newquote@ross360.co.uk (functions/api/quote.js).
   email: 'contact@ross360.co.uk',
+  // Business mobile, for calls and WhatsApp. Shown in the footer only; the Get a Quote page stays form-only.
+  phone: {
+    display: '07925 213557',
+    tel: '+447925213557',
+    whatsapp: 'https://wa.me/447925213557',
+  },
   // Used only where the operator's identity is needed: the Privacy Notice and Terms & Conditions.
   // Not shown in the footer or marketing pages.
   founder: 'Ross Rajah',

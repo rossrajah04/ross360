@@ -13,9 +13,18 @@ export default function Footer() {
           <Wordmark light />
           <p className="footer__descriptor">{site.descriptor}</p>
           <p className="footer__meta">{site.serviceArea} service</p>
-          <p>
+          <p className="footer__contact">
             <a className="footer__email" href={`mailto:${site.email}`}>
               {site.email}
+            </a>
+          </p>
+          <p className="footer__phone">
+            <a href={`tel:${site.phone.tel}`}>{site.phone.display}</a>
+            <span className="footer__sep" aria-hidden="true">
+              ·
+            </span>
+            <a href={site.phone.whatsapp} target="_blank" rel="noopener noreferrer">
+              WhatsApp
             </a>
           </p>
         </div>
