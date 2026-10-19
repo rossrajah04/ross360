@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import Seo from '../components/Seo.jsx';
-import { Arrow, ClosingCta } from '../components/service/ServiceSections.jsx';
+import { Arrow } from '../components/service/ServiceSections.jsx';
 import useReveal from '../lib/useReveal.js';
 import { categories, portfolio } from '../content/portfolio.js';
 import '../styles/home.css';
@@ -9,12 +9,10 @@ import '../styles/service-pages.css';
 import '../styles/portfolio.css';
 
 // Portfolio: opens on two photographs, Businesses and Properties, on the same dark ground as the
-// introduction. Each leads to its category page (src/pages/PortfolioCategory.jsx). While the photographs
-// are temporary they are credited, and marked as not ROSS 360 work, under the pair.
+// introduction. Each leads to its category page (src/pages/PortfolioCategory.jsx).
 export default function Portfolio() {
   useReveal();
-  const { hero, chooser, closing } = portfolio;
-  const credited = categories.filter((category) => category.credit);
+  const { hero, chooser } = portfolio;
 
   return (
     <div className="home vt sp pf">
@@ -56,27 +54,8 @@ export default function Portfolio() {
               </li>
             ))}
           </ul>
-          {credited.length ? (
-            <p className="h-tour__note pf-choose__note">
-              <span>{chooser.note}</span>
-              <span>
-                Photographs by{' '}
-                {credited.map((category, index) => (
-                  <span key={category.key}>
-                    {index ? ' and ' : ''}
-                    <a href={category.credit.url} target="_blank" rel="noopener noreferrer">
-                      {category.credit.name}
-                    </a>
-                  </span>
-                ))}{' '}
-                on Unsplash.
-              </span>
-            </p>
-          ) : null}
         </div>
       </section>
-
-      <ClosingCta {...closing} />
     </div>
   );
 }

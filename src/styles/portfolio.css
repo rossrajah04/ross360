@@ -92,12 +92,6 @@
   outline-offset: 3px;
 }
 
-.pf-choose__note a {
-  color: inherit;
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
-
 @media (min-width: 760px) {
   .pf-choose {
     grid-template-columns: 1fr 1fr;

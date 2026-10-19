@@ -33,8 +33,9 @@ export const projects = [
 //
 // TEMPORARY IMAGERY (October 2026): both are free photographs from Unsplash (Unsplash License), used until
 // ROSS 360 has its own photography of business and property spaces. They are not ROSS 360 work and not
-// photographs of ROSS 360 clients, and the page says so under them. Replace `image` with a local file
-// (and remove `credit`) once there is a ROSS 360 photograph for each.
+// photographs of ROSS 360 clients. The page shows no credit (the owner asked for none; the Unsplash
+// License does not require one); `credit` records the source. Replace `image` with a local file (and
+// remove `credit`) once there is a ROSS 360 photograph for each.
 export const categories = [
   {
     key: 'business',
@@ -73,8 +74,6 @@ export const portfolio = {
   chooser: {
     title: 'Portfolio categories',
     view: 'View work',
-    // Shown under the photographs while they are temporary.
-    note: 'Illustrative photographs, not ROSS 360 work.',
   },
 
   empty: {
@@ -87,11 +86,4 @@ export const portfolio = {
   projectsTitle: 'Projects',
   viewTour: 'View tour',
   categories: { business: 'Business', property: 'Property' },
-
-  closing: {
-    title: 'Have a space worth exploring?',
-    text: 'Request a quote for a professional 360° virtual tour.',
-    cta: 'Get a Quote',
-    to: '/get-a-quote',
-  },
 };

@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import Seo from '../components/Seo.jsx';
 import TourStage from '../components/home/TourStage.jsx';
-import { Arrow, ClosingCta } from '../components/service/ServiceSections.jsx';
+import { Arrow } from '../components/service/ServiceSections.jsx';
 import useReveal from '../lib/useReveal.js';
 import { categories, portfolio, projects } from '../content/portfolio.js';
 import '../styles/home.css';
@@ -59,7 +59,7 @@ export default function PortfolioCategory({ category: key }) {
   useReveal();
   const category = categories.find((item) => item.key === key);
   const list = projects.filter((project) => project.category === key);
-  const { empty, closing } = portfolio;
+  const { empty } = portfolio;
 
   return (
     <div className="home vt sp pf">
@@ -118,8 +118,6 @@ export default function PortfolioCategory({ category: key }) {
           </div>
         </section>
       )}
-
-      <ClosingCta {...closing} />
     </div>
   );
 }
