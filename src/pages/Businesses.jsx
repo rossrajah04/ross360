@@ -61,11 +61,8 @@ export default function Businesses() {
           {example.embedUrl ? (
             <div className="sp-view__tour">
               <TourStage tour={example} className="h-tour__stage sp-view__stage" />
-              {example.external ? (
-                <p className="h-tour__note">
-                  <span className="h-tour__note-label">{example.label}</span>
-                  <span>{example.credit}</span>
-                </p>
+              {example.credit ? (
+                <p className="h-tour__note">{example.credit}</p>
               ) : null}
             </div>
           ) : null}

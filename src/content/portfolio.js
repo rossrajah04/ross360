@@ -87,5 +87,6 @@ export const portfolio = {
   back: 'Portfolio',
   projectsTitle: 'Projects',
   viewTour: 'View tour',
+  createdBy: 'Created by ROSS 360.',
   categories: { business: 'Business', property: 'Property' },
 };

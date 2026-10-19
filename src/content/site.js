@@ -58,7 +58,8 @@ export const site = {
   },
 
   // The tour shown on the homepage ("Step inside" and the phone view), Virtual Tours and Businesses:
-  // Kinetic Sports & Health, ROSS 360's own work, so it carries no label or credit. It loads straight away.
+  // Kinetic Sports & Health, ROSS 360's own work: no external label, just the line under the frame. It loads
+  // straight away.
   // Also listed on the Portfolio (src/content/portfolio.js).
   stepInsideTour: {
     isRealProject: true,
@@ -66,6 +67,7 @@ export const site = {
     embedUrl: 'https://tour.panoee.net/iframe/6ad4ba76ea1add2da542e2cf?embedFullscreen=1&embedVr=1&embedGyro=1',
     openUrl: 'https://tour.panoee.net/iframe/6ad4ba76ea1add2da542e2cf?embedFullscreen=1&embedVr=1&embedGyro=1',
     title: 'Kinetic Sports & Health',
+    credit: 'Kinetic Sports & Health. Created by ROSS 360.',
   },
 
   // Genuine photography only, for the inner pages. Each slot shows a reserved image area until a real

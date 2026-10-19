@@ -39,7 +39,10 @@ function Project({ project }) {
         ) : null}
       </div>
       {tour ? (
-        <TourStage tour={tour} className="h-tour__stage pf-project__stage" />
+        <div>
+          <TourStage tour={tour} className="h-tour__stage pf-project__stage" />
+          <p className="h-tour__note">{portfolio.createdBy}</p>
+        </div>
       ) : project.image ? (
         <img
           className="pf-project__image"

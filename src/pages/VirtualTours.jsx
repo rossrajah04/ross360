@@ -51,11 +51,8 @@ export default function VirtualTours() {
         {example.embedUrl ? (
           <div className="h-wrap">
             <TourStage tour={example} className="h-tour__stage" />
-            {example.external ? (
-              <p className="h-tour__note">
-                <span className="h-tour__note-label">{example.label}</span>
-                <span>{example.credit}</span>
-              </p>
+            {example.credit ? (
+              <p className="h-tour__note">{example.credit}</p>
             ) : null}
           </div>
         ) : null}
