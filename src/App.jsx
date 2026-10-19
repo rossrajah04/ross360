@@ -5,6 +5,7 @@ import VirtualTours from './pages/VirtualTours.jsx';
 import Businesses from './pages/Businesses.jsx';
 import Property from './pages/Property.jsx';
 import Portfolio from './pages/Portfolio.jsx';
+import PortfolioCategory from './pages/PortfolioCategory.jsx';
 import Pricing from './pages/Pricing.jsx';
 import About from './pages/About.jsx';
 import Quote from './pages/Quote.jsx';
@@ -21,6 +22,8 @@ export default function App() {
         <Route path="businesses" element={<Businesses />} />
         <Route path="property" element={<Property />} />
         <Route path="portfolio" element={<Portfolio />} />
+        <Route path="portfolio/businesses" element={<PortfolioCategory category="business" />} />
+        <Route path="portfolio/properties" element={<PortfolioCategory category="property" />} />
         <Route path="pricing" element={<Pricing />} />
         <Route path="about" element={<About />} />
         <Route path="get-a-quote" element={<Quote />} />
