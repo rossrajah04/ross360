@@ -76,7 +76,7 @@ export default function TourEmbed({ tour = site.exampleTour, className = '' }) {
         className="tour-stage__frame"
         src={tour.embedUrl}
         title={`${tour.title}: interactive 360° tour`}
-        loading={tour.autoload ? 'eager' : 'lazy'}
+        loading="lazy"
         allow={`${tour.autoload ? 'autoplay; ' : ''}fullscreen; xr-spatial-tracking; gyroscope; accelerometer`}
         allowFullScreen={tour.autoload ? true : undefined}
         referrerPolicy="strict-origin-when-cross-origin"

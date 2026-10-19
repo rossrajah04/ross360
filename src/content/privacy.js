@@ -12,7 +12,7 @@
 //   - Cloudflare Turnstile spam check (when VITE_TURNSTILE_SITE_KEY and TURNSTILE_SECRET_KEY are set;
 //     required wherever enquiries are stored). Always on: a hidden honeypot field and a timing check,
 //     which process no extra personal information.
-//   - An external example tour from Panoee (tour.panoee.com) is embedded and loads automatically with the
+//   - A Panoee tour (tour.panoee.net, Kinetic Sports & Health) is embedded and loads automatically with the
 //     page. ROSS 360 chose automatic loading (4 October 2026) and accepts the third-party embed; keep the
 //     cookies and sharing wording below accurate to that.
 //   - Fonts are self-hosted. No analytics, advertising or tracking code, and the site's own code sets no

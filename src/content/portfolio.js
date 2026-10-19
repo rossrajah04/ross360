@@ -3,7 +3,7 @@
 //
 // Add a project ONLY when it is genuine ROSS 360 work and the client has given portfolio permission.
 // Only include the client's name and location if they have agreed to them being shown.
-// No placeholders, stock images, AI images or external examples (the Avalon Hotel tour is not ours).
+// No placeholders, stock images, AI images or other people's tours.
 //
 // {
 //   id: 'unique-slug',
@@ -18,6 +18,8 @@
 //   tourUrl: 'https://…',               // public link to the tour (View tour, opens in a new tab)
 // }
 
+import { site } from './site.js';
+
 export const projects = [
   {
     id: 'kinetic-sports-health',
@@ -25,7 +27,7 @@ export const projects = [
     category: 'business',
     sector: 'Sports and health',
     description: '',
-    embedUrl: 'https://tour.panoee.net/iframe/6ad4ba76ea1add2da542e2cf?embedFullscreen=1&embedVr=1&embedGyro=1',
+    embedUrl: site.stepInsideTour.embedUrl,
   },
 ];
 

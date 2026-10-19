@@ -14,7 +14,7 @@ export const home = {
   tour: {
     label: 'Step inside',
     title: 'Explore a real 360° virtual tour.',
-    text: 'Move through the Avalon Hotel and see how a finished 360° tour can let visitors explore a space online before they arrive.',
+    text: 'Move through Kinetic Sports & Health and see how a finished 360° tour can let visitors explore a space online before they arrive.',
     open: 'Open full tour',
     // Shown in the tour frame until the Panoee tour is set in site.exampleTour.
     placeholderLabel: '360° virtual tour',
@@ -26,7 +26,7 @@ export const home = {
   why: {
     title: 'See the space before you arrive.',
     text: 'A 360° virtual tour lets people explore a space for themselves, giving them a clearer sense of the layout, atmosphere and details before they visit.',
-    // The same Avalon tour, shown live in a phone-sized frame. Caption written for the homepage.
+    // The same tour, shown live in a phone-sized frame. Caption written for the homepage.
     phoneCaption: 'The same tour on a phone.',
   },
 
