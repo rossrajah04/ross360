@@ -37,7 +37,7 @@ export const pages = {
   portfolioBusinesses: {
     path: '/portfolio/businesses',
     title: 'Business Portfolio | ROSS 360',
-    description: '360° virtual tours of commercial premises completed by ROSS 360, including Kinetic Sports & Health.',
+    description: '360° virtual tours of commercial premises completed by ROSS 360, including Kinetic Sports & Health and Sabai Studio.',
   },
   portfolioProperties: {
     path: '/portfolio/properties',
