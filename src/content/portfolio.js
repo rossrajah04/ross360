@@ -29,6 +29,14 @@ export const projects = [
     description: '',
     embedUrl: site.stepInsideTour.embedUrl,
   },
+  {
+    id: 'sabai-studio',
+    name: 'Sabai Studio',
+    category: 'business',
+    sector: 'Pilates studio',
+    description: '',
+    embedUrl: 'https://tour.panoee.net/iframe/6ad763402ae6ddc50a7908a8?embedFullscreen=1&embedVr=1&embedGyro=1',
+  },
 ];
 
 // The two photographs on the Portfolio page.
