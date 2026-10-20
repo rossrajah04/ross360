@@ -188,8 +188,21 @@
   line-height: 1.55;
 }
 
-.pf-project .h-link {
+.pf-project__note a {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   color: #ffffff;
+  text-decoration: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+.pf-project__note a:hover {
+  border-bottom-color: #ffffff;
+}
+
+.pf-project__note a:hover .h-arrow {
+  transform: translateX(4px);
 }
 
 .pf-project__image {

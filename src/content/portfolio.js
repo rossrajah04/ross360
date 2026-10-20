@@ -15,7 +15,7 @@
 //   image: '/images/projects/slug.jpg', // optional photograph, 3:2, ideally under ~300 KB
 //   imageAlt: 'What the image shows',
 //   embedUrl: 'https://…',              // optional Panoee embed URL, shown live in place of the image
-//   tourUrl: 'https://…',               // public link to the tour (View tour, opens in a new tab)
+//   tourUrl: 'https://…',               // optional public link for "Open the full tour" (defaults to embedUrl)
 // }
 
 import { site } from './site.js';
@@ -94,7 +94,7 @@ export const portfolio = {
 
   back: 'Portfolio',
   projectsTitle: 'Projects',
-  viewTour: 'View tour',
+  openTour: 'Open the full tour',
   createdBy: 'Created by ROSS 360.',
   categories: { business: 'Business', property: 'Property' },
 };
