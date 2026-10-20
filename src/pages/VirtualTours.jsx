@@ -12,8 +12,8 @@ import '../styles/virtual-tours.css';
 //  - Why ROSS 360, what you receive, how it works (from the enquiry to delivery) and how a tour differs,
 //    on the light page.
 //  - The homepage's closing enquiry.
-// The `home` class gives the page the homepage's tokens and shared styles. The only tour shown is the
-// external Avalon Hotel example, labelled and credited as someone else's work; no imagery is copied from it.
+// The `home` class gives the page the homepage's tokens and shared styles. The tour shown is
+// Kinetic Sports & Health (site.stepInsideTour), ROSS 360's own work.
 
 function Arrow() {
   return (
@@ -51,11 +51,8 @@ export default function VirtualTours() {
         {example.embedUrl ? (
           <div className="h-wrap">
             <TourStage tour={example} className="h-tour__stage" />
-            {example.external ? (
-              <p className="h-tour__note">
-                <span className="h-tour__note-label">{example.label}</span>
-                <span>{example.credit}</span>
-              </p>
+            {example.credit ? (
+              <p className="h-tour__note">{example.credit}</p>
             ) : null}
           </div>
         ) : null}

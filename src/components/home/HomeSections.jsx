@@ -79,6 +79,8 @@ export function StepInside() {
           </p>
         ) : example.embedUrl && !example.isRealProject ? (
           <p className="h-tour__note">{tour.demoNote}</p>
+        ) : example.embedUrl && example.credit ? (
+          <p className="h-tour__note">{example.credit}</p>
         ) : null}
       </div>
     </section>
@@ -109,7 +111,7 @@ export function Why() {
               <TourEmbed tour={{ ...tour, title: `${tour.title} (phone view)` }} className="h-phone__screen" />
             </div>
             <figcaption className="h-phone__caption">
-              {why.phoneCaption} {tour.credit}
+              {why.phoneCaption}
             </figcaption>
           </figure>
         ) : null}

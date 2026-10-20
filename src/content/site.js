@@ -57,17 +57,17 @@ export const site = {
     title: 'Example tour',
   },
 
-  // The homepage "Step inside" tour. An external example used with its creator's permission; it is not
-  // ROSS 360's work, so it is labelled as such and credited under the frame. It is not used on any other
-  // page. Replace it with a ROSS 360 tour once one exists.
+  // The tour shown on the homepage ("Step inside" and the phone view), Virtual Tours and Businesses:
+  // Kinetic Sports & Health, ROSS 360's own work: no external label, just the line under the frame. It loads
+  // straight away.
+  // Also listed on the Portfolio (src/content/portfolio.js).
   stepInsideTour: {
-    isRealProject: false,
-    external: true,
-    embedUrl: 'https://tour.panoee.com/avalon-hotel/',
-    openUrl: 'https://tour.panoee.com/avalon-hotel/',
-    title: 'Avalon Hotel',
-    label: 'External example',
-    credit: 'Example tour by OCEAN.LV / Avalon Hotel.',
+    isRealProject: true,
+    autoload: true,
+    embedUrl: 'https://tour.panoee.net/iframe/6ad4ba76ea1add2da542e2cf?embedFullscreen=1&embedVr=1&embedGyro=1',
+    openUrl: 'https://tour.panoee.net/iframe/6ad4ba76ea1add2da542e2cf?embedFullscreen=1&embedVr=1&embedGyro=1',
+    title: 'Kinetic Sports & Health',
+    credit: 'Kinetic Sports & Health. Created by ROSS 360.',
   },
 
   // Genuine photography only, for the inner pages. Each slot shows a reserved image area until a real

@@ -32,7 +32,17 @@ export const pages = {
     path: '/portfolio',
     title: 'Portfolio | ROSS 360',
     description:
-      'The ROSS 360 portfolio of 360° virtual tours and 360° photography. Genuine business and property projects are added as they are completed.',
+      'The ROSS 360 portfolio of 360° virtual tours and 360° photography for businesses and property.',
+  },
+  portfolioBusinesses: {
+    path: '/portfolio/businesses',
+    title: 'Business Portfolio | ROSS 360',
+    description: '360° virtual tours of commercial premises completed by ROSS 360, including Kinetic Sports & Health.',
+  },
+  portfolioProperties: {
+    path: '/portfolio/properties',
+    title: 'Property Portfolio | ROSS 360',
+    description: '360° virtual tours of residential and commercial property by ROSS 360. Projects are added as they are completed.',
   },
   pricing: {
     path: '/pricing',

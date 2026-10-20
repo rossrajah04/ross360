@@ -12,7 +12,7 @@ import '../styles/service-pages.css';
 // Businesses: who a tour is for and why a business would want one, shown beside the live example tour on
 // the dark ground, then the sectors, where the tour is used, what you receive, the ROSS 360 Standard and
 // how it works, then the enquiry. Built from the Virtual Tours page's styles; the `home vt` classes give
-// it the homepage's tokens. The only tour is the external Avalon Hotel example, labelled and credited.
+// it the homepage's tokens. The tour is Kinetic Sports & Health (site.stepInsideTour).
 
 export default function Businesses() {
   useReveal();
@@ -61,11 +61,8 @@ export default function Businesses() {
           {example.embedUrl ? (
             <div className="sp-view__tour">
               <TourStage tour={example} className="h-tour__stage sp-view__stage" />
-              {example.external ? (
-                <p className="h-tour__note">
-                  <span className="h-tour__note-label">{example.label}</span>
-                  <span>{example.credit}</span>
-                </p>
+              {example.credit ? (
+                <p className="h-tour__note">{example.credit}</p>
               ) : null}
             </div>
           ) : null}

@@ -1,14 +1,212 @@
-/* Portfolio page. Uses the Virtual Tours and service-page styles; adds only the launch-stage band's
-   details and the project list for when genuine projects are added. */
+/* Portfolio pages. Use the Virtual Tours and service-page styles; add the two category photographs on
+   the Portfolio page, the category page's way back, its project list and the "in progress" band. */
 
 /* ---------- Hero ---------- */
 
 .pf-intro__head {
+  margin-bottom: clamp(24px, 3vw, 40px);
+}
+
+.pf .vt-intro__aside p {
+  color: #ffffff;
+}
+
+/* ---------- The two categories: photographs side by side, the label set into the lower edge ---------- */
+
+.pf-choose {
+  display: grid;
+  gap: 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pf-choose__link {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  aspect-ratio: 4 / 3;
+  background: #1c1b19;
+  color: #ffffff;
+  text-decoration: none;
+  outline: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.pf-choose__image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 1.2s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.pf-choose__shade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(12, 12, 11, 0.72) 0%, rgba(12, 12, 11, 0.18) 45%, rgba(12, 12, 11, 0) 70%);
+}
+
+.pf-choose__body {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px 24px;
+  padding: clamp(20px, 2.6vw, 36px);
+}
+
+.pf-choose__label {
+  font-size: clamp(1.5rem, 2.4vw, 2.1rem);
+  font-weight: 400;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+.pf-choose__view {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 0;
+  border-bottom: 1px solid currentColor;
+  font-size: 0.76rem;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.pf-choose__link:hover .pf-choose__image {
+  transform: scale(1.03);
+}
+
+.pf-choose__link:hover .h-arrow {
+  transform: translateX(6px);
+}
+
+.pf-choose__link:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: 3px;
+}
+
+@media (min-width: 760px) {
+  .pf-choose {
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+  .pf-choose__link {
+    aspect-ratio: 4 / 5;
+    max-height: calc(100svh - 160px);
+    width: 100%;
+  }
+}
+
+@media (min-width: 1100px) {
+  .pf-choose__link {
+    aspect-ratio: 5 / 6;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pf-choose__image {
+    transition: none;
+  }
+  .pf-choose__link:hover .pf-choose__image {
+    transform: none;
+  }
+}
+
+/* ---------- Category page ---------- */
+
+.pf-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: clamp(20px, 3vw, 36px);
+  color: var(--muted-on-dark);
+  font-size: 0.85rem;
+  text-decoration: none;
+}
+
+.pf-back:hover {
+  color: #ffffff;
+}
+
+.pf-back:hover .h-arrow {
+  transform: translateX(-4px);
+}
+
+.pf-cat .pf-intro__head:last-child {
   margin-bottom: 0;
 }
 
-.pf .vt-intro__aside p + p {
-  margin-top: -8px;
+/* ---------- Projects ---------- */
+
+.pf-projects__list {
+  display: grid;
+  gap: clamp(48px, 6vw, 88px);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pf-project {
+  display: grid;
+  gap: 20px;
+  padding-top: 24px;
+  border-top: 1px solid rgba(255, 255, 255, 0.16);
+}
+
+.pf-project__head {
+  display: grid;
+  gap: 12px;
+}
+
+.pf-project__meta {
+  margin: 0;
+  color: var(--muted-on-dark);
+  font-size: 0.95rem;
+}
+
+.pf-project__title {
+  margin: 6px 0 0;
+  color: #ffffff;
+  font-size: clamp(1.3rem, 1.9vw, 1.6rem);
+  font-weight: 400;
+  line-height: 1.2;
+  letter-spacing: -0.015em;
+}
+
+.pf-project__text {
+  max-width: 44ch;
+  margin: 0 0 16px;
+  color: rgba(255, 255, 255, 0.78);
+  font-size: clamp(1.05rem, 1.3vw, 1.15rem);
+  line-height: 1.55;
+}
+
+.pf-project .h-link {
+  color: #ffffff;
+}
+
+.pf-project__image {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 3 / 2;
+  object-fit: cover;
+  background: #1c1b19;
+}
+
+@media (min-width: 1000px) {
+  .pf-project__head {
+    grid-template-columns: 7fr 5fr;
+    gap: 0 48px;
+    align-items: end;
+  }
 }
 
 /* ---------- Launch stage ---------- */
@@ -21,85 +219,4 @@
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
-}
-
-/* ---------- Projects ---------- */
-
-.pf-projects {
-  padding: var(--h-gap) 0;
-}
-
-.pf-projects__list {
-  display: grid;
-  gap: clamp(40px, 5vw, 72px);
-  margin: clamp(28px, 3vw, 44px) 0 0;
-  padding: 0;
-  list-style: none;
-}
-
-.pf-project {
-  display: grid;
-  gap: 20px;
-  padding-top: 24px;
-  border-top: 1px solid var(--line-strong);
-}
-
-.pf-project__media {
-  min-width: 0;
-}
-
-.pf-project__image,
-.pf-project .pf-project__frame {
-  display: block;
-  width: 100%;
-  height: auto;
-  aspect-ratio: 3 / 2;
-  object-fit: cover;
-  background: #1c1b19;
-}
-
-.pf-project__meta {
-  margin: 0;
-  color: var(--muted);
-  font-size: 0.95rem;
-}
-
-.pf-project__title {
-  margin: 6px 0 0;
-  color: var(--ink);
-  font-size: clamp(1.3rem, 1.9vw, 1.6rem);
-  font-weight: 400;
-  line-height: 1.2;
-  letter-spacing: -0.015em;
-}
-
-.pf-project__text {
-  max-width: 44ch;
-  margin: 10px 0 20px;
-  color: var(--ink-soft);
-  font-size: clamp(1.05rem, 1.3vw, 1.15rem);
-  line-height: 1.55;
-}
-
-.pf-project .h-link {
-  font-size: 0.85rem;
-  letter-spacing: 0.12em;
-}
-
-@media (min-width: 900px) {
-  .pf-project {
-    grid-template-columns: repeat(12, minmax(0, 1fr));
-    gap: 0 32px;
-    padding-top: 32px;
-  }
-  .pf-project__media {
-    grid-column: 1 / 8;
-  }
-  .pf-project__body {
-    grid-column: 9 / 13;
-  }
-}
-
-.pf .vt-intro__aside p:first-child {
-  color: #ffffff;
 }
