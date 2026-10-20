@@ -25,23 +25,23 @@ function Project({ project }) {
           {meta ? <p className="pf-project__meta">{meta}</p> : null}
           <h2 className="pf-project__title">{project.name}</h2>
         </div>
-        {project.description || project.tourUrl ? (
+        {project.description ? (
           <div className="pf-project__aside">
-            {project.description ? <p className="pf-project__text">{project.description}</p> : null}
-            {project.tourUrl ? (
-              <a className="h-link" href={project.tourUrl} target="_blank" rel="noopener noreferrer">
-                {portfolio.viewTour}
-                <Arrow />
-                <span className="visually-hidden"> (opens in a new tab)</span>
-              </a>
-            ) : null}
+            <p className="pf-project__text">{project.description}</p>
           </div>
         ) : null}
       </div>
       {tour ? (
         <div>
           <TourStage tour={tour} className="h-tour__stage pf-project__stage" />
-          <p className="h-tour__note">{portfolio.createdBy}</p>
+          <p className="h-tour__note pf-project__note">
+            <span>{portfolio.createdBy}</span>
+            <a href={project.tourUrl || project.embedUrl} target="_blank" rel="noopener noreferrer">
+              {portfolio.openTour}
+              <Arrow />
+              <span className="visually-hidden"> (opens in a new tab)</span>
+            </a>
+          </p>
         </div>
       ) : project.image ? (
         <img
