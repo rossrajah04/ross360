@@ -10,7 +10,7 @@ import '../styles/pricing.css';
 
 // Pricing: the three business packages side by side, what every business tour includes, what affects
 // the final price, how property is priced, then the enquiry.
-// Google Street View only follows the tour packages, in the same band as property. Built from the service pages' styles.
+// Google Street View only comes first, above the tour packages, in the same band as property. Built from the service pages' styles.
 
 export default function Pricing() {
   useReveal();
@@ -30,6 +30,32 @@ export default function Pricing() {
             <ul className="sp-facts">
               <li>{hero.fact}</li>
             </ul>
+          </div>
+        </div>
+      </section>
+
+      <section className="sp-price" aria-labelledby="pr-streetview-title">
+        <div className="h-wrap">
+          <div className="sp-price__inner" data-reveal>
+            <div>
+              <h2 id="pr-streetview-title" className="sp-price__label">
+                {streetView.title}
+              </h2>
+              <p className="sp-price__title">{formatFrom(streetViewPlan.price)}</p>
+            </div>
+            <div className="sp-price__body">
+              <p className="sp-price__text">{streetView.text}</p>
+              <p className="pr-property__label">{streetView.listLabel}</p>
+              <ul className="pr-property__list">
+                {streetView.items.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+              <p className="sp-price__text">{streetView.note}</p>
+              <Link className="h-button h-button--quiet" to={streetView.to}>
+                {streetView.cta}
+              </Link>
+            </div>
           </div>
         </div>
       </section>
@@ -85,32 +111,6 @@ export default function Pricing() {
               </li>
             ))}
           </ul>
-        </div>
-      </section>
-
-      <section className="sp-price" aria-labelledby="pr-streetview-title">
-        <div className="h-wrap">
-          <div className="sp-price__inner" data-reveal>
-            <div>
-              <h2 id="pr-streetview-title" className="sp-price__label">
-                {streetView.title}
-              </h2>
-              <p className="sp-price__title">{formatFrom(streetViewPlan.price)}</p>
-            </div>
-            <div className="sp-price__body">
-              <p className="sp-price__text">{streetView.text}</p>
-              <p className="pr-property__label">{streetView.listLabel}</p>
-              <ul className="pr-property__list">
-                {streetView.items.map((item) => (
-                  <li key={item}>{item}</li>
-                ))}
-              </ul>
-              <p className="sp-price__text">{streetView.note}</p>
-              <Link className="h-button h-button--quiet" to={streetView.to}>
-                {streetView.cta}
-              </Link>
-            </div>
-          </div>
         </div>
       </section>
 
