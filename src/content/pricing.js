@@ -95,7 +95,7 @@ export const pricing = {
 
   streetView: {
     title: 'Google Street View only',
-    text: 'For businesses that want their premises on Google Maps without a full virtual tour. We capture linked 360° photographs of your premises and publish them to your Google Business Profile.',
+    text: 'For businesses that want their premises on Google Maps without a full virtual tour. We capture linked 360° photographs of your premises and publish them to your Google Business Profile. £99 covers smaller premises; larger premises need more photographs and are quoted accordingly.',
     listLabel: 'Includes:',
     items: [
       'Linked 360° photographs of the agreed areas',
