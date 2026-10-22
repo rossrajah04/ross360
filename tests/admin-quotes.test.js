@@ -844,7 +844,7 @@ test('a quote for a Google Street View only enquiry starts with that package; ot
   assert.equal(quote.package, 'streetview');
   assert.deepEqual(
     quote.items.map((i) => [i.kind, i.description, i.quantity, i.unitPence]),
-    [['package', 'Google Street View publishing (up to 7 linked 360° photographs)', 1, 9900]],
+    [['package', 'Google Street View publishing', 1, 9900]],
   );
   assert.equal(quote.totalPence, 9900);
 

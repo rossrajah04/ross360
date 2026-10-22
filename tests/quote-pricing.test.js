@@ -31,7 +31,7 @@ test('packages come from the published starting prices, in pence', () => {
     ],
   );
   assert.equal(PACKAGES.length, plans.length + 1);
-  assert.equal(packageItem('streetview').description, 'Google Street View publishing (up to 7 linked 360° photographs)');
+  assert.equal(packageItem('streetview').description, 'Google Street View publishing');
   assert.deepEqual(packageItem('professional'), {
     kind: 'package',
     description: 'Professional 360° virtual tour',
