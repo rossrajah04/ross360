@@ -3,6 +3,7 @@
 // Images are assigned in src/content/media.js. The Step inside tour is configured in src/content/site.js.
 
 import { site } from './site.js';
+import { streetView } from './pricing.js';
 
 
 export const home = {
@@ -62,7 +63,8 @@ export const home = {
 
   pricing: {
     title: 'Business tours from £249',
-    text: 'Straightforward pricing for professional 360° tours. Property projects are quoted individually.',
+    // Street View sentence added 22 October 2026, at ROSS 360's request.
+    text: `Straightforward pricing for professional 360° tours. Google Street View only from £${streetView.price}. Property projects are quoted individually.`,
     view: 'View pricing',
     quote: 'Request a Quote',
   },

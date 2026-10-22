@@ -4,6 +4,9 @@
 
 export const PROJECT_TYPES = [
   { value: 'business', label: 'Business' },
+  // The £99 Google Street View only package (src/content/pricing.js). A quote created in the Admin
+  // from one of these enquiries starts with that package.
+  { value: 'streetview', label: 'Google Street View only' },
   { value: 'property', label: 'Property' },
   { value: 'other', label: 'Other' },
 ];
@@ -28,6 +31,7 @@ export const SOURCES = ['Google', 'Referral', 'Social media', 'Website', 'Other'
 // Map of ?type= query values on the quote page to a project type value.
 export const TYPE_PARAM_MAP = {
   business: 'business',
+  streetview: 'streetview',
   property: 'property',
   agency: 'property',
 };

@@ -104,7 +104,7 @@ export const pricing = {
     ],
     note: 'This option does not include an interactive virtual tour, website embed or shareable tour URL. Publication is subject to your authorisation and Google’s requirements.',
     cta: 'Get a Quote',
-    to: '/get-a-quote?type=business',
+    to: '/get-a-quote?type=streetview',
   },
 
   factors: {

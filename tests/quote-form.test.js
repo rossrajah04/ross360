@@ -539,3 +539,11 @@ test('if Cloudflare cannot be reached, the submission is refused and the failure
   assert.match(errors, /Turnstile verification could not be completed: TypeError/);
   db.close();
 });
+
+test('Google Street View only is a project type, and ?type=streetview selects it', async () => {
+  const { validateQuote, TYPE_PARAM_MAP } = await import('../src/lib/quoteSchema.js');
+  assert.equal(TYPE_PARAM_MAP.streetview, 'streetview');
+  const { valid, values } = validateQuote({ ...FORM, projectType: 'streetview' });
+  assert.equal(valid, true);
+  assert.equal(values.projectType, 'streetview');
+});
