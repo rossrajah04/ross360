@@ -9,7 +9,8 @@ export const site = {
   // Public contact address. Customer acknowledgements are sent from it; internal quote enquiries go to
   // newquote@ross360.co.uk (functions/api/quote.js).
   email: 'contact@ross360.co.uk',
-  // Business mobile, for calls and WhatsApp. Shown in the footer only; the Get a Quote page stays form-only.
+  // Business mobile, for calls and WhatsApp. Shown in the footer and the floating WhatsApp link; the Get a Quote
+  // page stays form-only.
   phone: {
     display: '07925 213557',
     tel: '+447925213557',

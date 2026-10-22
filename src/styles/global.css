@@ -663,6 +663,53 @@ main:focus {
   }
 }
 
+/* ---------- Floating WhatsApp link ---------- */
+
+.whatsapp-fab {
+  position: fixed;
+  right: max(16px, env(safe-area-inset-right));
+  bottom: calc(16px + env(safe-area-inset-bottom));
+  z-index: 41;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: #25d366;
+  color: #ffffff;
+  box-shadow: 0 2px 10px rgba(20, 20, 19, 0.22);
+  transition: transform 0.15s ease;
+}
+
+.whatsapp-fab:hover {
+  transform: scale(1.06);
+}
+
+.whatsapp-fab:focus-visible {
+  outline: 3px solid var(--ink);
+  outline-offset: 3px;
+}
+
+/* Clear the sticky "Get a Quote" bar on small screens. */
+.whatsapp-fab--raised {
+  bottom: calc(84px + env(safe-area-inset-bottom));
+}
+
+@media (min-width: 1000px) {
+  .whatsapp-fab,
+  .whatsapp-fab--raised {
+    right: 24px;
+    bottom: 24px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .whatsapp-fab {
+    transition: none;
+  }
+}
+
 /* ---------- Image frames ---------- */
 
 .frame {
