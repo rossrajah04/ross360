@@ -2,18 +2,19 @@ import { Link } from 'react-router-dom';
 import Seo from '../components/Seo.jsx';
 import { ClosingCta } from '../components/service/ServiceSections.jsx';
 import useReveal from '../lib/useReveal.js';
-import { plans, formatFrom, pricing } from '../content/pricing.js';
+import { plans, streetView as streetViewPlan, formatFrom, pricing } from '../content/pricing.js';
 import '../styles/home.css';
 import '../styles/virtual-tours.css';
 import '../styles/service-pages.css';
 import '../styles/pricing.css';
 
 // Pricing: the three business packages side by side, what every business tour includes, what affects
-// the final price, how property is priced, then the enquiry. Built from the service pages' styles.
+// the final price, how property is priced, then the enquiry.
+// Google Street View only follows the tour packages, in the same band as property. Built from the service pages' styles.
 
 export default function Pricing() {
   useReveal();
-  const { hero, business, includes, factors, property, closing } = pricing;
+  const { hero, business, includes, streetView, factors, property, closing } = pricing;
 
   return (
     <div className="home vt sp pr">
@@ -84,6 +85,32 @@ export default function Pricing() {
               </li>
             ))}
           </ul>
+        </div>
+      </section>
+
+      <section className="sp-price" aria-labelledby="pr-streetview-title">
+        <div className="h-wrap">
+          <div className="sp-price__inner" data-reveal>
+            <div>
+              <h2 id="pr-streetview-title" className="sp-price__label">
+                {streetView.title}
+              </h2>
+              <p className="sp-price__title">{formatFrom(streetViewPlan.price)}</p>
+            </div>
+            <div className="sp-price__body">
+              <p className="sp-price__text">{streetView.text}</p>
+              <p className="pr-property__label">{streetView.listLabel}</p>
+              <ul className="pr-property__list">
+                {streetView.items.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+              <p className="sp-price__text">{streetView.note}</p>
+              <Link className="h-button h-button--quiet" to={streetView.to}>
+                {streetView.cta}
+              </Link>
+            </div>
+          </div>
         </div>
       </section>
 

@@ -5,7 +5,7 @@
 //
 // All money is whole pence (integers). Amounts typed in pounds are converted with poundsToPence.
 
-import { plans } from '../../content/pricing.js';
+import { plans, streetView } from '../../content/pricing.js';
 import { poundsToPence } from './model.js';
 
 export const QUOTE_STATUSES = [
@@ -24,12 +24,16 @@ export const QUOTE_REFERENCE_RE = /^Q-\d{4,}$/;
 
 // The published packages (src/content/pricing.js) are the starting prices. Choosing one adds a line at
 // that price, which can then be changed for the quote in hand.
-export const PACKAGES = plans.map((plan) => ({
-  id: plan.id,
-  name: plan.name,
-  pence: plan.price * 100,
-  description: `${plan.name} 360° virtual tour`,
-}));
+// Google Street View only has no fixed deposit, so it is paid in full when booked online.
+export const PACKAGES = [
+  ...plans.map((plan) => ({
+    id: plan.id,
+    name: plan.name,
+    pence: plan.price * 100,
+    description: `${plan.name} 360° virtual tour`,
+  })),
+  { id: streetView.id, name: streetView.name, pence: streetView.price * 100, description: streetView.quoteLine },
+];
 export const PACKAGE_IDS = PACKAGES.map((p) => p.id);
 export const packageById = (id) => PACKAGES.find((p) => p.id === id) || null;
 
