@@ -17,10 +17,13 @@ import {
   SEND_UNKNOWN_AFTER_MS,
   sendProblems,
   ukToday,
+  packageItem,
   validateQuoteDraft,
 } from '../../src/lib/admin/quotes.js';
+import { streetView } from '../../src/content/pricing.js';
 
 const now = () => new Date().toISOString();
+const streetViewItem = packageItem(streetView.id);
 
 const SELECT_QUOTE = `
   SELECT q.*, e.reference AS enquiry_reference, e.status AS enquiry_status, o.reference AS revision_of_reference
@@ -155,6 +158,21 @@ export async function createQuote(db, enquiryReference, actor) {
          RETURNING reference`,
       )
       .bind(at, at, enquiry.id),
+    // An enquiry for Google Street View only starts its quote with that package at its published price.
+    db
+      .prepare(
+        `INSERT INTO quote_items (quote_id, position, kind, description, quantity, unit_pence, amount_pence)
+         SELECT q.id, 0, ?, ?, ?, ?, ? FROM quotes q, counters c, enquiries e
+         WHERE c.name = 'quote' AND q.quote_number = c.value AND e.id = ? AND e.project_type = 'streetview'`,
+      )
+      .bind(streetViewItem.kind, streetViewItem.description, streetViewItem.quantity, streetViewItem.unitPence, streetViewItem.unitPence, enquiry.id),
+    db
+      .prepare(
+        `UPDATE quotes SET package = ?, subtotal_pence = ?, total_pence = ?
+         WHERE quote_number = (SELECT value FROM counters WHERE name = 'quote')
+           AND EXISTS (SELECT 1 FROM enquiries WHERE id = ? AND project_type = 'streetview')`,
+      )
+      .bind(streetView.id, streetViewItem.unitPence, streetViewItem.unitPence, enquiry.id),
     db
       .prepare(
         `INSERT INTO enquiry_events (enquiry_id, created_at, actor, type, detail)

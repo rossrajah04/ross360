@@ -1,7 +1,7 @@
 // Get a Quote page wording. Supplied by ROSS 360 (4 October 2026) unless marked "written for this page".
 // No response-time promise, no booking or payment on this page, no telephone number and no hosting.
 
-import { lowestPrice } from './pricing.js';
+import { lowestPrice, streetView } from './pricing.js';
 
 export const quote = {
   hero: {
@@ -33,7 +33,7 @@ export const quote = {
   },
 
   pricing: {
-    text: `Business tours from £${lowestPrice} · Property tours individually quoted`,
+    text: `Business tours from £${lowestPrice} · Google Street View from £${streetView.price} · Property tours individually quoted`,
     link: 'View pricing',
     to: '/pricing',
   },

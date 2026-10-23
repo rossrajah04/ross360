@@ -830,3 +830,26 @@ test('the render function never reads internal notes or the travel working', () 
   assert.ok(out.html.includes('Valid until 19 October 2026 (14 days)'));
   assert.equal(quoteEmail.vat, 'VAT is not charged.');
 });
+
+// --- Google Street View only ------------------------------------------------------------------
+
+test('a quote for a Google Street View only enquiry starts with that package; others start empty', async () => {
+  const t = await setUp();
+  const { reference: sv } = await createEnquiry(
+    t.db,
+    { name: 'Sam Owner', business: 'Test Studio', email: 'sam@example.test', projectType: 'streetview' },
+    { origin: 'admin', actor: t.email },
+  );
+  const quote = await createQuote(t.db, sv, 'test');
+  assert.equal(quote.package, 'streetview');
+  assert.deepEqual(
+    quote.items.map((i) => [i.kind, i.description, i.quantity, i.unitPence]),
+    [['package', 'Google Street View publishing', 1, 9900]],
+  );
+  assert.equal(quote.totalPence, 9900);
+
+  const plain = await createQuote(t.db, t.enquiry, 'test');
+  assert.equal(plain.package, null);
+  assert.deepEqual(plain.items, []);
+  assert.equal(plain.totalPence, 0);
+});

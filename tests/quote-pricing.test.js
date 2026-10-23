@@ -27,9 +27,11 @@ test('packages come from the published starting prices, in pence', () => {
       ['essential', 24900],
       ['professional', 34900],
       ['bespoke', 49900],
+      ['streetview', 9900],
     ],
   );
-  assert.equal(PACKAGES.length, plans.length);
+  assert.equal(PACKAGES.length, plans.length + 1);
+  assert.equal(packageItem('streetview').description, 'Google Street View publishing');
   assert.deepEqual(packageItem('professional'), {
     kind: 'package',
     description: 'Professional 360° virtual tour',
