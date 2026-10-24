@@ -34,16 +34,6 @@ export const pages = {
     description:
       'The ROSS 360 portfolio of 360° virtual tours and 360° photography for businesses and property.',
   },
-  portfolioBusinesses: {
-    path: '/portfolio/businesses',
-    title: 'Business Portfolio | ROSS 360',
-    description: '360° virtual tours of commercial premises completed by ROSS 360, including Kinetic Sports & Health and Sabai Studio.',
-  },
-  portfolioProperties: {
-    path: '/portfolio/properties',
-    title: 'Property Portfolio | ROSS 360',
-    description: '360° virtual tours of residential and commercial property by ROSS 360. Projects are added as they are completed.',
-  },
   pricing: {
     path: '/pricing',
     title: 'Pricing | ROSS 360',

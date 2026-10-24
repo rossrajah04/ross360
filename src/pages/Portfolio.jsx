@@ -1,18 +1,65 @@
-import { Link } from 'react-router-dom';
 import Seo from '../components/Seo.jsx';
+import TourStage from '../components/home/TourStage.jsx';
 import { Arrow } from '../components/service/ServiceSections.jsx';
 import useReveal from '../lib/useReveal.js';
-import { categories, portfolio } from '../content/portfolio.js';
+import { portfolio, projects } from '../content/portfolio.js';
 import '../styles/home.css';
 import '../styles/virtual-tours.css';
 import '../styles/service-pages.css';
 import '../styles/portfolio.css';
 
-// Portfolio: opens on two photographs, Businesses and Properties, on the same dark ground as the
-// introduction. Each leads to its category page (src/pages/PortfolioCategory.jsx).
+// Portfolio: the genuine ROSS 360 projects, each with its live tour where there is one, on the same dark
+// ground as the introduction.
+
+function Project({ project }) {
+  const meta = [project.sector, project.location].filter(Boolean).join(' · ');
+  const tour = project.embedUrl
+    ? { isRealProject: true, autoload: true, embedUrl: project.embedUrl, openUrl: project.tourUrl || '', title: project.name }
+    : null;
+
+  return (
+    <li className="pf-project" data-reveal>
+      <div className="pf-project__head">
+        <div>
+          {meta ? <p className="pf-project__meta">{meta}</p> : null}
+          <h2 className="pf-project__title">{project.name}</h2>
+        </div>
+        {project.description ? (
+          <div className="pf-project__aside">
+            <p className="pf-project__text">{project.description}</p>
+          </div>
+        ) : null}
+      </div>
+      {tour ? (
+        <div>
+          <TourStage tour={tour} className="h-tour__stage pf-project__stage" />
+          <p className="h-tour__note pf-project__note">
+            <span>{portfolio.createdBy}</span>
+            <a href={project.tourUrl || project.embedUrl} target="_blank" rel="noopener noreferrer">
+              {portfolio.openTour}
+              <Arrow />
+              <span className="visually-hidden"> (opens in a new tab)</span>
+            </a>
+          </p>
+        </div>
+      ) : project.image ? (
+        <img
+          className="pf-project__image"
+          src={project.image}
+          alt={project.imageAlt || project.name}
+          width="1500"
+          height="1000"
+          loading="lazy"
+          decoding="async"
+        />
+      ) : null}
+    </li>
+  );
+}
+
 export default function Portfolio() {
   useReveal();
-  const { hero, chooser } = portfolio;
+  const { hero } = portfolio;
 
   return (
     <div className="home vt sp pf">
@@ -29,29 +76,9 @@ export default function Portfolio() {
         </div>
 
         <div className="h-wrap">
-          <h2 className="visually-hidden">{chooser.title}</h2>
-          <ul className="pf-choose">
-            {categories.map((category) => (
-              <li key={category.key} className="pf-choose__item" data-reveal>
-                <Link className="pf-choose__link" to={category.path}>
-                  <img
-                    className="pf-choose__image"
-                    src={category.image}
-                    alt={category.imageAlt}
-                    width="1800"
-                    height="1200"
-                    decoding="async"
-                  />
-                  <span className="pf-choose__shade" aria-hidden="true" />
-                  <span className="pf-choose__body">
-                    <span className="pf-choose__label">{category.label}</span>
-                    <span className="pf-choose__view" aria-hidden="true">
-                      {chooser.view}
-                      <Arrow />
-                    </span>
-                  </span>
-                </Link>
-              </li>
+          <ul className="pf-projects__list">
+            {projects.map((project) => (
+              <Project key={project.id} project={project} />
             ))}
           </ul>
         </div>

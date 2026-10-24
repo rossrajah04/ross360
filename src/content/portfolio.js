@@ -1,5 +1,6 @@
-// Portfolio. The Portfolio page opens on two photographs, Businesses and Properties; each leads to its own
-// page listing that category's projects. A category with no projects shows the "in progress" band.
+// Portfolio. The Portfolio page lists every project with its live tour (October 2026: the Businesses and
+// Properties photographs and category pages were removed at ROSS 360's request until there is property
+// work to show; /portfolio/businesses and /portfolio/properties redirect to /portfolio).
 //
 // Add a project ONLY when it is genuine ROSS 360 work and the client has given portfolio permission.
 // Only include the client's name and location if they have agreed to them being shown.
@@ -8,7 +9,7 @@
 // {
 //   id: 'unique-slug',
 //   name: 'Project or client name',      // client name only with permission
-//   category: 'business' | 'property',  // which category page lists it
+//   category: 'business' | 'property',  // kept for when the categories return
 //   sector: 'Restaurant',               // short sector label
 //   location: 'Town or city',           // optional, only with permission
 //   description: 'One or two sentences about the project.',
@@ -39,62 +40,13 @@ export const projects = [
   },
 ];
 
-// The two photographs on the Portfolio page.
-//
-// TEMPORARY IMAGERY (October 2026): both are free photographs from Unsplash (Unsplash License), used until
-// ROSS 360 has its own photography of business and property spaces. They are not ROSS 360 work and not
-// photographs of ROSS 360 clients. The page shows no credit (the owner asked for none; the Unsplash
-// License does not require one); `credit` records the source. Replace `image` with a local file (and
-// remove `credit`) once there is a ROSS 360 photograph for each.
-export const categories = [
-  {
-    key: 'business',
-    path: '/portfolio/businesses',
-    seo: 'portfolioBusinesses',
-    label: 'Businesses',
-    title: 'Businesses',
-    lead: '360° virtual tours of commercial premises completed by ROSS 360.',
-    empty: 'Business projects will be added here as they are completed.',
-    image:
-      'https://images.unsplash.com/photo-1660557989695-14fac79c086d?fm=jpg&q=70&w=1800&auto=format&fit=crop',
-    imageAlt: 'Hotel reception with a black marble desk and warm lighting',
-    credit: { name: 'Dylan Calluy', url: 'https://unsplash.com/photos/reception-desk-in-hotel-lobby-8BYahZcwYgI' },
-  },
-  {
-    key: 'property',
-    path: '/portfolio/properties',
-    seo: 'portfolioProperties',
-    label: 'Properties',
-    title: 'Properties',
-    lead: '360° virtual tours of residential and commercial property completed by ROSS 360.',
-    empty: 'Property projects will be added here as they are completed.',
-    image:
-      'https://images.unsplash.com/photo-1564078516393-cf04bd966897?fm=jpg&q=70&w=1800&auto=format&fit=crop',
-    imageAlt: 'Living room with a grey chaise beside a tall window in evening light',
-    credit: { name: 'Roberto Nickson', url: 'https://unsplash.com/photos/gray-padded-chaise-couch-beside-window-rEJxpBskj3Q' },
-  },
-];
-
 export const portfolio = {
   hero: {
     title: 'Our Work',
     lead: 'Explore examples of 360° virtual tours created by ROSS 360.',
   },
 
-  chooser: {
-    title: 'Portfolio categories',
-    view: 'View work',
-  },
-
-  empty: {
-    title: 'Portfolio in progress',
-    quote: 'Request a Quote',
-    tours: 'Explore Virtual Tours',
-  },
-
-  back: 'Portfolio',
   projectsTitle: 'Projects',
   openTour: 'Open the full tour',
   createdBy: 'Created by ROSS 360.',
-  categories: { business: 'Business', property: 'Property' },
 };
