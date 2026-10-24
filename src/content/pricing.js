@@ -100,9 +100,10 @@ export const pricing = {
     items: [
       'Linked 360° photographs of the agreed areas',
       'Publication to your Google Business Profile',
+      'No login details or passwords needed from you',
       'Quality check before publication',
     ],
-    note: 'This option does not include an interactive virtual tour, website embed or shareable tour URL. Publication is subject to your authorisation and Google’s requirements.',
+    note: 'This option does not include an interactive virtual tour, website embed or shareable tour URL. Publication is subject to Google’s requirements.',
     cta: 'Get a Quote',
     to: '/get-a-quote?type=streetview',
   },
