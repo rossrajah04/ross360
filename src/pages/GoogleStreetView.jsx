@@ -203,7 +203,7 @@ export default function GoogleStreetView() {
               },
               {
                 title: 'Uploading handled for you',
-                text: 'I'll handle the agreed uploading process. You won't need to prepare or upload the images yourself.',
+                text: "I'll handle the agreed uploading process. You won't need to prepare or upload the images yourself.",
               },
             ].map((item) => (
               <li
