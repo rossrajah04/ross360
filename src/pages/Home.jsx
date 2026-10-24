@@ -16,7 +16,7 @@ import '../styles/home.css';
 const googleProfileUrl =
   'https://maps.app.goo.gl/1FuHte5Mw8ZvijBU9?g_st=ic';
 
-// Add new Google reviews to this list as you receive them.
+// Add new reviews here as you receive them.
 const reviews = [
   {
     id: 1,
@@ -24,9 +24,23 @@ const reviews = [
     rating: 5,
     title: 'Reasonable price',
     text: 'The finished 360 tour looks fantastic! Rosser was professional and timely. Communication was great and everything was done well with no mess left after. Would recommend to anyone looking to enhance their website / premises!',
-    date: '4 days ago',
   },
 ];
+
+const arrowButtonStyle = {
+  width: '42px',
+  height: '42px',
+  border: '1px solid #dadce0',
+  borderRadius: '50%',
+  background: '#ffffff',
+  color: '#5f6368',
+  fontSize: '26px',
+  lineHeight: 1,
+  cursor: 'pointer',
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+};
 
 export default function Home() {
   useReveal();
@@ -70,7 +84,8 @@ export default function Home() {
             maxWidth: '1000px',
             margin: '0 auto',
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))',
+            gridTemplateColumns:
+              'repeat(auto-fit, minmax(min(100%, 300px), 1fr))',
             alignItems: 'center',
             gap: '36px',
           }}
@@ -129,7 +144,8 @@ export default function Home() {
                 borderRadius: '2px',
               }}
             >
-              Explore Google Street View <span aria-hidden="true">↗</span>
+              Explore Google Street View{' '}
+              <span aria-hidden="true">↗</span>
             </Link>
           </div>
 
@@ -179,50 +195,38 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Google Reviews carousel */}
+      {/* Google-style reviews carousel */}
       <section
         aria-labelledby="google-reviews-heading"
         style={{
-          background: '#f5f4f1',
-          color: '#171717',
-          padding: '76px 24px',
+          background: '#f8f9fa',
+          color: '#202124',
+          padding: '64px 20px',
+          fontFamily: 'Arial, Helvetica, sans-serif',
         }}
       >
-        <div style={{ maxWidth: '820px', margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-            <p
-              style={{
-                color: '#777777',
-                fontSize: '12px',
-                letterSpacing: '2px',
-                fontWeight: 600,
-                margin: '0 0 12px',
-              }}
-            >
-              CLIENT FEEDBACK
-            </p>
-
+        <div style={{ maxWidth: '760px', margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: '30px' }}>
             <h2
               id="google-reviews-heading"
               style={{
-                color: '#171717',
-                fontSize: 'clamp(28px, 5vw, 40px)',
-                lineHeight: 1.2,
+                color: '#202124',
+                fontSize: 'clamp(26px, 5vw, 36px)',
+                fontWeight: 400,
                 margin: '0 0 12px',
               }}
             >
-              What our clients say
+              Reviews
             </h2>
 
             <p
               style={{
-                color: '#666666',
+                color: '#5f6368',
                 fontSize: '15px',
-                lineHeight: 1.7,
                 margin: 0,
               }}
             >
-              Real feedback from businesses we've worked with.
+              What customers say about ROSS 360
             </p>
           </div>
 
@@ -230,66 +234,93 @@ export default function Home() {
             aria-live="polite"
             style={{
               background: '#ffffff',
-              border: '1px solid #e4e1db',
-              borderRadius: '5px',
-              padding: 'clamp(24px, 5vw, 44px)',
-              boxShadow: '0 10px 35px rgba(0, 0, 0, 0.045)',
+              border: '1px solid #dadce0',
+              borderRadius: '12px',
+              padding: 'clamp(22px, 5vw, 32px)',
+              boxShadow: '0 1px 2px rgba(60,64,67,0.08)',
             }}
           >
+            {/* Google branding and reviewer */}
             <div
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: '16px',
-                flexWrap: 'wrap',
-                marginBottom: '22px',
+                gap: '14px',
+                marginBottom: '20px',
               }}
             >
-              <div>
-                <div
-                  aria-label={`${review.rating} out of 5 stars`}
-                  style={{
-                    color: '#e5a323',
-                    fontSize: '25px',
-                    letterSpacing: '3px',
-                    marginBottom: '8px',
-                  }}
-                >
-                  {'★'.repeat(review.rating)}
-                  {'☆'.repeat(5 - review.rating)}
-                </div>
-
-                <p
-                  style={{
-                    color: '#777777',
-                    fontSize: '13px',
-                    margin: 0,
-                  }}
-                >
-                  Google review
-                </p>
-              </div>
-
               <span
                 aria-label="Google"
                 style={{
-                  color: '#555555',
-                  fontSize: '15px',
-                  fontWeight: 600,
-                  letterSpacing: '-0.3px',
+                  fontSize: '36px',
+                  fontWeight: 700,
+                  lineHeight: 1,
+                  letterSpacing: '-2px',
+                  flexShrink: 0,
+                  background:
+                    'conic-gradient(from -45deg, #4285F4 0deg 90deg, #34A853 90deg 180deg, #FBBC05 180deg 270deg, #EA4335 270deg 360deg)',
+                  color: 'transparent',
+                  backgroundClip: 'text',
+                  WebkitBackgroundClip: 'text',
                 }}
               >
-                Google
+                G
               </span>
+
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div
+                  style={{
+                    color: '#202124',
+                    fontSize: '16px',
+                    fontWeight: 600,
+                    marginBottom: '5px',
+                  }}
+                >
+                  {review.name}
+                </div>
+
+                <div style={{ color: '#5f6368', fontSize: '13px' }}>
+                  Google reviewer
+                </div>
+              </div>
+
+              <a
+                href={googleProfileUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="View ROSS 360 Google Business Profile"
+                style={{
+                  color: '#5f6368',
+                  textDecoration: 'none',
+                  fontSize: '24px',
+                  padding: '4px',
+                }}
+              >
+                ⋮
+              </a>
+            </div>
+
+            {/* Star rating */}
+            <div
+              aria-label={`${review.rating} out of 5 stars`}
+              style={{
+                color: '#fbbc04',
+                fontSize: '21px',
+                letterSpacing: '1px',
+                marginBottom: '14px',
+              }}
+            >
+              {'★'.repeat(review.rating)}
+              {'☆'.repeat(5 - review.rating)}
             </div>
 
             {review.title && (
               <h3
                 style={{
-                  color: '#252525',
-                  fontSize: '18px',
-                  margin: '0 0 12px',
+                  color: '#202124',
+                  fontSize: '16px',
+                  fontWeight: 600,
+                  margin: '0 0 10px',
                 }}
               >
                 {review.title}
@@ -298,10 +329,10 @@ export default function Home() {
 
             <blockquote
               style={{
-                color: '#333333',
-                fontSize: 'clamp(16px, 2.5vw, 19px)',
-                lineHeight: 1.85,
-                margin: '0 0 28px',
+                color: '#3c4043',
+                fontSize: '15px',
+                lineHeight: 1.75,
+                margin: '0 0 24px',
               }}
             >
               “{review.text}”
@@ -309,36 +340,20 @@ export default function Home() {
 
             <div
               style={{
-                borderTop: '1px solid #eeeeee',
-                paddingTop: '22px',
+                borderTop: '1px solid #dadce0',
+                paddingTop: '20px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                gap: '18px',
+                gap: '16px',
                 flexWrap: 'wrap',
               }}
             >
-              <div>
-                <p
-                  style={{
-                    color: '#222222',
-                    fontWeight: 600,
-                    fontSize: '15px',
-                    margin: '0 0 5px',
-                  }}
-                >
-                  {review.name}
-                </p>
-
-                <p
-                  style={{
-                    color: '#888888',
-                    fontSize: '13px',
-                    margin: 0,
-                  }}
-                >
-                  {review.date}
-                </p>
+              <div style={{ color: '#5f6368', fontSize: '13px' }}>
+                <span style={{ color: '#4285F4', fontWeight: 600 }}>
+                  Google
+                </span>{' '}
+                review
               </div>
 
               <a
@@ -346,20 +361,27 @@ export default function Home() {
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{
-                  color: '#171717',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  minHeight: '42px',
+                  padding: '0 18px',
+                  border: '1px solid #dadce0',
+                  borderRadius: '22px',
+                  background: '#ffffff',
+                  color: '#1a73e8',
                   textDecoration: 'none',
-                  fontSize: '13px',
+                  fontSize: '14px',
                   fontWeight: 600,
-                  borderBottom: '1px solid #c6a76a',
-                  paddingBottom: '5px',
                 }}
               >
-                View on Google ↗
+                Read on Google ↗
               </a>
             </div>
           </div>
 
-          {/* Carousel controls appear when there is more than one review */}
+          {/* Carousel controls appear when more reviews are added */}
           {reviews.length > 1 && (
             <div
               style={{
@@ -367,16 +389,16 @@ export default function Home() {
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: '20px',
-                marginTop: '26px',
+                marginTop: '22px',
               }}
             >
               <button
                 type="button"
                 onClick={previousReview}
                 aria-label="Previous review"
-                style={carouselButtonStyle}
+                style={arrowButtonStyle}
               >
-                ←
+                ‹
               </button>
 
               <div
@@ -392,15 +414,17 @@ export default function Home() {
                     type="button"
                     onClick={() => setActiveReview(index)}
                     aria-label={`Show review ${index + 1}`}
-                    aria-current={index === activeReview ? 'true' : undefined}
+                    aria-current={
+                      index === activeReview ? 'true' : undefined
+                    }
                     style={{
-                      width: index === activeReview ? '22px' : '8px',
+                      width: index === activeReview ? '20px' : '8px',
                       height: '8px',
                       padding: 0,
                       border: 0,
                       borderRadius: '10px',
                       background:
-                        index === activeReview ? '#171717' : '#c8c5bf',
+                        index === activeReview ? '#1a73e8' : '#dadce0',
                       cursor: 'pointer',
                     }}
                   />
@@ -411,23 +435,23 @@ export default function Home() {
                 type="button"
                 onClick={nextReview}
                 aria-label="Next review"
-                style={carouselButtonStyle}
+                style={arrowButtonStyle}
               >
-                →
+                ›
               </button>
             </div>
           )}
 
           <p
             style={{
-              color: '#888888',
+              color: '#70757a',
               textAlign: 'center',
               fontSize: '12px',
               lineHeight: 1.6,
-              margin: '24px 0 0',
+              margin: '20px 0 0',
             }}
           >
-            Reviews are displayed as provided by customers on Google.
+            Customer feedback displayed from Google reviews.
           </p>
         </div>
       </section>
@@ -436,17 +460,3 @@ export default function Home() {
     </div>
   );
 }
-
-const carouselButtonStyle = {
-  width: '42px',
-  height: '42px',
-  border: '1px solid #d8d5cf',
-  borderRadius: '50%',
-  background: '#ffffff',
-  color: '#171717',
-  fontSize: '21px',
-  cursor: 'pointer',
-  display: 'inline-flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-};
