@@ -1,11 +1,10 @@
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout.jsx';
 import Home from './pages/Home.jsx';
 import VirtualTours from './pages/VirtualTours.jsx';
 import Businesses from './pages/Businesses.jsx';
 import Property from './pages/Property.jsx';
 import Portfolio from './pages/Portfolio.jsx';
-import PortfolioCategory from './pages/PortfolioCategory.jsx';
 import Pricing from './pages/Pricing.jsx';
 import About from './pages/About.jsx';
 import Quote from './pages/Quote.jsx';
@@ -22,8 +21,9 @@ export default function App() {
         <Route path="businesses" element={<Businesses />} />
         <Route path="property" element={<Property />} />
         <Route path="portfolio" element={<Portfolio />} />
-        <Route path="portfolio/businesses" element={<PortfolioCategory category="business" />} />
-        <Route path="portfolio/properties" element={<PortfolioCategory category="property" />} />
+        {/* The old category pages, linked from outreach emails; public/_redirects also sends them to /portfolio. */}
+        <Route path="portfolio/businesses" element={<Navigate to="/portfolio" replace />} />
+        <Route path="portfolio/properties" element={<Navigate to="/portfolio" replace />} />
         <Route path="pricing" element={<Pricing />} />
         <Route path="about" element={<About />} />
         <Route path="get-a-quote" element={<Quote />} />
