@@ -1,7 +1,9 @@
+
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout.jsx';
 import Home from './pages/Home.jsx';
 import VirtualTours from './pages/VirtualTours.jsx';
+import GoogleStreetView from './pages/GoogleStreetView.jsx';
 import Businesses from './pages/Businesses.jsx';
 import Property from './pages/Property.jsx';
 import Portfolio from './pages/Portfolio.jsx';
@@ -18,12 +20,21 @@ export default function App() {
       <Route element={<Layout />}>
         <Route index element={<Home />} />
         <Route path="virtual-tours" element={<VirtualTours />} />
+        <Route path="google-street-view" element={<GoogleStreetView />} />
         <Route path="businesses" element={<Businesses />} />
         <Route path="property" element={<Property />} />
         <Route path="portfolio" element={<Portfolio />} />
-        {/* The old category pages, linked from outreach emails; public/_redirects also sends them to /portfolio. */}
-        <Route path="portfolio/businesses" element={<Navigate to="/portfolio" replace />} />
-        <Route path="portfolio/properties" element={<Navigate to="/portfolio" replace />} />
+
+        {/* Old category pages redirect to the portfolio. */}
+        <Route
+          path="portfolio/businesses"
+          element={<Navigate to="/portfolio" replace />}
+        />
+        <Route
+          path="portfolio/properties"
+          element={<Navigate to="/portfolio" replace />}
+        />
+
         <Route path="pricing" element={<Pricing />} />
         <Route path="about" element={<About />} />
         <Route path="get-a-quote" element={<Quote />} />
