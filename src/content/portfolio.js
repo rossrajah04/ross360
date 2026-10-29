@@ -29,6 +29,7 @@ export const projects = [
     name: 'Kinetic Sports & Health',
     category: 'business',
     sector: 'Sports and health',
+    location: 'Didsbury, Manchester',
     description: 'A 360° virtual tour of the premises, which visitors can move through from one area to the next.',
     embedUrl: site.stepInsideTour.embedUrl,
   },
@@ -37,6 +38,7 @@ export const projects = [
     name: 'Sabai Studio',
     category: 'business',
     sector: 'Pilates studio',
+    location: 'Altrincham, Manchester',
     description:
       'A 360° virtual tour of the studio. The 360° photographs are also published to Sabai’s Google listing, where they appear under Street View & 360°.',
     mapsUrl: 'https://maps.app.goo.gl/ruMZ8PPf3mWSNLBRA',
