@@ -43,12 +43,12 @@ export const guides = [
           {
             ul: [
               `${plan('essential').name}, from £${plan('essential').price}: smaller premises and straightforward layouts, such as cafés, small studios and boutiques.`,
-              `${plan('professional').name}, from £${plan('professional').price}: multiple areas or rooms, such as restaurants, gyms, studios and showrooms.`,
-              `${plan('bespoke').name}, from £${plan('bespoke').price}: larger premises, multiple connected areas or more involved layouts.`,
+              `${plan('professional').name}, from £${plan('professional').price}: multiple areas or rooms, such as restaurants, studios, clinics and showrooms.`,
+              `${plan('bespoke').name}, from £${plan('bespoke').price}: larger premises, multiple connected areas or more involved layouts, such as gyms and large studios.`,
             ],
           },
           {
-            p: 'Every business tour includes the 360° photography, an interactive tour visitors can move through, a shareable link, the information needed to embed the tour on your website, and a quality check before delivery.',
+            p: 'Every business tour includes the 360° photography, an interactive tour visitors can move through, a shareable link, the information needed to embed the tour on your website, and a quality check before delivery. Video hotspots, such as a how-to video on each machine, can be added and are quoted separately.',
           },
         ],
       },

@@ -32,7 +32,7 @@ export const plans = [
       'Multiple areas or rooms',
       'More comprehensive coverage',
       'Designed for visitors to explore more of the premises',
-      'Ideal for restaurants, gyms, studios, showrooms and similar spaces',
+      'Ideal for restaurants, studios, clinics, showrooms and similar spaces',
     ],
   },
   {
@@ -46,6 +46,7 @@ export const plans = [
       'Multiple connected areas',
       'More involved layouts or access requirements',
       'Bespoke scope based on the project',
+      'Ideal for gyms, large studios and similar spaces',
     ],
   },
 ];
@@ -117,6 +118,7 @@ export const pricing = {
       'Layout and complexity',
       'Access requirements',
       'Location',
+      'Video hotspots, such as a how-to video on each machine, quoted separately',
       'Additional project requirements',
     ],
     note: 'Your quotation confirms the full price before you book.',
