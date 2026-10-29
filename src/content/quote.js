@@ -14,7 +14,7 @@ export const quote = {
 
   // Written for this page.
   businessHint: 'For a private property, enter “Private”.',
-  locationNote: 'The location helps us plan the visit and any travel. Addresses are used only to prepare your quotation.',
+  locationNote: 'The location helps us plan the visit. Addresses are used only to prepare your quotation.',
 
   consent:
     'By submitting this form, you agree that ROSS 360 can use the information provided to respond to your enquiry and prepare your quotation.',
