@@ -12,6 +12,8 @@ import About from './pages/About.jsx';
 import Quote from './pages/Quote.jsx';
 import Privacy from './pages/Privacy.jsx';
 import Terms from './pages/Terms.jsx';
+import Guides from './pages/Guides.jsx';
+import Guide from './pages/Guide.jsx';
 import NotFound from './pages/NotFound.jsx';
 
 export default function App() {
@@ -35,6 +37,8 @@ export default function App() {
           element={<Navigate to="/portfolio" replace />}
         />
 
+        <Route path="guides" element={<Guides />} />
+        <Route path="guides/:slug" element={<Guide />} />
         <Route path="pricing" element={<Pricing />} />
         <Route path="about" element={<About />} />
         <Route path="get-a-quote" element={<Quote />} />

@@ -12,7 +12,9 @@ export default function Footer() {
         <div className="footer__brand">
           <Wordmark light />
           <p className="footer__descriptor">{site.descriptor}</p>
-          <p className="footer__meta">{site.serviceArea} service</p>
+          <p className="footer__meta">
+            {site.base}. {site.serviceArea} service.
+          </p>
           <p className="footer__contact">
             <a className="footer__email" href={`mailto:${site.email}`}>
               {site.email}
@@ -37,6 +39,9 @@ export default function Footer() {
                 <Link to={item.to}>{item.label}</Link>
               </li>
             ))}
+            <li>
+              <Link to="/guides">Guides</Link>
+            </li>
             <li>
               <Link to={site.quoteLink.to}>{site.quoteLink.label}</Link>
             </li>

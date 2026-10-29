@@ -55,6 +55,11 @@
   line-height: 1.55;
 }
 
+.pf-project__maps {
+  color: #ffffff;
+  margin-bottom: 16px;
+}
+
 .pf-project__note a {
   display: inline-flex;
   align-items: center;

@@ -17,6 +17,8 @@
 //   imageAlt: 'What the image shows',
 //   embedUrl: 'https://…',              // optional Panoee embed URL, shown live in place of the image
 //   tourUrl: 'https://…',               // optional public link for "Open the full tour" (defaults to embedUrl)
+//   mapsUrl: 'https://…',               // optional link to the client's Google Maps listing, where the
+//                                       // 360° photographs are published
 // }
 
 import { site } from './site.js';
@@ -27,7 +29,7 @@ export const projects = [
     name: 'Kinetic Sports & Health',
     category: 'business',
     sector: 'Sports and health',
-    description: '',
+    description: 'A 360° virtual tour of the premises, which visitors can move through from one area to the next.',
     embedUrl: site.stepInsideTour.embedUrl,
   },
   {
@@ -35,7 +37,9 @@ export const projects = [
     name: 'Sabai Studio',
     category: 'business',
     sector: 'Pilates studio',
-    description: '',
+    description:
+      'A 360° virtual tour of the studio. The 360° photographs are also published to Sabai’s Google listing, where they appear under Street View & 360°.',
+    mapsUrl: 'https://maps.app.goo.gl/ruMZ8PPf3mWSNLBRA',
     embedUrl: 'https://tour.panoee.net/iframe/6ad763402ae6ddc50a7908a8?embedFullscreen=1&embedVr=1&embedGyro=1',
   },
 ];
@@ -48,5 +52,6 @@ export const portfolio = {
 
   projectsTitle: 'Projects',
   openTour: 'Open the full tour',
+  viewOnMaps: 'View on Google Maps',
   createdBy: 'Created by ROSS 360.',
 };

@@ -112,7 +112,7 @@ export const googleStreetView = {
       },
       {
         question: 'Do you cover my area?',
-        answer: 'Yes, ROSS 360 works UK-wide.',
+        answer: 'Yes. ROSS 360 is based in Manchester and works UK-wide.',
       },
     ],
   },
