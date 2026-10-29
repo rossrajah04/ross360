@@ -27,6 +27,13 @@ function Project({ project }) {
         {project.description ? (
           <div className="pf-project__aside">
             <p className="pf-project__text">{project.description}</p>
+            {project.mapsUrl ? (
+              <a className="h-link pf-project__maps" href={project.mapsUrl} target="_blank" rel="noopener noreferrer">
+                {portfolio.viewOnMaps}
+                <Arrow />
+                <span className="visually-hidden"> (opens in a new tab)</span>
+              </a>
+            ) : null}
           </div>
         ) : null}
       </div>

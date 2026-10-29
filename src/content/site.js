@@ -19,6 +19,7 @@ export const site = {
   founder: 'Ross Rajah',
   legalName: 'Ross Rajah, sole trader trading as ROSS 360',
   serviceArea: 'UK-wide',
+  base: 'Based in Manchester',
   responseTime: 'within 1 business day',
 
   cta: {

@@ -1,8 +1,10 @@
 // Build-time prerender: gives every route its own HTML file with the correct <title>,
-// meta description, canonical URL, social tags and JSON-LD already in the page source.
-// The React app still renders the page content in the browser as normal.
+// meta description, canonical URL, social tags and JSON-LD, and the page's own content, already in the
+// page source, so search engines read the text without running JavaScript. In the browser React takes
+// over the prerendered HTML (hydrateRoot in src/main.jsx).
 //
-// Runs after `vite build` (see "build" in package.json). Output on Cloudflare Pages:
+// Runs after `vite build` and the server build of src/entry-server.jsx into dist-ssr (see "build" in
+// package.json). Output on Cloudflare Pages:
 //   dist/index.html, dist/virtual-tours.html, ... and dist/404.html
 // Cloudflare Pages serves dist/virtual-tours.html at /virtual-tours (no trailing slash), which matches the
 // canonical URLs and sitemap. A folder with index.html would instead redirect /virtual-tours to /virtual-tours/.
@@ -14,6 +16,7 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { pages, canonicalFor, jsonLdFor, shareImage } from '../src/content/seo.js';
 import { site } from '../src/content/site.js';
+import { render as renderApp } from '../dist-ssr/entry-server.js';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const dist = join(root, 'dist');
@@ -76,14 +79,16 @@ function headFor(key) {
   return lines.join('\n    ');
 }
 
+const rootTag = '<div id="root"></div>';
+if (!template.includes(rootTag)) {
+  console.error('Empty <div id="root"></div> missing from dist/index.html.');
+  process.exit(1);
+}
+
 function render(key) {
-  return (
-    template.slice(0, start + startMarker.length) +
-    '\n    ' +
-    headFor(key) +
-    '\n    ' +
-    template.slice(end)
-  );
+  const html =
+    template.slice(0, start + startMarker.length) + '\n    ' + headFor(key) + '\n    ' + template.slice(end);
+  return html.replace(rootTag, `<div id="root">${renderApp(pages[key].path)}</div>`);
 }
 
 let count = 0;
@@ -110,4 +115,4 @@ await writeFile(
   `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`,
 );
 
-console.log(`Prerendered head metadata for ${count} routes and generated sitemap.xml.`);
+console.log(`Prerendered ${count} routes and generated sitemap.xml.`);

@@ -10,7 +10,8 @@ import '../../styles/legal.css';
 // A legal page (Privacy Notice, Terms & Conditions): the service pages' hero, then a contents list
 // beside numbered sections. Wording lives in src/content/<page>.js as sections of blocks:
 // { h } sub-heading, { p } paragraph, { ul } list, { dl } [term, text] pairs.
-// In any string, {email}, {ico}, {privacy} and {quote} are rendered as links.
+// In any string, {email}, {ico}, {privacy}, {quote}, {pricing}, {streetview} and {virtualtours} are rendered
+// as links. Guides (src/pages/Guide.jsx) use the same blocks.
 
 const ICO_URL = 'https://ico.org.uk/make-a-complaint/';
 
@@ -35,9 +36,24 @@ const TOKENS = {
       Get a Quote
     </Link>
   ),
+  '{pricing}': (key) => (
+    <Link key={key} to="/pricing">
+      Pricing
+    </Link>
+  ),
+  '{streetview}': (key) => (
+    <Link key={key} to="/google-street-view">
+      Google Street View
+    </Link>
+  ),
+  '{virtualtours}': (key) => (
+    <Link key={key} to="/virtual-tours">
+      Virtual Tours
+    </Link>
+  ),
 };
 
-const TOKEN_RE = /(\{email\}|\{ico\}|\{privacy\}|\{quote\})/;
+const TOKEN_RE = /(\{email\}|\{ico\}|\{privacy\}|\{quote\}|\{pricing\}|\{streetview\}|\{virtualtours\})/;
 
 function Text({ children }) {
   return children
@@ -45,7 +61,7 @@ function Text({ children }) {
     .map((part, index) => (TOKENS[part] ? TOKENS[part](index) : <Fragment key={index}>{part}</Fragment>));
 }
 
-function Block({ block }) {
+export function Block({ block }) {
   if (block.h) return <h3 className="lg-h3">{block.h}</h3>;
   if (block.p) {
     return (
