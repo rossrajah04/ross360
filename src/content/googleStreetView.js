@@ -50,7 +50,7 @@ export const googleStreetView = {
     steps: [
       {
         title: 'Tell me about your premises',
-        text: 'Send your business name, address and the areas you would like included. I will reply with a fixed quote, including any travel.',
+        text: 'Send your business name, address and the areas you would like included. I will reply with a fixed quote.',
       },
       {
         title: 'I photograph the premises',
@@ -66,7 +66,7 @@ export const googleStreetView = {
   price: {
     label: 'Google Street View only',
     title: `From £${streetView.price}`,
-    text: `£${streetView.price} covers smaller premises. Larger premises need more photographs and are quoted accordingly. Any travel is confirmed in your quote before you book.`,
+    text: `£${streetView.price} covers smaller premises. Larger premises need more photographs and are quoted accordingly.`,
     link: 'View all pricing',
     to: '/pricing',
   },
@@ -89,7 +89,7 @@ export const googleStreetView = {
       },
       {
         question: 'Do you cover my area?',
-        answer: 'Yes, ROSS 360 works UK-wide. Any travel is confirmed in your quote before you book.',
+        answer: 'Yes, ROSS 360 works UK-wide.',
       },
     ],
   },

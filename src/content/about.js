@@ -104,7 +104,7 @@ export const about = {
     title: 'UK-wide service',
     paragraphs: [
       'ROSS 360 provides 360° virtual tour services across the UK.',
-      'Projects are quoted according to the space, requirements, access and location. Any additional travel or project costs are confirmed before booking.',
+      'Projects are quoted according to the space, requirements, access and location. The full price is confirmed in your quotation before booking.',
     ],
   },
 

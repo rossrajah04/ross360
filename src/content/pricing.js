@@ -55,7 +55,7 @@ export const lowestPrice = plans[0].price;
 // Google Street View only (agreed with ROSS 360, 22 October 2026): linked 360° photographs published
 // to the business's Google listing, with no interactive tour, website embed or tour URL. No photograph
 // count (removed at ROSS 360's request): the quotation sets the scope. Kept out of `plans`, so
-// "Business tours from £249" stays true wherever it is shown. Travel is charged as for every project.
+// "Business tours from £249" stays true wherever it is shown.
 export const streetView = {
   id: 'streetview',
   name: 'Google Street View',
@@ -110,16 +110,16 @@ export const pricing = {
 
   factors: {
     title: 'What affects the final price?',
-    text: 'Every space is different. The final quotation depends on the size of the premises, number of areas, layout, access, location, travel requirements and any additional project requirements.',
+    text: 'Every space is different. The final quotation depends on the size of the premises, number of areas, layout, access, location and any additional project requirements.',
     items: [
       'Size of the space',
       'Number of areas to capture',
       'Layout and complexity',
       'Access requirements',
-      'Location and travel',
+      'Location',
       'Additional project requirements',
     ],
-    note: "We'll confirm any additional travel or project costs before you book.",
+    note: 'Your quotation confirms the full price before you book.',
   },
 
   property: {
