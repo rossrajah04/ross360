@@ -52,7 +52,7 @@ export const plans = [
 
 export const lowestPrice = plans[0].price;
 
-// Google Street View only (agreed with ROSS 360, 22 October 2026): linked 360° photographs published
+// Google Street View only (agreed with ROSS 360, 22 October 2026): 360° photographs published
 // to the business's Google listing, with no interactive tour, website embed or tour URL. No photograph
 // count (removed at ROSS 360's request): the quotation sets the scope. Kept out of `plans`, so
 // "Business tours from £249" stays true wherever it is shown.
@@ -95,10 +95,10 @@ export const pricing = {
 
   streetView: {
     title: 'Google Street View only',
-    text: 'For businesses that want their premises on Google Maps without a full virtual tour. We capture linked 360° photographs of your premises and publish them to your Google Business Profile. £99 covers smaller premises; larger premises need more photographs and are quoted accordingly.',
+    text: 'For businesses that want their premises on Google Maps without a full virtual tour. We capture 360° photographs of your premises and publish them to your Google Business Profile. £99 covers smaller premises; larger premises need more photographs and are quoted accordingly.',
     listLabel: 'Includes:',
     items: [
-      'Linked 360° photographs of the agreed areas',
+      '360° photographs of the agreed areas',
       'Publication to your Google Business Profile',
       'No login details or passwords needed from you',
       'Quality check before publication',
