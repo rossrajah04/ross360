@@ -308,3 +308,40 @@
   margin-top: clamp(24px, 3vw, 36px);
   font-size: 0.9rem;
 }
+
+/* Google Street View page: screenshots of a real Google listing. */
+.gsv-example {
+  padding: var(--h-gap) 0 0;
+}
+
+.gsv-example__shots {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: clamp(24px, 4vw, 48px);
+  margin: clamp(28px, 3.5vw, 44px) 0;
+  padding: 0;
+  list-style: none;
+}
+
+.gsv-example__shots > li {
+  width: min(340px, 100%);
+}
+
+.gsv-example__shot {
+  margin: 0;
+}
+
+.gsv-example__shot img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+}
+
+.gsv-example__shot figcaption {
+  margin-top: 12px;
+  color: var(--muted);
+  font-size: 0.95rem;
+}

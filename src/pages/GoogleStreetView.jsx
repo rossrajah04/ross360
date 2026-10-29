@@ -9,12 +9,12 @@ import '../styles/virtual-tours.css';
 import '../styles/service-pages.css';
 
 // Google Street View: the £99 Street View only service. Introduction on the dark ground, why it helps,
-// what you receive, how it works, the price, questions, then the enquiry. Built from the service pages'
+// how it looks on Google (Sabai Studio's listing), what you receive, how it works, the price, questions, then the enquiry. Built from the service pages'
 // shared sections and styles, like Businesses and Property. Wording: src/content/googleStreetView.js.
 
 export default function GoogleStreetView() {
   useReveal();
-  const { hero, why, receive, how, price, faqs, closing } = googleStreetView;
+  const { hero, why, example, receive, how, price, faqs, closing } = googleStreetView;
 
   return (
     <div className="home vt sp">
@@ -47,6 +47,47 @@ export default function GoogleStreetView() {
       </section>
 
       <Standards id="gsv-why-title" title={why.title} items={why.items} />
+
+      <section className="gsv-example" aria-labelledby="gsv-example-title">
+        <div className="h-wrap">
+          <h2 id="gsv-example-title" className="h-h2" data-reveal>
+            {example.title}
+          </h2>
+          <p className="vt-how__intro" data-reveal>
+            {example.text}
+          </p>
+          <ul className="gsv-example__shots">
+            {example.images.map((image) => (
+              <li key={image.name} data-reveal>
+                <figure className="gsv-example__shot">
+                  <picture>
+                    <source
+                      type="image/webp"
+                      srcSet={`/images/google/${image.name}-460.webp 460w, /images/google/${image.name}-920.webp 920w`}
+                      sizes="(min-width: 700px) 340px, 80vw"
+                    />
+                    <img
+                      src={`/images/google/${image.name}-920.jpg`}
+                      srcSet={`/images/google/${image.name}-460.jpg 460w, /images/google/${image.name}-920.jpg 920w`}
+                      sizes="(min-width: 700px) 340px, 80vw"
+                      width={image.width}
+                      height={image.height}
+                      alt={image.alt}
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  </picture>
+                  <figcaption>{image.caption}</figcaption>
+                </figure>
+              </li>
+            ))}
+          </ul>
+          <a className="h-link" href={example.href} target="_blank" rel="noopener noreferrer" data-reveal>
+            {example.link}
+            <Arrow />
+          </a>
+        </div>
+      </section>
 
       <Deliverables id="gsv-receive-title" title={receive.title} items={receive.items} />
 
