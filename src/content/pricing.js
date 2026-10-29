@@ -25,7 +25,6 @@ export const plans = [
     name: 'Professional',
     price: 349,
     featured: true,
-    tag: 'Most popular',
     bestFor: 'Most businesses',
     description: 'Our main package for businesses that want a comprehensive tour across multiple areas.',
     suits: [
