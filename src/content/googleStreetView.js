@@ -18,7 +18,7 @@ export const googleStreetView = {
     items: [
       {
         title: 'People see inside first',
-        text: 'People often look a business up on Google Maps before they visit. Linked 360° photographs let them walk through your entrance and main areas from the listing.',
+        text: 'People often look a business up on Google Maps before they visit. 360° photographs let them see your entrance and main areas from the listing.',
       },
       {
         title: 'A fuller Google listing',
@@ -39,7 +39,6 @@ export const googleStreetView = {
     title: 'What you receive',
     items: [
       { title: '360° photography', text: 'Your entrance and customer areas, photographed at a time that suits you.' },
-      { title: 'Linked photographs', text: 'Connected so people can move from one area to the next on Google Maps.' },
       { title: 'Published for you', text: 'Added to your Google Business Profile. No logins or passwords needed from you.' },
       { title: 'Quality check', text: 'Every photograph is checked before publication.' },
     ],
