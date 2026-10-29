@@ -28,6 +28,12 @@ export const pages = {
     description:
       'Interactive 360° virtual tours for property: estate agents, letting agents, developers and commercial property professionals. UK-wide, individually quoted.',
   },
+  googleStreetView: {
+    path: '/google-street-view',
+    title: 'Google Street View Photography | ROSS 360',
+    description:
+      'Professional 360° photographs of your premises, published to your Google Business Profile so people can look inside before they visit. From £99, UK-wide.',
+  },
   portfolio: {
     path: '/portfolio',
     title: 'Portfolio | ROSS 360',
