@@ -83,66 +83,73 @@ export const guides = [
   },
 
   {
-    slug: 'add-360-photos-to-google-business-profile',
-    title: 'How to add 360° photos to your Google Business Profile',
+    slug: 'prepare-premises-for-360-shoot',
+    title: 'How to prepare your premises for a 360° shoot',
     description:
-      'How 360° photographs get onto a Google Business Profile and Google Maps, what Google needs, and the choice between doing it yourself and having it done professionally.',
-    lead: 'When people look up a business on Google Maps, the listing can show 360° photographs under a "Street View & 360°" tab, so they can look around inside before they visit. This guide explains how those photographs get there.',
+      'A short checklist for getting your premises ready for 360° photography, so the finished virtual tour or Google Street View images show the space at its best.',
+    lead: '360° photography captures the whole room at once, so everything in the space is in the picture. A little preparation makes a noticeable difference to the finished result.',
     published: '2026-10-29',
     updated: '29 October 2026',
     sections: [
       {
-        id: 'what-you-need',
-        title: 'What you need',
+        id: 'before-the-day',
+        title: 'Before the day',
         blocks: [
           {
             ul: [
-              'A business listing on Google Maps (a Google Business Profile).',
-              'A 360° camera that captures the full sphere around it.',
-              'Images in the standard 360° format: a full sphere, twice as wide as it is tall, with the 360° information Google reads to display them.',
+              'Choose a time when the premises is closed or quiet, usually before or after opening hours.',
+              'Decide which areas you want included, and any that should stay out, such as staff rooms or storage.',
+              'Let staff know when the photography is taking place.',
             ],
           },
         ],
       },
       {
-        id: 'uploading',
-        title: 'Uploading the photographs',
+        id: 'tidy',
+        title: 'Tidy every angle',
         blocks: [
-          {
-            p: 'Open the business listing in the Google Maps app, go to Photos and choose Add photos, then select the 360° images. Google also offers Street View Studio on the web for publishing 360° imagery.',
-          },
-        ],
-      },
-      {
-        id: 'after-upload',
-        title: 'After you upload',
-        blocks: [
-          {
-            p: 'Google reviews and processes 360° imagery before it appears on Maps, which can take up to a couple of weeks. Google decides whether imagery is accepted, so publication is never guaranteed.',
-          },
-        ],
-      },
-      {
-        id: 'getting-it-right',
-        title: 'Getting it right',
-        blocks: [
+          { p: 'A 360° image shows the floor, the ceiling and every wall, including the corners an ordinary photograph would leave out.' },
           {
             ul: [
-              'Photograph during quiet hours, so customers are not in shot.',
-              'Keep the camera level and at a natural eye height.',
-              'Cover the entrance and the main customer areas.',
-              'Check every image for blur, stitching errors and anything private before uploading.',
+              'Clear counters, desks and floors of bags, boxes and paperwork.',
+              'Put away cleaning equipment, cables and bins where possible.',
+              'Straighten furniture and equipment so the space looks ready for customers.',
             ],
           },
         ],
       },
       {
-        id: 'done-for-you',
-        title: 'Having it done for you',
+        id: 'lighting',
+        title: 'Lighting',
         blocks: [
           {
-            p: `ROSS 360 photographs premises and publishes the images to the business's Google Business Profile, from £${streetView.price}, with no logins or passwords needed from you. You can see how it looks on a real listing on the {streetview} page.`,
+            ul: [
+              'Switch on all the lights in each area, and replace any bulbs that have gone.',
+              'Open blinds and curtains, unless the view outside is better hidden.',
+            ],
           },
+        ],
+      },
+      {
+        id: 'privacy',
+        title: 'Privacy',
+        blocks: [
+          {
+            ul: [
+              'Remove or cover anything personal or confidential: documents, whiteboards, customer details and computer screens.',
+              'Keep customers and staff out of the areas being photographed.',
+            ],
+          },
+        ],
+      },
+      {
+        id: 'on-the-day',
+        title: 'On the day',
+        blocks: [
+          {
+            p: 'The photography needs very little from you beyond access to each area. Afterwards, ROSS 360 produces and checks the finished tour or images before delivery.',
+          },
+          { p: 'Send a few details about your premises through {quote} for a fixed quotation.' },
         ],
       },
     ],
