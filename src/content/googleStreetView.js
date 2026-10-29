@@ -35,6 +35,30 @@ export const googleStreetView = {
     ],
   },
 
+  // Screenshots of Sabai Studio's Google listing (October 2026), shown with their agreement.
+  example: {
+    title: 'How it looks on Google',
+    text: 'These are the 360° photographs I took for Sabai Studio, as they appear on their Google listing.',
+    images: [
+      {
+        name: 'sabai-360-view',
+        width: 920,
+        height: 1805,
+        alt: 'A 360° photograph of the Sabai Studio Pilates room open in Google Maps above the map and listing, credited to ROSS 360',
+        caption: 'A 360° photograph open in Google Maps',
+      },
+      {
+        name: 'sabai-listing',
+        width: 920,
+        height: 1373,
+        alt: 'Sabai Studio’s Google Maps listing, showing the Street View & 360° photos tab',
+        caption: 'The Street View & 360° tab on the listing',
+      },
+    ],
+    link: 'View Sabai Studio on Google Maps',
+    href: 'https://maps.app.goo.gl/ruMZ8PPf3mWSNLBRA',
+  },
+
   receive: {
     title: 'What you receive',
     items: [
