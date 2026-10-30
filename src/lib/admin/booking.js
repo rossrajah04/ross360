@@ -3,9 +3,11 @@
 // date helpers.
 //
 // - Deposits are fixed by package and count towards the quote total (which already includes travel).
-// - A slot more than 7 days away can be paid in full or by deposit; 7 days or fewer: in full only.
-// - A deposit booking's balance is due by the end of the UK day 7 days before the slot. Reminders go
-//   14 and 8 days before the slot, where those dates are not already past when the booking is made.
+// - Any slot can be paid in full or by deposit (packages with a fixed deposit only).
+// - A deposit booking's balance is due on the day of the shoot (ROSS 360, 30 October 2026): the
+//   customer pays it in person on the day, or online at any time before then. Nothing is cancelled for
+//   an unpaid balance. Reminders go 7 and 2 days before the slot, where those dates are not already
+//   past when the booking is made.
 // - Cancelling more than 48 hours before the slot refunds everything paid. Within 48 hours ROSS 360
 //   decides what to keep, up to 50% of the booking price; nothing is kept automatically.
 
@@ -15,9 +17,7 @@ import { site } from '../../content/site.js';
 // Fixed deposits, by package id (src/content/pricing.js): £249 / £349 / £499.
 export const DEPOSITS = { essential: 5000, professional: 7000, bespoke: 10000 };
 
-export const FULL_PAYMENT_WITHIN_DAYS = 7; // 7 days or fewer before the slot: pay in full
-export const BALANCE_DUE_DAYS = 7; // balance due by the end of the day this many days before the slot
-export const REMINDER_DAYS = [14, 8]; // balance reminders, days before the slot
+export const REMINDER_DAYS = [7, 2]; // balance reminders, days before the slot (first, second)
 export const REMINDER_FROM_HOUR = 9; // reminders are not emailed before 09:00 UK time
 
 // The slot is held while the customer is on Stripe Checkout. Stripe's shortest Checkout expiry is 30
@@ -48,7 +48,7 @@ export const bookingStatusLabel = (value) => BOOKING_STATUSES.find((s) => s.valu
 export const CANCEL_REASONS = {
   customer: 'Cancelled by the customer',
   customer_late: 'Cancelled by the customer within 48 hours',
-  unpaid_balance: 'Balance not paid by the deadline',
+  unpaid_balance: 'Balance not paid by the deadline', // bookings cancelled before 30 October 2026
   ross360: 'Cancelled by ROSS 360',
   slot_unavailable: 'Paid after the slot was taken',
 };
@@ -66,14 +66,13 @@ export const depositFor = (pkg) => (Object.hasOwn(DEPOSITS, pkg || '') ? DEPOSIT
 /**
  * The payment choices for a quote total and a slot date, booked on `today` (UK).
  * Returns { totalPence, full: { dueNowPence }, deposit: { depositPence, balancePence, balanceDueOn } | null,
- *   noDeposit: null | 'no_package' | 'within_7_days' | 'total_too_low' }.
+ *   noDeposit: null | 'no_package' | 'total_too_low' }.
  */
 export function paymentOptions({ totalPence, pkg, slotDate, today = ukToday() }) {
   const full = { dueNowPence: totalPence };
   const depositPence = depositFor(pkg);
   let noDeposit = null;
   if (depositPence === null) noDeposit = 'no_package';
-  else if (daysBetween(today, slotDate) <= FULL_PAYMENT_WITHIN_DAYS) noDeposit = 'within_7_days';
   else if (totalPence <= depositPence) noDeposit = 'total_too_low';
   return {
     totalPence,
@@ -85,12 +84,13 @@ export function paymentOptions({ totalPence, pkg, slotDate, today = ukToday() })
   };
 }
 
-/** The UK date by the end of which a deposit booking's balance must be paid. */
-export const balanceDueOn = (slotDate) => addDays(slotDate, -BALANCE_DUE_DAYS);
+/** The UK date a deposit booking's balance is due: the day of the shoot. */
+export const balanceDueOn = (slotDate) => slotDate;
 
 /**
  * The reminder dates that apply to a deposit booking made on `bookedOn`: each reminder whose date is
- * not already past. Returns { r14: date | null, r8: date | null }.
+ * not already past. Returns { r14: date | null, r8: date | null } (the first and second reminder; the
+ * names follow the database columns).
  */
 export function reminderDates(slotDate, bookedOn) {
   const [first, second] = REMINDER_DAYS.map((days) => addDays(slotDate, -days));
@@ -133,9 +133,6 @@ export const ukEndOfDay = (date) => ukInstant(addDays(date, 1), '00:00');
 
 /** When a slot starts. */
 export const slotStart = (date, period) => ukInstant(date, SLOT_START[period] || '09:00');
-
-/** Whether a deposit's balance deadline has passed at `at`. */
-export const balanceOverdue = (balanceDueOnDate, at = new Date()) => at.getTime() >= ukEndOfDay(balanceDueOnDate).getTime();
 
 /**
  * Which cancellation rule applies at `at`: 'free' (more than 48 hours before the slot), 'late' (within

@@ -167,9 +167,8 @@ async function handle({ request, env, params }) {
     const outcome = await startBalanceCheckout(env, ctx, base);
     if (outcome.result === 'ok') return redirect(outcome.url);
     if (outcome.result === 'nothing_due') return redirect(urls.self);
-    const state = outcome.result === 'too_late' ? 'too_late' : 'due';
-    const error = outcome.result === 'payments_off' ? B.paymentsOff : outcome.result === 'too_late' ? '' : B.paymentStartFailed;
-    return html(renderBalancePage({ snapshot: ctx.snapshot, booking, nonce: await nonce(), urls, error, state }), outcome.result === 'too_late' ? 409 : 502);
+    const error = outcome.result === 'payments_off' ? B.paymentsOff : B.paymentStartFailed;
+    return html(renderBalancePage({ snapshot: ctx.snapshot, booking, nonce: await nonce(), urls, error }), 502);
   }
 
   if (page === 'cancel') {

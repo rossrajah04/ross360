@@ -71,6 +71,8 @@ export const api = {
   bookings: () => call('/bookings'),
   booking: (id) => call(`/bookings/${id}`),
   cancelBooking: (id, body) => call(`/bookings/${id}/cancel`, { method: 'POST', body: { ...body, confirm: true } }),
+  recordBalanceInPerson: (id, expectPaidPence) =>
+    call(`/bookings/${id}/balance-in-person`, { method: 'POST', body: { expectPaidPence, confirm: true } }),
   moveBooking: (id, slotId) => call(`/bookings/${id}/move`, { method: 'POST', body: { slotId, confirm: true } }),
   retryRefund: (id, refundId) => call(`/bookings/${id}/refunds/${refundId}/retry`, { method: 'POST', body: {} }),
   payments: () => call('/payments'),

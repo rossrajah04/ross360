@@ -249,10 +249,9 @@ slot and pay on Stripe Checkout** (hosted by Stripe; no card details reach this 
   online booking waits for legal review of the consumer cancellation wording.
 
 - **Packages and deposits.** Essential, Professional and Bespoke quotes can be paid in full or by deposit
-  (£50, £70, £100) when the slot is more than 7 days away. Within 7 days, and for quotes without one of
-  those packages, payment in full only. The deposit counts toward the total; the balance is the total
-  minus the deposit. Before Stripe the customer sees the total, the amount due now, any balance and
-  its deadline.
+  (£50, £70, £100), whatever the date. Quotes without one of those packages are paid in full. The
+  deposit counts toward the total; the balance is the total minus the deposit. Before Stripe the
+  customer sees the total, the amount due now and any balance, due on the day of the shoot.
 - **Holding a slot.** Starting Checkout holds the slot for that customer for Stripe's minimum session
   time, 30 minutes (plus about a minute of margin). Two customers can't hold or book the same slot: the
   database refuses a second active booking on a slot. An unpaid hold is released when Stripe expires
@@ -261,17 +260,20 @@ slot and pay on Stripe Checkout** (hosted by Stripe; no card details reach this 
   return from Stripe, or the hourly task, whichever comes first; each is safe to repeat). The customer
   gets a confirmation email and newquote@ an internal one. The enquiry moves to Booked. If a payment
   completes after its hold ran out and the slot was taken, it is refunded in full automatically.
-- **Balance.** Due by the end of the UK day 7 days before the slot. Reminders go 14 and 8 days before
-  (from 09:00 UK), only those still ahead when booked. The email and the customer page have a Pay the
-  balance button (a new Checkout). Unpaid at the deadline: the booking is cancelled, the slot reopens,
-  the deposit is refunded in full and the customer is emailed.
+- **Balance.** Due on the day of the shoot (since 30 October 2026). The customer pays it in person on
+  the day, or online at any time before then: the customer page and the reminders have a Pay balance
+  button (a new Checkout). Reminders go 7 and 2 days before (from 09:00 UK), only those still ahead
+  when booked. When the customer pays in person, use **Record balance paid** on the booking in the
+  Admin: the booking is marked paid in full, any open online balance checkout is ended first, and the
+  customer is emailed a receipt. An unpaid balance never cancels a booking. A balance paid in person
+  is refunded by hand if the booking is later cancelled (the refund shows as failed with that note).
 - **Cancellation.** The customer can cancel online. More than 48 hours before the slot: full refund
   and the slot reopens at once. Within 48 hours: the request comes to you (Admin -> Bookings) and
   nothing is refunded until you decide how much to keep, from nothing up to 50% of the booking total
   (never more than was paid). Slot start times used for these windows: Morning and Full day 09:00,
   Afternoon 13:00 (UK).
-- **Admin.** Bookings lists every booking with slot, payment status, paid, balance and deadline. A
-  booking's page has cancel (by the customer's request or by ROSS 360), move to another open slot (the
+- **Admin.** Bookings lists every booking with slot, payment status, paid and balance. A
+  booking's page has record balance paid in person, cancel (by the customer's request or by ROSS 360), move to another open slot (the
   customer is emailed), payments and refunds, and **Retry refund** for a refund Stripe refused. A
   refund that got no answer is retried hourly with the same Stripe idempotency key, so it is never
   paid twice. **Run scheduled tasks now** runs the hourly tasks at once.
@@ -309,7 +311,7 @@ booking isn't available; nothing else changes.
    apply `migrations/0005_bookings.sql`, then `migrations/0006_quote_customer_type.sql` (see Admin).
 5. Deploy the scheduler for Preview (next section). Test cards: `4242 4242 4242 4242` pays, `4000 0000 0000 0002` is declined; any future expiry and any CVC.
 
-**Booking scheduler (Cron Worker).** Reminders, unpaid-balance cancellations, expired holds and refund
+**Booking scheduler (Cron Worker).** Balance reminders, expired holds and refund
 retries run hourly from a small separate Worker in `workers/scheduler/`, which calls
 `/api/scheduler/run` on the site with `SCHEDULER_SECRET`. It has no access to D1 or Stripe itself.
 From that folder on your Mac:

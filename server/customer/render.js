@@ -151,7 +151,7 @@ function bookingFacts(b) {
     [B.labels.total, money(b.totalPence)],
     [B.labels.paid, money(b.paidPence)],
   ];
-  if (b.plan === 'deposit' && balance > 0) rows.push([B.labels.balance, money(balance)], [B.labels.balanceDue, `End of ${longDate(b.balanceDueOn)}`]);
+  if (b.plan === 'deposit' && balance > 0) rows.push([B.labels.balance, money(balance)], [B.labels.balanceDue, B.balanceDueValue]);
   return facts(rows);
 }
 
@@ -252,7 +252,7 @@ export function renderPayPage({ snapshot, slot, options, nonce, urls, termsUrl, 
       )}<span class="sub">${escapeHtml(B.fullOption(money(options.totalPence)))}</span></span></label></li>` +
       `<li class="slot"><label><input type="radio" name="plan" value="deposit" required${chosen === 'deposit' ? ' checked' : ''}><span>${escapeHtml(
         B.payDeposit,
-      )}<span class="sub">${escapeHtml(B.depositOption(money(deposit.depositPence), money(deposit.balancePence), longDate(deposit.balanceDueOn)))}</span></span></label></li>` +
+      )}<span class="sub">${escapeHtml(B.depositOption(money(deposit.depositPence), money(deposit.balancePence)))}</span></span></label></li>` +
       '</ul></fieldset>'
     : `<input type="hidden" name="plan" value="full">` +
       facts([[B.labels.dueNow, money(options.totalPence)]]) +
@@ -271,9 +271,7 @@ export function renderPayPage({ snapshot, slot, options, nonce, urls, termsUrl, 
     `<input type="hidden" name="slot" value="${slot.id}">` +
     planChoice +
     `<h2>${escapeHtml(B.cancellationHeading)}</h2>` +
-    `<ul class="terms">${B.cancellationTerms.map((t) => `<li>${escapeHtml(t)}</li>`).join('')}${
-      deposit ? `<li>${escapeHtml(B.depositTerm(longDate(deposit.balanceDueOn)))}</li>` : ''
-    }</ul>` +
+    `<ul class="terms">${B.cancellationTerms.map((t) => `<li>${escapeHtml(t)}</li>`).join('')}</ul>` +
     `<label class="check"><input type="checkbox" name="agree" value="yes" required${values.agree ? ' checked' : ''}><span>${escapeHtml(B.agree)} <a href="${escapeHtml(
       termsUrl,
     )}" rel="noreferrer" target="_blank">${escapeHtml(B.agreeLink)}</a>.</span></label>` +
@@ -284,14 +282,13 @@ export function renderPayPage({ snapshot, slot, options, nonce, urls, termsUrl, 
 }
 
 /** Pay the balance of a deposit booking. */
-export function renderBalancePage({ snapshot, booking, nonce, urls, error = '', state = 'due' }) {
+export function renderBalancePage({ snapshot, booking, nonce, urls, error = '' }) {
   const balance = Math.max(0, booking.totalPence - booking.paidPence);
   let action;
-  if (state === 'too_late') action = noticeBox(escapeHtml(B.balanceTooLate));
-  else if (balance === 0) action = noticeBox(escapeHtml(B.balanceNothingDue));
+  if (balance === 0) action = noticeBox(escapeHtml(B.balanceNothingDue));
   else {
     action =
-      `<p>${escapeHtml(B.balanceIntro(money(balance), longDate(booking.balanceDueOn)))}</p>` +
+      `<p>${escapeHtml(B.balanceIntro(money(balance)))}</p>` +
       `<p class="small muted">${escapeHtml(B.stripeNote)}</p>` +
       postButton(urls.balance, nonce, B.toPayment);
   }

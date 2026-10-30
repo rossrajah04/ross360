@@ -46,6 +46,7 @@ import {
   moveBooking,
   moveTargets,
   paymentsAvailable,
+  recordBalanceInPerson,
   retryRefund,
   runScheduled,
 } from '../../../server/booking/bookings.js';
@@ -145,7 +146,8 @@ const BOOKING_OUTCOMES = {
   changed: [409, 'This booking has changed since you opened it. Reload it to see the latest state; nothing was changed.'],
   invalid_retention: [422, 'The amount to keep must be between £0 and 50% of the booking price (and no more than was paid), and only on a cancellation within 48 hours.'],
   slot_unavailable: [409, 'That slot is no longer available. Choose another.'],
-  balance_first: [409, 'The balance must be paid before this booking can move to a date whose balance deadline has passed.'],
+  paid_online: [409, 'The customer has just paid the balance online, so nothing was recorded in person.'],
+  stripe_unreachable: [503, 'The customer has an online balance payment open and Stripe could not be reached to end it. Try again in a moment.'],
   past: [422, 'That date has passed.'],
   not_failed: [409, 'This refund is not marked as failed.'],
 };
@@ -338,6 +340,11 @@ async function handle(context) {
         return json({ ok: false, message: 'Invalid request.' }, 400);
       }
       return bookingOutcome(env, await cancelBooking(env, id, { reason: body.reason, retainPence: body.retainPence, actor, expect: body.expect }), id);
+    }
+    if (segments.length === 3 && segments[2] === 'balance-in-person') {
+      // The balance was paid in person (on the day of the shoot, or by another agreed method).
+      if (body.confirm !== true || !isPence(body.expectPaidPence)) return json({ ok: false, message: 'Invalid request.' }, 400);
+      return bookingOutcome(env, await recordBalanceInPerson(env, id, { actor, expectPaidPence: body.expectPaidPence }), id);
     }
     if (segments.length === 3 && segments[2] === 'move') {
       if (body.confirm !== true || !Number.isSafeInteger(body.slotId) || body.slotId < 1) return json({ ok: false, message: 'Invalid request.' }, 400);

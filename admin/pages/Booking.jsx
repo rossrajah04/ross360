@@ -6,12 +6,12 @@ import { BookingTag } from './Bookings.jsx';
 import { formatMoney } from '../../src/lib/admin/model.js';
 import { longDate } from '../../src/lib/admin/quotes.js';
 import { periodLabel, weekdayDate } from '../../src/lib/admin/availability.js';
-import { CANCEL_REASONS, LATE_CANCELLATION_MAX_PERCENT, PAYMENT_KINDS } from '../../src/lib/admin/booking.js';
+import { CANCEL_REASONS, LATE_CANCELLATION_MAX_PERCENT, PAYMENT_KINDS, REMINDER_DAYS } from '../../src/lib/admin/booking.js';
 
 const slotText = (date, period) => `${weekdayDate(date)}, ${periodLabel(period)}`;
 const reminderText = (on, sentAt) => {
   if (!on) return 'Not applicable';
-  if (sentAt === 'skipped') return `Skipped (${longDate(on)}; the 8-day reminder went instead)`;
+  if (sentAt === 'skipped') return `Skipped (${longDate(on)}; the later reminder went instead)`;
   return sentAt ? `Sent ${when(sentAt, true)}` : `Due ${longDate(on)}`;
 };
 
@@ -22,8 +22,9 @@ function toPence(value) {
   return Math.round(Number(text) * 100);
 }
 
-// One booking: slot, payments, balance and deadline, refunds; and the controls ROSS 360 needs —
-// decide a cancellation request (keep up to 50%), cancel, move to another open slot, retry a refund.
+// One booking: slot, payments, balance, refunds; and the controls ROSS 360 needs — record a balance
+// paid in person, decide a cancellation request (keep up to 50%), cancel, move to another open slot,
+// retry a refund.
 export default function Booking() {
   const { id } = useParams();
   const [data, setData] = useState(null);
@@ -105,12 +106,12 @@ export default function Booking() {
         {b.status !== 'cancelled' && b.plan === 'deposit' ? (
           <>
             <dt>Balance</dt>
-            <dd>{b.balancePence ? `${formatMoney(b.balancePence)}, due by the end of ${longDate(b.balanceDueOn)}` : 'Paid'}</dd>
+            <dd>{b.balancePence ? `${formatMoney(b.balancePence)}, due on the day of the shoot (in person, or online before then)` : 'Paid'}</dd>
             {b.balancePence ? (
               <>
-                <dt>14-day reminder</dt>
+                <dt>Reminder ({REMINDER_DAYS[0]} days before)</dt>
                 <dd>{reminderText(b.reminder14On, b.reminder14SentAt)}</dd>
-                <dt>8-day reminder</dt>
+                <dt>Reminder ({REMINDER_DAYS[1]} days before)</dt>
                 <dd>{reminderText(b.reminder8On, b.reminder8SentAt)}</dd>
               </>
             ) : null}
@@ -148,6 +149,7 @@ export default function Booking() {
         ) : null}
       </dl>
 
+      {b.status === 'confirmed' && b.plan === 'deposit' && b.balancePence ? <BalanceInPerson b={b} busy={busy} act={act} /> : null}
       {b.status === 'cancel_requested' ? <Decide b={b} busy={busy} act={act} /> : null}
       {b.status === 'confirmed' ? <CancelByUs b={b} busy={busy} act={act} /> : null}
       {b.status === 'confirmed' ? <Move b={b} targets={data.moveTargets} busy={busy} act={act} /> : null}
@@ -173,7 +175,7 @@ export default function Booking() {
                     <td>{formatMoney(p.amountPence)}</td>
                     <td>{{ open: 'Checkout open', paid: 'Paid', expired: 'Not completed', failed: 'Could not start' }[p.status] || p.status}</td>
                     <td>{when(p.paidAt || p.createdAt, true)}</td>
-                    <td className="ad-muted">{p.paymentIntent || p.sessionId || ''}</td>
+                    <td className="ad-muted">{p.paymentIntent || p.sessionId || (p.status === 'paid' ? 'Paid in person' : '')}</td>
                   </tr>
                 ))}
               </tbody>
@@ -228,10 +230,32 @@ export default function Booking() {
 
       {active ? (
         <p className="ad-note">
-          Refunds go back to the card the customer paid with. Stripe does not return its own fee on a refund.
+          Refunds go back to the card the customer paid with. Stripe does not return its own fee on a refund. A balance paid in person is refunded by hand.
         </p>
       ) : null}
     </>
+  );
+}
+
+// The customer paid the balance in person (on the day of the shoot, or by another agreed method). It
+// records the whole balance as paid and emails the customer a receipt.
+function BalanceInPerson({ b, busy, act }) {
+  const submit = async (event) => {
+    event.preventDefault();
+    if (!window.confirm(`Record the balance of ${formatMoney(b.balancePence)} as paid in person? The customer is emailed a receipt.`)) return;
+    await act(() => api.recordBalanceInPerson(b.id, b.paidPence), `Balance of ${formatMoney(b.balancePence)} recorded as paid in person.`);
+  };
+  return (
+    <form className="ad-panel" onSubmit={submit}>
+      <h2 className="ad-h2">Balance paid in person</h2>
+      <p>
+        When the customer pays the balance of {formatMoney(b.balancePence)} on the day (cash, card reader or bank transfer), record it here. The
+        booking is then paid in full and no more reminders are sent.
+      </p>
+      <button type="submit" className="ad-button" disabled={busy}>
+        Record balance paid
+      </button>
+    </form>
   );
 }
 

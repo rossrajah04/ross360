@@ -2,8 +2,9 @@
 //
 // A customer with a valid quotation chooses an open slot and pays on Stripe Checkout, in full or by
 // the fixed deposit (src/lib/admin/booking.js has the rules). The slot is held while they pay and the
-// booking is confirmed only when Stripe confirms the payment. Balance reminders, the unpaid-balance
-// cancellation and refunds run on a schedule (runScheduled), triggered hourly by the Cron Worker.
+// booking is confirmed only when Stripe confirms the payment. A deposit booking's balance is paid on
+// the day of the shoot, in person (recorded in the Admin) or online beforehand. Balance reminders and
+// refunds run on a schedule (runScheduled), triggered hourly by the Cron Worker.
 //
 // Double booking is impossible by construction: an active booking (a checkout in progress counts) is
 // one row, and the database allows one per slot and one per quote (bookings_one_per_slot / _per_quote)
@@ -20,15 +21,14 @@ import {
   CHECKOUT_MINUTES,
   CHECKOUT_SLACK_SECONDS,
   HOLD_MARGIN_SECONDS,
+  REMINDER_DAYS,
   REMINDER_FROM_HOUR,
   balanceDueOn,
-  balanceOverdue,
   cancellationWindow,
   maxRetention,
   onlineBooking,
   paymentOptions,
   reminderDates,
-  ukEndOfDay,
   ukHour,
 } from '../../src/lib/admin/booking.js';
 import {
@@ -570,18 +570,22 @@ async function completeBalance(env, booking, payment, claim, now) {
     db
       .prepare(
         `UPDATE bookings SET paid_pence = paid_pence + ?, updated_at = ?
-         WHERE id = ? AND status IN ('confirmed', 'cancel_requested') AND ${unpaid}
+         WHERE id = ? AND status IN ('confirmed', 'cancel_requested') AND paid_pence + ? <= total_pence AND ${unpaid}
          RETURNING id`,
       )
-      .bind(payment.amount_pence, at, booking.id),
+      .bind(payment.amount_pence, at, booking.id, payment.amount_pence),
     db
-      .prepare(`INSERT INTO enquiry_events (enquiry_id, created_at, actor, type, detail) SELECT ?, ?, 'customer', 'balance_paid', ? WHERE ${unpaid} AND ${active}`)
+      .prepare(
+        `INSERT INTO enquiry_events (enquiry_id, created_at, actor, type, detail)
+         SELECT ?, ?, 'customer', 'balance_paid', ? WHERE ${unpaid} AND ${active} AND EXISTS (SELECT 1 FROM bookings WHERE id = ${Number(booking.id)} AND updated_at = '${at}')`,
+      )
       .bind(booking.enquiryId, at, JSON.stringify({ quote: booking.quoteReference, paidPence: payment.amount_pence })),
     markPaidSql(claim),
   ]);
   if (!results[results.length - 1].results?.[0]) return { result: 'duplicate' };
   if (!results[0].results?.[0]) {
-    // The booking was cancelled (for example at the balance deadline) before this payment completed.
+    // The booking was cancelled, or the balance was recorded as paid in person, before this payment
+    // completed.
     return refundLatePayment(env, booking, payment, { ...claim, recorded: true }, now);
   }
   const updated = await getBooking(db, booking.id);
@@ -716,9 +720,9 @@ export async function handleRefundUpdated(env, refund, now = new Date()) {
 // --- Balance ------------------------------------------------------------------------------------
 
 /**
- * Start Stripe Checkout for a deposit booking's balance. The session expires by the deadline, so a
- * balance cannot be paid after the booking has been cancelled for non-payment.
- * Returns { result: 'ok' | 'nothing_due' | 'too_late' | 'payments_off' | 'payment_start_failed', url? }.
+ * Start Stripe Checkout for a deposit booking's balance. The balance can be paid online at any time
+ * while the booking is confirmed (it is otherwise paid in person on the day of the shoot).
+ * Returns { result: 'ok' | 'nothing_due' | 'payments_off' | 'payment_start_failed', url? }.
  */
 export async function startBalanceCheckout(env, ctx, pageUrl, now = new Date()) {
   const db = env.DB;
@@ -727,10 +731,6 @@ export async function startBalanceCheckout(env, ctx, pageUrl, now = new Date()) 
   if (!b || b.status !== 'confirmed' || b.plan !== 'deposit') return { result: 'nothing_due' };
   const balance = b.totalPence - b.paidPence;
   if (balance <= 0) return { result: 'nothing_due' };
-  const deadline = ukEndOfDay(b.balanceDueOn).getTime();
-  // Stripe sessions last at least 30 minutes, so the last half hour before the deadline is too late.
-  const latestStart = deadline - (CHECKOUT_MINUTES * 60 + CHECKOUT_SLACK_SECONDS + 60) * 1000;
-  if (now.getTime() > latestStart) return { result: 'too_late' };
 
   const open = await openPayment(db, b.id);
   if (open) {
@@ -746,7 +746,7 @@ export async function startBalanceCheckout(env, ctx, pageUrl, now = new Date()) 
   }
 
   const at = iso(now);
-  const sessionExpires = Math.floor(Math.min(now.getTime() + 23 * 3_600_000, deadline - 60_000) / 1000);
+  const sessionExpires = Math.floor((now.getTime() + 23 * 3_600_000) / 1000);
   let paymentId;
   try {
     const row = await db
@@ -796,6 +796,68 @@ export async function startBalanceCheckout(env, ctx, pageUrl, now = new Date()) 
   }
 }
 
+/**
+ * The Admin records a deposit booking's balance as paid in person (on the day of the shoot, or by any
+ * other agreed method). An online balance checkout still open is ended at Stripe first, so the balance
+ * cannot be paid twice; if it was paid meanwhile, that payment is recorded instead.
+ * expectPaidPence: the amount paid that the Admin showed, so a stale screen cannot act.
+ * Returns { result: 'ok' | 'not_found' | 'changed' | 'paid_online' | 'stripe_unreachable', booking? }.
+ */
+export async function recordBalanceInPerson(env, bookingId, { actor, expectPaidPence }, now = new Date()) {
+  const db = env.DB;
+  await requireSchema(db);
+  const b = await getBooking(db, bookingId);
+  if (!b) return { result: 'not_found' };
+  const balance = b.totalPence - b.paidPence;
+  if (b.status !== 'confirmed' || b.plan !== 'deposit' || balance <= 0 || b.paidPence !== expectPaidPence) return { result: 'changed', booking: b };
+
+  const open = await openPayment(db, b.id);
+  if (open) {
+    if (open.sessionId) {
+      let session;
+      try {
+        session = await expireCheckoutSession(env, open.sessionId);
+      } catch {
+        try {
+          session = await retrieveCheckoutSession(env, open.sessionId);
+        } catch {
+          return { result: 'stripe_unreachable', booking: b };
+        }
+      }
+      if (session?.status === 'complete') {
+        if (session.payment_status === 'paid') await handleCheckoutCompleted(env, session, now);
+        return { result: 'paid_online', booking: await getBooking(db, b.id) };
+      }
+    }
+    await db.prepare(`UPDATE booking_payments SET status = 'expired', updated_at = ? WHERE id = ? AND status = 'open'`).bind(iso(now), open.id).run();
+  }
+
+  const at = iso(now);
+  const recordedHere = `EXISTS (SELECT 1 FROM bookings WHERE id = ${Number(b.id)} AND paid_pence = total_pence AND updated_at = '${at}')`;
+  const results = await db.batch([
+    db
+      .prepare(
+        `UPDATE bookings SET paid_pence = total_pence, updated_at = ?
+         WHERE id = ? AND status = 'confirmed' AND paid_pence = ? AND total_pence - paid_pence = ?
+         RETURNING id`,
+      )
+      .bind(at, b.id, b.paidPence, balance),
+    db
+      .prepare(
+        `INSERT INTO booking_payments (booking_id, kind, amount_pence, status, created_at, paid_at, updated_at)
+         SELECT ?, 'balance', ?, 'paid', ?, ?, ? WHERE ${recordedHere}`,
+      )
+      .bind(b.id, balance, at, at, at),
+    db
+      .prepare(`INSERT INTO enquiry_events (enquiry_id, created_at, actor, type, detail) SELECT ?, ?, ?, 'balance_paid', ? WHERE ${recordedHere}`)
+      .bind(b.enquiryId, at, actor, JSON.stringify({ quote: b.quoteReference, paidPence: balance, inPerson: true })),
+  ]);
+  if (!results[0].results?.[0]) return { result: 'changed', booking: await getBooking(db, b.id) };
+  const updated = await getBooking(db, b.id);
+  await notifyCustomer(env, updated, balancePaidEmail(updated, balance, await customerPageUrl(env, updated.quoteId)), `balance-in-person-${b.id}`, 'balance received');
+  return { result: 'ok', booking: updated };
+}
+
 // --- Cancellations and refunds --------------------------------------------------------------------
 
 /**
@@ -833,12 +895,14 @@ export async function customerCancel(env, ctx, now = new Date()) {
 }
 
 /**
- * Split a refund across a booking's paid payments, most recent first. Returns [{ paymentId, amount }].
+ * Split a refund across a booking's paid payments: card payments (most recent first), then any paid in
+ * person, which ROSS 360 refunds by hand. Returns [{ paymentId, amount }].
  */
 function allocateRefund(payments, total) {
   const allocation = [];
   let left = total;
-  for (const p of [...payments].filter((x) => x.status === 'paid').reverse()) {
+  const paid = [...payments].filter((x) => x.status === 'paid').reverse();
+  for (const p of [...paid.filter((x) => x.paymentIntent), ...paid.filter((x) => !x.paymentIntent)]) {
     if (left <= 0) break;
     const amount = Math.min(left, p.amountPence);
     allocation.push({ paymentId: p.id, amount });
@@ -851,8 +915,8 @@ function allocateRefund(payments, total) {
  * Cancel a booking and refund what is due.
  *
  * reason: 'customer' (outside 48 hours: full refund), 'customer_late' (ROSS 360 decides retainPence,
- * at most 50% of the booking price and never more than was paid), 'ross360' (full refund) or
- * 'unpaid_balance' (the deposit refunded in full). Only 'customer_late' may keep anything.
+ * at most 50% of the booking price and never more than was paid) or 'ross360' (full refund). Only
+ * 'customer_late' may keep anything.
  * expect: the status the caller saw ('confirmed' or 'cancel_requested'), so a stale screen cannot act.
  *
  * The booking, the refund rows and the timeline are written in one transaction; the refunds are then
@@ -960,7 +1024,7 @@ export async function executeRefunds(env, { bookingId = null, refundId = null, o
     if (!r.stripe_payment_intent) {
       const marked = await db
         .prepare(`UPDATE booking_refunds SET status = 'failed', last_error = ?, updated_at = ? WHERE id = ? AND status = 'pending' RETURNING id`)
-        .bind('No Stripe payment to refund.', t, r.id)
+        .bind('Paid in person: refund it by hand.', t, r.id)
         .first();
       if (marked) outcome.failed += 1;
       continue;
@@ -1039,8 +1103,8 @@ export async function retryRefund(env, refundId, bookingId, now = new Date()) {
 
 /**
  * Move a confirmed booking to another open slot, keeping its payments. A deposit booking's balance
- * deadline and reminders follow the new date; an unpaid balance cannot be moved past its deadline.
- * Returns { result: 'ok' | 'not_found' | 'changed' | 'slot_unavailable' | 'balance_first' | 'past', booking? }.
+ * due date and reminders follow the new date.
+ * Returns { result: 'ok' | 'not_found' | 'changed' | 'slot_unavailable' | 'past', booking? }.
  */
 export async function moveBooking(env, bookingId, slotId, actor, now = new Date()) {
   const db = env.DB;
@@ -1054,7 +1118,6 @@ export async function moveBooking(env, bookingId, slotId, actor, now = new Date(
   if (slot.slot_date < today) return { result: 'past', booking: b };
   const unpaid = b.totalPence - b.paidPence > 0;
   const due = b.plan === 'deposit' ? balanceDueOn(slot.slot_date) : null;
-  if (unpaid && due && balanceOverdue(due, now)) return { result: 'balance_first', booking: b };
   const reminders = unpaid && due ? reminderDates(slot.slot_date, today) : { r14: null, r8: null };
   const at = iso(now);
   await releaseHolds(db, now);
@@ -1100,45 +1163,18 @@ export async function moveBooking(env, bookingId, slotId, actor, now = new Date(
  * Safe to run at any time and any number of times:
  * 1. releases checkout holds that have run out;
  * 2. emails balance reminders that are due (from 09:00 UK time), each once;
- * 3. cancels deposit bookings whose balance is unpaid after the deadline, refunding the deposit;
- * 4. retries refunds Stripe has not answered.
+ * 3. retries refunds Stripe has not answered.
+ * An unpaid balance never cancels a booking: it is paid on the day of the shoot.
  * Returns a summary of what it did.
  */
 export async function runScheduled(env, now = new Date()) {
   const db = env.DB;
   await requireSchema(db);
-  const summary = { holdsReleased: 0, reminders: 0, cancelled: 0, refunds: null };
+  const summary = { holdsReleased: 0, reminders: 0, refunds: null };
   const today = ukToday(now);
 
   const released = await db.batch(releaseExpiredHolds(db, now));
   summary.holdsReleased = released[2].results?.length ?? 0;
-
-  // Overdue balances first, so a booking past its deadline gets no reminder.
-  const { results: overdue } = await db
-    .prepare(
-      `SELECT id, balance_due_on FROM bookings
-       WHERE status = 'confirmed' AND plan = 'deposit' AND paid_pence < total_pence AND balance_due_on <= ?`,
-    )
-    .bind(today)
-    .all();
-  for (const row of overdue) {
-    if (!balanceOverdue(row.balance_due_on, now)) continue;
-    // A balance payment completed at the last moment is recorded first.
-    const open = await openPayment(db, row.id);
-    if (open?.sessionId) {
-      try {
-        const session = await retrieveCheckoutSession(env, open.sessionId);
-        if (session.status === 'complete' && session.payment_status === 'paid') {
-          await handleCheckoutCompleted(env, session, now);
-          continue;
-        }
-      } catch {
-        continue; // Stripe unreachable: decide on the next run rather than risk cancelling a paid booking.
-      }
-    }
-    const outcome = await cancelBooking(env, row.id, { reason: 'unpaid_balance', retainPence: 0, actor: 'system', expect: 'confirmed' }, now);
-    if (outcome.result === 'ok') summary.cancelled += 1;
-  }
 
   if (ukHour(now) >= REMINDER_FROM_HOUR) {
     const { results: due } = await db
@@ -1160,16 +1196,18 @@ export async function runScheduled(env, now = new Date()) {
 }
 
 /**
- * Send the reminder that is due for a booking. If the 14-day reminder was missed and the 8-day one is
- * now due, only the 8-day one is sent. The reminder is claimed before it is emailed, so two runs at
+ * Send the reminder that is due for a booking. If the first reminder was missed and the second is now
+ * due, only the second is sent. Nothing is sent once the day of the shoot has passed. The reminder is claimed before it is emailed, so two runs at
  * once send it once; a failed email is released to be tried again on the next run.
  */
 async function sendReminder(env, bookingId, now) {
   const db = env.DB;
   const b = await getBooking(db, bookingId);
-  if (!b || balanceOverdue(b.balanceDueOn, now)) return false;
   const today = ukToday(now);
+  if (!b || b.slotDate < today) return false;
+  // 8 and 14 name the database columns (reminder_8_*, reminder_14_*): the second and first reminder.
   const which = b.reminder8On && b.reminder8On <= today && !b.reminder8SentAt ? 8 : 14;
+  const days = which === 8 ? REMINDER_DAYS[1] : REMINDER_DAYS[0];
   const at = iso(now);
   const claimed = await db
     .prepare(
@@ -1183,7 +1221,7 @@ async function sendReminder(env, bookingId, now) {
   if (!claimed) return false;
   const pageUrl = await customerPageUrl(env, b.quoteId);
   const sent = await sendEmail(env, reminderEmail(b, pageUrl ? `${pageUrl}/balance` : null), {
-    idempotencyKey: `balance-reminder-${which}-${b.id}-${b.balanceDueOn}`,
+    idempotencyKey: `balance-reminder-${which}-${b.id}-${b.slotDate}`,
     customer: true,
     label: `balance reminder ${which}`,
   });
@@ -1197,8 +1235,8 @@ async function sendReminder(env, bookingId, now) {
   }
   await event(db, b.enquiryId, at, 'system', 'balance_reminder_sent', {
     quote: b.quoteReference,
-    days: which,
-    balanceDueOn: b.balanceDueOn,
+    days,
+    balanceDueOn: b.slotDate,
     skipped: Boolean(sent.skipped),
   }).run();
   return true;

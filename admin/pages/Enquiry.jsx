@@ -370,7 +370,7 @@ function describe(event) {
   if (type === 'booking_confirmed') {
     return `Quote ${detail.quote}: booked ${slotText(detail)}, ${formatMoney(detail.paidPence)} paid (${detail.plan === 'deposit' ? 'deposit' : 'in full'})`;
   }
-  if (type === 'balance_paid') return `Quote ${detail.quote}: balance of ${formatMoney(detail.paidPence)} paid`;
+  if (type === 'balance_paid') return `Quote ${detail.quote}: balance of ${formatMoney(detail.paidPence)} paid${detail.inPerson ? ' in person' : ''}`;
   if (type === 'balance_reminder_sent') {
     return `Quote ${detail.quote}: ${detail.days}-day balance reminder ${detail.skipped ? 'skipped (test address guard)' : 'emailed'}`;
   }
