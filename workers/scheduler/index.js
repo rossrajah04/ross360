@@ -1,7 +1,7 @@
 // ROSS 360 booking scheduler: a Cloudflare Worker with a Cron Trigger (hourly).
 //
 // It does one thing: POST <SCHEDULER_TARGET>/api/scheduler/run with the shared SCHEDULER_SECRET. All
-// the work (reminders, unpaid-balance cancellations, refunds) runs in the Pages project, with its own
+// the work (reminders, expired holds, refunds) runs in the Pages project, with its own
 // database and keys, so this Worker needs no database or Stripe access. See README: Booking scheduler.
 //
 // Variables: SCHEDULER_TARGET (e.g. https://phase-c-customer-links.ross360.pages.dev for Preview, or

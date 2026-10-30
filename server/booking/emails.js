@@ -6,7 +6,6 @@ import { site } from '../../src/content/site.js';
 import { quoteEmail } from '../../src/content/quoteEmail.js';
 import { booking as B, bookingEmails as E } from '../../src/content/booking.js';
 import { formatMoney } from '../../src/lib/admin/model.js';
-import { longDate } from '../../src/lib/admin/quotes.js';
 import { periodLabel, weekdayDate } from '../../src/lib/admin/availability.js';
 import { CANCEL_REASONS, PAYMENT_KINDS } from '../../src/lib/admin/booking.js';
 import { QUOTE_FROM } from '../admin/quoteRender.js';
@@ -122,7 +121,7 @@ function bookingRows(b, { paidLabel = B.labels.paid } = {}) {
     [paidLabel, money(b.paidPence)],
   ];
   if (b.plan === 'deposit' && balanceOf(b) > 0) {
-    rows.push([B.labels.balance, money(balanceOf(b))], [B.labels.balanceDue, `End of ${longDate(b.balanceDueOn)}`]);
+    rows.push([B.labels.balance, money(balanceOf(b))], [B.labels.balanceDue, B.balanceDueValue]);
   }
   return rows;
 }
@@ -139,7 +138,7 @@ export function confirmedEmail(b, pageUrl) {
     rows: bookingRows(b),
     button: viewButton(pageUrl),
     after: [
-      balance > 0 ? E.confirmed.balance(money(balance), longDate(b.balanceDueOn)) : E.confirmed.paidInFull,
+      balance > 0 ? E.confirmed.balance(money(balance)) : E.confirmed.paidInFull,
       ...B.cancellationTerms,
     ],
   });
@@ -149,11 +148,10 @@ export function reminderEmail(b, balanceUrl) {
   const slot = slotText(b.slotDate, b.period);
   return customerMessage({
     to: b.customerEmail,
-    subject: E.reminder.subject(longDate(b.balanceDueOn)),
-    intro: [E.reminder.lead(slot, longDate(b.balanceDueOn))],
+    subject: E.reminder.subject(slot),
+    intro: [E.reminder.lead(slot), E.reminder.balance(money(balanceOf(b)))],
     rows: bookingRows(b),
     button: balanceUrl ? { label: E.payBalance, url: balanceUrl } : null,
-    after: [E.reminder.consequence(money(b.depositPence))],
   });
 }
 
@@ -178,14 +176,6 @@ export function refundLine(b, refunds) {
 
 export function cancelledEmail(b, refunds, { pageUrl } = {}) {
   const slot = slotText(b.slotDate, b.period);
-  if (b.cancelReason === 'unpaid_balance') {
-    return customerMessage({
-      to: b.customerEmail,
-      subject: E.overdue.subject,
-      intro: [E.overdue.lead(slot, longDate(b.balanceDueOn)), refundLine(b, refunds)],
-      after: [E.overdue.again],
-    });
-  }
   if (b.cancelReason === 'ross360') {
     return customerMessage({
       to: b.customerEmail,
@@ -226,7 +216,7 @@ export function movedEmail(b, pageUrl) {
     intro: [E.moved.lead(slot)],
     rows: bookingRows(b),
     button: viewButton(pageUrl),
-    after: balance > 0 ? [E.confirmed.balance(money(balance), longDate(b.balanceDueOn))] : [],
+    after: balance > 0 ? [E.confirmed.balance(money(balance))] : [],
   });
 }
 
@@ -269,7 +259,7 @@ export function internalEmail(env, kind, b, { adminUrl, refunds = [] } = {}) {
     ['Paid', money(b.paidPence)],
   ];
   if (b.plan === 'deposit' && b.paidPence < b.totalPence && b.status !== 'cancelled') {
-    rows.push(['Balance', money(b.totalPence - b.paidPence)], ['Balance due by', `End of ${longDate(b.balanceDueOn)}`]);
+    rows.push(['Balance', money(b.totalPence - b.paidPence)], ['Balance due', 'On the day of the shoot (in person, or online before then)']);
   }
   if (b.status === 'cancelled') {
     rows.push(['Reason', CANCEL_REASONS[b.cancelReason] || b.cancelReason], ['Retained', money(b.retainedPence)]);

@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import { api } from '../api.js';
 import { when } from '../components/Bits.jsx';
 import { formatMoney } from '../../src/lib/admin/model.js';
-import { longDate } from '../../src/lib/admin/quotes.js';
 import { periodLabel, weekdayDate } from '../../src/lib/admin/availability.js';
 import { CANCEL_REASONS, bookingStatusLabel } from '../../src/lib/admin/booking.js';
 
@@ -42,7 +41,7 @@ export default function Bookings() {
     }
     const s = result.summary;
     setMessage(
-      `Done: ${s.reminders} reminder${s.reminders === 1 ? '' : 's'} sent, ${s.cancelled} unpaid booking${s.cancelled === 1 ? '' : 's'} cancelled, ` +
+      `Done: ${s.reminders} reminder${s.reminders === 1 ? '' : 's'} sent, ` +
         `${s.holdsReleased} expired hold${s.holdsReleased === 1 ? '' : 's'} released, ${s.refunds.succeeded} refund${s.refunds.succeeded === 1 ? '' : 's'} completed.`,
     );
     load();
@@ -69,7 +68,7 @@ export default function Bookings() {
         </p>
       ) : null}
       <p className="ad-note">
-        Reminders, unpaid-balance cancellations and refund retries run every hour. “Run scheduled tasks now” runs the same tasks at once;
+        Balance reminders and refund retries run every hour. “Run scheduled tasks now” runs the same tasks at once;
         it never does anything twice.
       </p>
       {error ? <p className="ad-error" role="alert">{error}</p> : null}
@@ -96,7 +95,7 @@ export default function Bookings() {
                     : b.status === 'holding'
                       ? `Paying now; slot held until ${when(b.holdExpiresAt, true)}.`
                       : `Paid ${formatMoney(b.paidPence)} of ${formatMoney(b.totalPence)}${
-                          b.balancePence ? `. Balance ${formatMoney(b.balancePence)} due by the end of ${longDate(b.balanceDueOn)}` : ' (in full)'
+                          b.balancePence ? `. Balance ${formatMoney(b.balancePence)} due on the day` : ' (in full)'
                         }.`}
                 </span>
               </Link>

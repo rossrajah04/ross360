@@ -38,7 +38,7 @@ const { freeCancellationHours: hours, lateCancellationMaxPercent: percent } = si
 export const terms = {
   title: 'Terms & Conditions',
   lead: 'The terms that apply when ROSS 360 provides 360° photography and virtual tour services.',
-  updated: '4 October 2026',
+  updated: '30 October 2026',
 
   sections: [
     {
@@ -118,18 +118,18 @@ export const terms = {
           ul: previewLegalWording
             ? [
                 'A booking is confirmed only when payment has been received. Until then, no date is reserved for you.',
-                'When you book online, you can pay in full or, for the Essential, Professional and Bespoke packages when the booked date is more than 7 days away, pay a deposit of £50, £70 or £100 respectively. Bookings made 7 days or fewer before the date, and quotations that do not use one of those packages, are paid in full when booking.',
-                'A deposit counts toward the total price shown on your quotation. The balance is the total price less the deposit, and is due by the end of the day (UK time) 7 days before the booked date. We will send you reminders with a link to pay it.',
-                'If the balance has not been paid by then, the booking is cancelled, the date is released and your deposit is refunded in full. We will email you to confirm this.',
+                'When you book online, you can pay in full or, for the Essential, Professional and Bespoke packages, pay a deposit of £50, £70 or £100 respectively. Quotations that do not use one of those packages are paid in full when booking.',
+                'A deposit counts toward the total price shown on your quotation. The balance is the total price less the deposit, and is due on the day of the shoot. You can pay it in person on the day, or online at any time before then using the link in your booking email.',
                 'Online card payments are processed by Stripe. We do not see or store your full card details.',
                 'You can also pay using any other payment method we agree with you, such as bank transfer.',
                 'We do not begin work until the booking has been confirmed.',
               ]
             : [
-                'Paid projects require payment in full before the booking is confirmed.',
+                'Paid projects require a deposit, or payment in full, before the booking is confirmed.',
+                'Where you pay a deposit, the balance is due on the day of the shoot. You can pay it in person on the day, or online before then.',
                 'You can pay using the payment methods we offer at the time, which may include online card payment and bank transfer.',
                 'Online card payments may be processed by a third-party payment provider, such as Stripe. Where a payment provider processes your payment, we do not see or store your full card details.',
-                'We do not begin work until payment has been received and the booking has been confirmed.',
+                'We do not begin work until the booking has been confirmed.',
               ],
         },
       ],
@@ -139,7 +139,7 @@ export const terms = {
       title: 'Booking',
       blocks: [
         {
-          p: 'A booking is confirmed only when you have accepted the quotation, paid in full and received our booking confirmation. Until then, no date is reserved. After booking, we may ask for further details to plan the visit, such as access arrangements and the order in which the space should be captured.',
+          p: 'A booking is confirmed only when you have accepted the quotation, paid the deposit or paid in full, and received our booking confirmation. Until then, no date is reserved. After booking, we may ask for further details to plan the visit, such as access arrangements and the order in which the space should be captured.',
         },
       ],
     },

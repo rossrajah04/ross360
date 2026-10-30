@@ -1,6 +1,6 @@
 // Phase C self-service booking and Stripe payment, against a local Stripe stub (tests/helpers/services.js):
 // payment in full, deposit, late bookings, successful and failed checkout, slot holds and their
-// release, two customers for one slot, balance reminders and the unpaid-balance cancellation,
+// release, two customers for one slot, balance reminders, the balance paid online or in person,
 // customer cancellations (outside and within 48 hours), ROSS 360's retention decision, refunds,
 // moving a booking, the webhook, and the test-mode guards. No real card, email or Stripe account.
 
@@ -57,22 +57,24 @@ async function bookAndPay(t, stripe, token, slotId, plan) {
 test('deposit and balance: fixed by package, counted towards the full total including travel', () => {
   const today = '2026-10-06';
   const far = paymentOptions({ totalPence: TOTAL, pkg: 'professional', slotDate: '2026-10-26', today });
-  assert.deepEqual(far.deposit, { depositPence: 7000, balancePence: TOTAL - 7000, balanceDueOn: '2026-10-19' });
+  assert.deepEqual(far.deposit, { depositPence: 7000, balancePence: TOTAL - 7000, balanceDueOn: '2026-10-26' });
   assert.equal(paymentOptions({ totalPence: 26900, pkg: 'essential', slotDate: '2026-10-26', today }).deposit.depositPence, 5000);
   assert.equal(paymentOptions({ totalPence: 51900, pkg: 'bespoke', slotDate: '2026-10-26', today }).deposit.depositPence, 10000);
-  // 8 days away: deposit allowed. 7 days or fewer: in full only.
-  assert.ok(paymentOptions({ totalPence: TOTAL, pkg: 'professional', slotDate: '2026-10-14', today }).deposit);
-  const late = paymentOptions({ totalPence: TOTAL, pkg: 'professional', slotDate: '2026-10-13', today });
-  assert.equal(late.deposit, null);
-  assert.equal(late.noDeposit, 'within_7_days');
+  // A deposit is allowed however close the slot is; the balance is due on the day of the shoot.
+  assert.deepEqual(paymentOptions({ totalPence: TOTAL, pkg: 'professional', slotDate: '2026-10-08', today }).deposit, {
+    depositPence: 7000,
+    balancePence: TOTAL - 7000,
+    balanceDueOn: '2026-10-08',
+  });
   // No package: in full only.
   assert.equal(paymentOptions({ totalPence: TOTAL, pkg: null, slotDate: '2026-10-26', today }).noDeposit, 'no_package');
 });
 
-test('reminders: 14 and 8 days before, only those not already past when booked; deadline is the end of the UK day', () => {
-  assert.deepEqual(reminderDates('2026-11-30', '2026-11-01'), { r14: '2026-11-16', r8: '2026-11-22' });
-  assert.deepEqual(reminderDates('2026-11-30', '2026-11-20'), { r14: null, r8: '2026-11-22' });
-  assert.deepEqual(reminderDates('2026-11-30', '2026-11-22'), { r14: null, r8: '2026-11-22' });
+test('reminders: 7 and 2 days before, only those not already past when booked; UK clock times', () => {
+  assert.deepEqual(reminderDates('2026-11-30', '2026-11-01'), { r14: '2026-11-23', r8: '2026-11-28' });
+  assert.deepEqual(reminderDates('2026-11-30', '2026-11-25'), { r14: null, r8: '2026-11-28' });
+  assert.deepEqual(reminderDates('2026-11-30', '2026-11-28'), { r14: null, r8: '2026-11-28' });
+  assert.deepEqual(reminderDates('2026-11-30', '2026-11-29'), { r14: null, r8: null });
   // British Summer Time and GMT.
   assert.equal(ukInstant('2026-07-01', '00:00').toISOString(), '2026-06-30T23:00:00.000Z');
   assert.equal(ukInstant('2026-12-01', '09:00').toISOString(), '2026-12-01T09:00:00.000Z');
@@ -126,7 +128,7 @@ test('payment in full: Stripe Checkout for the full total, slot held, then confi
   });
 });
 
-test('deposit: £70 now, the balance from the full total, due by the end of the day 7 days before', async () => {
+test('deposit: £70 now, the balance from the full total, due on the day of the shoot', async () => {
   const { t, slot, token } = await ready(20);
   await withServices(async ({ stripe, emails }) => {
     const b = await bookAndPay(t, stripe, token, slot.id, 'deposit');
@@ -134,27 +136,30 @@ test('deposit: £70 now, the balance from the full total, due by the end of the 
     assert.equal(b.plan, 'deposit');
     assert.equal(b.paid_pence, DEPOSIT);
     assert.equal(b.total_pence, TOTAL);
-    assert.equal(b.balance_due_on, addDays(slot.date, -7));
-    assert.equal(b.reminder_14_on, addDays(slot.date, -14));
-    assert.equal(b.reminder_8_on, addDays(slot.date, -8));
+    assert.equal(b.balance_due_on, slot.date);
+    assert.equal(b.reminder_14_on, addDays(slot.date, -7));
+    assert.equal(b.reminder_8_on, addDays(slot.date, -2));
     const page = await callPage(t.env, `/q/${token}`);
     assert.match(page.html, /£369\.00/); // balance = 439 − 70
+    assert.match(page.html, /On the day of the shoot/);
     assert.match(page.html, /Pay balance/);
     const confirm = emails.find((e) => e.subject.startsWith('ROSS 360 booking confirmed'));
-    assert.match(confirm.text, /The balance of £369\.00 is due by the end of/);
+    assert.match(confirm.text, /The balance of £369\.00 is due on the day of the shoot\. You can pay it in person on the day, or online before then/);
   });
 });
 
-test('booking 7 days or fewer before the slot: payment in full only, a deposit is refused', async () => {
+test('a slot a few days away can still be booked with a deposit, with the balance paid on the day', async () => {
   const { t, slot, token } = await ready(5);
   await withServices(async ({ stripe }) => {
     const pay = await callPage(t.env, `/q/${token}/pay?slot=${slot.id}`);
-    assert.deepEqual(formOf(pay.html).plans, ['full']);
-    assert.match(pay.html, /Slots 7 days away or fewer are paid in full/);
-    const refused = await checkout(t.env, token, slot.id, 'deposit');
-    assert.equal(refused.status, 422);
-    assert.equal(stripe.calls.length, 0);
-    assert.equal(rows(t, `SELECT * FROM bookings`).length, 0);
+    assert.deepEqual(formOf(pay.html).plans, ['full', 'deposit']);
+    assert.match(pay.html, /The balance of £369\.00 is paid on the day of the shoot, in person, or online before then if you prefer\./);
+    assert.doesNotMatch(pay.html, /7 days/);
+    const b = await bookAndPay(t, stripe, token, slot.id, 'deposit');
+    assert.equal(b.paid_pence, DEPOSIT);
+    assert.equal(b.balance_due_on, slot.date);
+    assert.equal(b.reminder_14_on, null); // 7 days before had already passed
+    assert.equal(b.reminder_8_on, addDays(slot.date, -2));
   });
 });
 
@@ -483,36 +488,38 @@ test('a session whose amount does not match the payment is not accepted', async 
   });
 });
 
-// --- Balance: reminders, payment, and the unpaid-balance cancellation -----------------------------
+// --- Balance: reminders, paying online, and paying in person on the day ----------------------------
 
-test('balance reminders at 14 and 8 days (from 09:00 UK), each once, with a Stripe link to pay', async () => {
+test('balance reminders 7 and 2 days before (from 09:00 UK), each once, offering payment in person or online', async () => {
   const { t, slot, token } = await ready(20);
   await withServices(async ({ stripe, emails }) => {
     await bookAndPay(t, stripe, token, slot.id, 'deposit');
-    const r14 = addDays(slot.date, -14);
+    const first = addDays(slot.date, -7);
     const before = emails.length;
-    await runScheduled(t.env, at(r14, '08:30'));
+    await runScheduled(t.env, at(first, '08:30'));
     assert.equal(emails.length, before, 'nothing before 09:00');
-    assert.equal((await runScheduled(t.env, at(r14, '10:00'))).reminders, 1);
-    assert.equal((await runScheduled(t.env, at(r14, '11:00'))).reminders, 0, 'once only');
+    assert.equal((await runScheduled(t.env, at(first, '10:00'))).reminders, 1);
+    assert.equal((await runScheduled(t.env, at(first, '11:00'))).reminders, 0, 'once only');
     const reminder = emails.at(-1);
-    assert.match(reminder.subject, /^ROSS 360 balance due by /);
+    assert.match(reminder.subject, /^ROSS 360 booking reminder: /);
     assert.match(reminder.text, /Balance: £369\.00/);
+    assert.match(reminder.text, /You can pay it in person on the day, or online now/);
     assert.match(reminder.text, /Pay balance: https:\/\/ross360\.test\/q\/.+\/balance/);
-    assert.match(reminder.text, /deposit of £70\.00 refunded in full/);
-    assert.equal((await runScheduled(t.env, at(addDays(slot.date, -8), '09:05'))).reminders, 1);
-    assert.equal((await events(t, 'balance_reminder_sent')).length, 2);
+    assert.doesNotMatch(reminder.text, /cancelled|refunded/);
+    assert.equal((await runScheduled(t.env, at(addDays(slot.date, -2), '09:05'))).reminders, 1);
+    const sent = await events(t, 'balance_reminder_sent');
+    assert.deepEqual(sent.map((e) => e.detail.days).sort(), [2, 7]);
   });
 });
 
-test('a deposit booking made after the 14-day date gets only the 8-day reminder', async () => {
-  const { t, slot, token } = await ready(10);
+test('a deposit booking made after the first reminder date gets only the second', async () => {
+  const { t, slot, token } = await ready(5);
   await withServices(async ({ stripe, emails }) => {
     const b = await bookAndPay(t, stripe, token, slot.id, 'deposit');
     assert.equal(b.reminder_14_on, null);
-    assert.equal(b.reminder_8_on, addDays(slot.date, -8));
-    await runScheduled(t.env, at(addDays(slot.date, -8), '12:00'));
-    assert.equal(emails.filter((e) => /balance due by/.test(e.subject)).length, 1);
+    assert.equal(b.reminder_8_on, addDays(slot.date, -2));
+    await runScheduled(t.env, at(addDays(slot.date, -2), '12:00'));
+    assert.equal(emails.filter((e) => /booking reminder/.test(e.subject)).length, 1);
   });
 });
 
@@ -525,7 +532,6 @@ test('paying the balance on Stripe: the booking is paid in full and no more remi
     const s = stripe.lastSession();
     assert.equal(s.amount_total, TOTAL - DEPOSIT);
     assert.equal(s.metadata.kind, 'balance');
-    assert.ok(s.expires_at * 1000 <= ukInstant(addDays(slot.date, -6), '00:00').getTime(), 'expires by the deadline');
     stripe.pay(s.id);
     await deliverWebhook(t.env, 'checkout.session.completed', stripe.session(s.id));
     const b = one(t, `SELECT * FROM bookings`);
@@ -533,52 +539,108 @@ test('paying the balance on Stripe: the booking is paid in full and no more remi
     assert.ok(emails.find((e) => e.subject === 'ROSS 360 balance received'));
     const page = await callPage(t.env, `/q/${token}`);
     assert.match(page.html, /Paid in full/);
-    assert.equal((await runScheduled(t.env, at(addDays(slot.date, -8), '10:00'))).reminders, 0);
-    assert.equal((await runScheduled(t.env, at(addDays(slot.date, -6), '10:00'))).cancelled, 0);
+    assert.equal((await runScheduled(t.env, at(addDays(slot.date, -7), '10:00'))).reminders, 0);
   });
 });
 
-test('unpaid at the deadline: cancelled, slot reopened, deposit refunded in full, customer emailed', async () => {
+test('an unpaid balance never cancels the booking: it can still be paid online on and after the day', async () => {
   const { t, slot, token } = await ready(20);
-  const t2 = await setUp({ db: t.db });
-  const q2 = await sentQuote(t2);
   await withServices(async ({ stripe, emails }) => {
     await bookAndPay(t, stripe, token, slot.id, 'deposit');
-    const due = addDays(slot.date, -7);
-    assert.equal((await runScheduled(t.env, at(due, '23:59'))).cancelled, 0, 'not before the end of the day');
-    const summary = await runScheduled(t.env, at(addDays(due, 1), '00:05'));
-    assert.equal(summary.cancelled, 1);
+    await runScheduled(t.env, at(addDays(slot.date, -7), '10:00'));
+    await runScheduled(t.env, at(addDays(slot.date, 1), '10:00'));
+    await runScheduled(t.env, at(addDays(slot.date, 10), '10:00'));
     const b = one(t, `SELECT * FROM bookings`);
-    assert.equal(b.status, 'cancelled');
-    assert.equal(b.cancel_reason, 'unpaid_balance');
-    assert.equal(b.retained_pence, 0);
-    assert.equal(b.refunded_pence, DEPOSIT);
-    const refund = stripe.refunds.at(-1);
-    assert.equal(refund.amount, DEPOSIT);
-    assert.match(refund.payment_intent, /^pi_test_/);
-    const email = emails.find((e) => e.subject === 'ROSS 360 booking cancelled');
-    assert.match(email.text, /was not paid by the end of/);
-    assert.match(email.text, /£70\.00 has been refunded in full/);
-    // The slot is open again for others.
-    assert.equal(one(t, `SELECT status FROM availability_slots WHERE id = ?`, slot.id).status, 'open');
-    await runScheduled(t.env, at(addDays(due, 1), '01:05'));
-    assert.equal(stripe.refunds.length, 1, 'refunded once');
-    const page = await callPage(t2.env, `/q/${q2.token}/book`);
-    assert.ok(formOf(page.html).slots.includes(slot.id));
+    assert.equal(b.status, 'confirmed');
+    assert.equal(b.paid_pence, DEPOSIT);
+    assert.equal(stripe.refunds.length, 0);
+    assert.equal(emails.filter((e) => e.subject === 'ROSS 360 booking cancelled').length, 0);
+    const page = await callPage(t.env, `/q/${token}/balance`);
+    assert.match(page.html, /due on the day of the shoot\. You can pay it online now, or in person on the day\./);
+    const res = await postForm(t.env, token, 'balance', `/q/${token}/balance`);
+    assert.equal(res.status, 303);
   });
 });
 
-test('a balance paid at the last moment is recorded, not cancelled', async () => {
+test('ROSS 360 records the balance as paid in person: paid in full, receipt emailed, no more reminders', async () => {
+  const { t, slot, token } = await ready(20);
+  await withServices(async ({ stripe, emails }) => {
+    const b = await bookAndPay(t, stripe, token, slot.id, 'deposit');
+    const detail = await t.call(`/bookings/${b.id}`);
+    assert.equal(detail.data.booking.balancePence, TOTAL - DEPOSIT);
+    // A stale screen (it showed a different amount paid) changes nothing.
+    const stale = await t.call(`/bookings/${b.id}/balance-in-person`, { method: 'POST', body: { confirm: true, expectPaidPence: 0 } });
+    assert.equal(stale.status, 409);
+    const res = await t.call(`/bookings/${b.id}/balance-in-person`, { method: 'POST', body: { confirm: true, expectPaidPence: DEPOSIT } });
+    assert.equal(res.status, 200, JSON.stringify(res.data));
+    assert.equal(res.data.booking.balancePence, 0);
+    const row = one(t, `SELECT * FROM bookings`);
+    assert.equal(row.status, 'confirmed');
+    assert.equal(row.paid_pence, TOTAL);
+    assert.deepEqual(
+      plain(rows(t, `SELECT kind, status, amount_pence, stripe_session_id, stripe_payment_intent FROM booking_payments ORDER BY id`)).at(-1),
+      { kind: 'balance', status: 'paid', amount_pence: TOTAL - DEPOSIT, stripe_session_id: null, stripe_payment_intent: null },
+    );
+    const paid = await events(t, 'balance_paid');
+    assert.equal(paid.length, 1);
+    assert.equal(paid[0].detail.inPerson, true);
+    const receipt = emails.filter((e) => e.subject === 'ROSS 360 balance received');
+    assert.equal(receipt.length, 1);
+    assert.match(receipt[0].text, /balance payment of £369\.00/);
+    // Twice does nothing more.
+    const again = await t.call(`/bookings/${b.id}/balance-in-person`, { method: 'POST', body: { confirm: true, expectPaidPence: DEPOSIT } });
+    assert.equal(again.status, 409);
+    assert.equal(one(t, `SELECT paid_pence FROM bookings`).paid_pence, TOTAL);
+    assert.equal((await runScheduled(t.env, at(addDays(slot.date, -7), '10:00'))).reminders, 0);
+    assert.match((await callPage(t.env, `/q/${token}`)).html, /Paid in full/);
+    assert.equal((await t.call('/dashboard')).data.bookings.balancesDue, 0);
+  });
+});
+
+test('recording in person ends an open online balance checkout first, so the balance cannot be paid twice', async () => {
   const { t, slot, token } = await ready(20);
   await withServices(async ({ stripe }) => {
-    await bookAndPay(t, stripe, token, slot.id, 'deposit');
+    const b = await bookAndPay(t, stripe, token, slot.id, 'deposit');
     await postForm(t.env, token, 'balance', `/q/${token}/balance`);
-    stripe.pay(stripe.lastSession().id); // paid, but the webhook has not arrived yet
-    await runScheduled(t.env, at(addDays(slot.date, -6), '00:05'));
-    const b = one(t, `SELECT * FROM bookings`);
-    assert.equal(b.status, 'confirmed');
-    assert.equal(b.paid_pence, TOTAL);
+    const s = stripe.lastSession();
+    const res = await t.call(`/bookings/${b.id}/balance-in-person`, { method: 'POST', body: { confirm: true, expectPaidPence: DEPOSIT } });
+    assert.equal(res.status, 200, JSON.stringify(res.data));
+    assert.equal(stripe.session(s.id).status, 'expired');
+    assert.equal(one(t, `SELECT status FROM booking_payments WHERE stripe_session_id = ?`, s.id).status, 'expired');
+    assert.equal(one(t, `SELECT paid_pence FROM bookings`).paid_pence, TOTAL);
+  });
+});
+
+test('if the customer paid online just before it was recorded in person, the online payment stands', async () => {
+  const { t, slot, token } = await ready(20);
+  await withServices(async ({ stripe }) => {
+    const b = await bookAndPay(t, stripe, token, slot.id, 'deposit');
+    await postForm(t.env, token, 'balance', `/q/${token}/balance`);
+    stripe.pay(stripe.lastSession().id); // paid; the webhook has not arrived yet
+    const res = await t.call(`/bookings/${b.id}/balance-in-person`, { method: 'POST', body: { confirm: true, expectPaidPence: DEPOSIT } });
+    assert.equal(res.status, 409);
+    assert.match(res.data.message, /paid the balance online/);
+    const row = one(t, `SELECT * FROM bookings`);
+    assert.equal(row.paid_pence, TOTAL);
+    assert.equal(rows(t, `SELECT * FROM booking_payments WHERE stripe_payment_intent IS NULL AND status = 'paid'`).length, 0);
     assert.equal(stripe.refunds.length, 0);
+  });
+});
+
+test('cancelling after a balance paid in person refunds the card payment at Stripe and flags the rest to refund by hand', async () => {
+  const { t, slot, token } = await ready(20);
+  await withServices(async ({ stripe }) => {
+    const b = await bookAndPay(t, stripe, token, slot.id, 'deposit');
+    await t.call(`/bookings/${b.id}/balance-in-person`, { method: 'POST', body: { confirm: true, expectPaidPence: DEPOSIT } });
+    const outcome = await cancelBooking(t.env, b.id, { reason: 'ross360', actor: 'admin', expect: 'confirmed' });
+    assert.equal(outcome.result, 'ok');
+    assert.equal(stripe.refunds.length, 1);
+    assert.equal(stripe.refunds[0].amount, DEPOSIT);
+    const refunds = plain(rows(t, `SELECT amount_pence, status, last_error FROM booking_refunds ORDER BY id`));
+    assert.deepEqual(refunds, [
+      { amount_pence: DEPOSIT, status: 'succeeded', last_error: null },
+      { amount_pence: TOTAL - DEPOSIT, status: 'failed', last_error: 'Paid in person: refund it by hand.' },
+    ]);
   });
 });
 
@@ -782,7 +844,7 @@ test('two attempts at one pending refund that Stripe refuses: marked failed once
 
 // --- Moving a booking --------------------------------------------------------------------------------
 
-test('ROSS 360 moves a booking to another open slot, keeping payments; the deadline follows the new date', async () => {
+test('ROSS 360 moves a booking to another open slot, keeping payments; the balance date follows the new date', async () => {
   const { t, slot, token } = await ready(20);
   const later = await addSlot(t, 30, 'day');
   await withServices(async ({ stripe, emails }) => {
@@ -795,7 +857,8 @@ test('ROSS 360 moves a booking to another open slot, keeping payments; the deadl
     const row = one(t, `SELECT * FROM bookings`);
     assert.equal(row.slot_id, later.id);
     assert.equal(row.paid_pence, DEPOSIT);
-    assert.equal(row.balance_due_on, addDays(later.date, -7));
+    assert.equal(row.balance_due_on, later.date);
+    assert.equal(row.reminder_8_on, addDays(later.date, -2));
     assert.ok(emails.find((e) => /^ROSS 360 booking moved/.test(e.subject)));
     // The old slot is free again.
     assert.ok(formOf((await callPage(t.env, `/q/${token}/book`)).html).slots.length >= 0);
@@ -803,14 +866,16 @@ test('ROSS 360 moves a booking to another open slot, keeping payments; the deadl
   });
 });
 
-test('an unpaid balance cannot be moved to a date whose deadline has passed', async () => {
+test('a booking with an unpaid balance can be moved to a date only a few days away', async () => {
   const { t, slot, token } = await ready(20);
   const soon = await addSlot(t, 4, 'am');
   await withServices(async ({ stripe }) => {
     const b = await bookAndPay(t, stripe, token, slot.id, 'deposit');
-    const refused = await t.call(`/bookings/${b.id}/move`, { method: 'POST', body: { confirm: true, slotId: soon.id } });
-    assert.equal(refused.status, 409);
-    assert.match(refused.data.message, /balance must be paid/);
+    const moved = await t.call(`/bookings/${b.id}/move`, { method: 'POST', body: { confirm: true, slotId: soon.id } });
+    assert.equal(moved.status, 200, JSON.stringify(moved.data));
+    const row = one(t, `SELECT * FROM bookings`);
+    assert.equal(row.balance_due_on, soon.date);
+    assert.equal(row.reminder_14_on, null);
   });
 });
 
@@ -907,7 +972,7 @@ test('the scheduler endpoint needs the shared secret', async () => {
   assert.equal((await ok.json()).ok, true);
 });
 
-test('the Admin lists bookings with slot, payment status, amounts and deadline', async () => {
+test('the Admin lists bookings with slot, payment status, amounts and balance date', async () => {
   const { t, slot, token } = await ready(20);
   await withServices(async ({ stripe }) => {
     const b = await bookAndPay(t, stripe, token, slot.id, 'deposit');
@@ -917,7 +982,7 @@ test('the Admin lists bookings with slot, payment status, amounts and deadline',
     assert.equal(row.slotDate, slot.date);
     assert.equal(row.paidPence, DEPOSIT);
     assert.equal(row.balancePence, TOTAL - DEPOSIT);
-    assert.equal(row.balanceDueOn, addDays(slot.date, -7));
+    assert.equal(row.balanceDueOn, slot.date);
     const detail = await t.call(`/bookings/${b.id}`);
     assert.equal(detail.data.booking.payments[0].kind, 'deposit');
     assert.equal(detail.data.booking.payments[0].status, 'paid');
