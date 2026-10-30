@@ -197,14 +197,18 @@ async function handle({ request, env, params }) {
   const current = await activeBooking(db, ctx.quoteId);
   if (current && current.status !== 'holding') return redirect(urls.self);
 
-  if (page === 'book') {
-    return html(renderSlotsPage({ snapshot: ctx.snapshot, slots: await bookableSlots(db, new Date(), ctx.quoteId), urls }));
-  }
+  // The calendar shows one month; ?date= selects a day (and its month), ?month= moves between months.
+  const view = { date: url.searchParams.get('date') || '', month: url.searchParams.get('month') || '' };
+  const slotsPage = async (error = '', status = 200) =>
+    html(
+      renderSlotsPage({ snapshot: ctx.snapshot, slots: await bookableSlots(db, new Date(), ctx.quoteId), urls, error, today: ukToday(), view }),
+      status,
+    );
+
+  if (page === 'book') return slotsPage();
 
   // page === 'pay'
   const slotParam = method === 'GET' ? url.searchParams.get('slot') : form.get('slot');
-  const slotsPage = async (error, status) =>
-    html(renderSlotsPage({ snapshot: ctx.snapshot, slots: await bookableSlots(db, new Date(), ctx.quoteId), urls, error }), status);
   if (!/^\d{1,10}$/.test(slotParam || '')) return slotsPage(B.chooseOne, 422);
   const slot = await bookableSlot(db, Number(slotParam), new Date(), ctx.quoteId);
   if (!slot) return slotsPage(B.slotGone, 409);

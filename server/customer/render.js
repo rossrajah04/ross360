@@ -6,8 +6,8 @@ import { quoteEmail } from '../../src/content/quoteEmail.js';
 import { customerQuote as C } from '../../src/content/customerQuote.js';
 import { booking as B } from '../../src/content/booking.js';
 import { formatMoney } from '../../src/lib/admin/model.js';
-import { longDate } from '../../src/lib/admin/quotes.js';
-import { periodLabel, weekdayDate } from '../../src/lib/admin/availability.js';
+import { addDays, longDate, ukToday } from '../../src/lib/admin/quotes.js';
+import { REQUEST_WINDOW, periodLabel, weekdayDate } from '../../src/lib/admin/availability.js';
 import { onlineBooking } from '../../src/lib/admin/booking.js';
 
 const escapeHtml = (value) =>
@@ -53,6 +53,27 @@ legend{padding:0;margin:0 0 8px;font-weight:600}
 .slot label{display:flex;gap:12px;align-items:center;padding:12px 0;cursor:pointer}
 .slot input{width:20px;height:20px;margin:0;flex:none;accent-color:#141413}
 .slot .sub{display:block;color:#64625d;font-size:14px}
+.cal{margin:24px 0 20px}
+.cal-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 12px}
+.cal-head h2{margin:0;font-size:18px;text-align:center}
+.cal-nav{display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;flex:none;border:1px solid #dddbd6;border-radius:6px;font-size:22px;line-height:1;text-decoration:none}
+span.cal-nav{color:#d3d0ca;border-color:#eceae6}
+a.cal-nav:hover{border-color:#141413}
+table.cal-grid{table-layout:fixed;margin:0}
+.cal-grid th{padding:0 0 6px;border:0;text-align:center;font-size:13px;font-weight:500}
+.cal-grid td{padding:3px;border:0;text-align:center;font-size:15px}
+.day{display:flex;align-items:center;justify-content:center;height:44px;border:1px solid transparent;border-radius:6px;color:#b3b0a9}
+a.day{color:#141413;font-weight:600;text-decoration:none}
+.day--open{border-color:#141413;background:#fff}
+.day--open:hover{background:#f4f3f0}
+a.day--selected,a.day--selected:hover{background:#141413;color:#fff}
+.legend{display:flex;flex-wrap:wrap;gap:8px 20px;margin:14px 0 0;padding:0;list-style:none;color:#64625d;font-size:14px}
+.legend li{display:flex;align-items:center;gap:8px}
+.swatch{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border:1px solid transparent;border-radius:5px;color:#b3b0a9;font-size:12px}
+.swatch--open{border-color:#141413;color:#141413;font-weight:600}
+.swatch--selected{border-color:#141413;background:#141413;color:#fff;font-weight:600}
+.times{margin-top:8px}
+@media (min-width:520px){.day{height:52px}.cal-grid td{padding:4px}}
 .check{display:flex;gap:12px;align-items:flex-start;margin:0 0 20px}
 .check input{width:20px;height:20px;margin:2px 0 0;flex:none;accent-color:#141413}
 .facts{margin:0 0 20px}
@@ -86,6 +107,10 @@ function footer() {
     '</p>'
   );
 }
+
+/** "2026-11" -> "November 2026". */
+const monthYear = (month) =>
+  new Date(`${month}-01T00:00:00Z`).toLocaleDateString('en-GB', { timeZone: 'UTC', month: 'long', year: 'numeric' });
 
 const slotText = (date, period) => `${weekdayDate(date)}, ${periodLabel(period)}`;
 
@@ -211,30 +236,103 @@ export function renderQuotePage({ snapshot, state, booking, latest, urls, notice
   return shell(`${quoteEmail.title} ${snapshot.reference}`, quotation(snapshot) + parts.join(''));
 }
 
-/** Choose a slot: open slots as choices; the form goes (GET) to the payment summary. */
-export function renderSlotsPage({ snapshot, slots, urls, error = '' }) {
-  const body =
+/** Choose a slot: a month calendar of the open dates; a chosen date lists its times, and the form goes (GET) to the payment summary. */
+export function renderSlotsPage({ snapshot, slots, urls, error = '', today = ukToday(), view = {} }) {
+  const head =
     `<p class="muted small"><a href="${escapeHtml(urls.self)}">${escapeHtml(B.back)}</a></p>` +
     `<h1>${escapeHtml(B.slotsHeading)}</h1>` +
     `<p class="meta">${escapeHtml(quoteEmail.title)} ${escapeHtml(snapshot.reference)}</p>` +
     `<p>${escapeHtml(B.slotsIntro)}</p>` +
-    errorBox(error) +
-    (slots.length
-      ? `<form method="get" action="${escapeHtml(urls.pay)}">` +
-        `<fieldset><legend>${escapeHtml(B.slotsHeading)}</legend><ul class="slots">` +
-        slots
-          .map(
-            (slot) =>
-              `<li class="slot"><label><input type="radio" name="slot" value="${slot.id}" required><span>${escapeHtml(
-                slotText(slot.slot_date, slot.period),
-              )}</span></label></li>`,
-          )
-          .join('') +
-        '</ul></fieldset>' +
-        `<p><button class="button" type="submit">${escapeHtml(B.continue)}</button></p>` +
-        '</form>'
-      : noticeBox(escapeHtml(B.noSlots)));
-  return shell(B.slotsHeading, body);
+    errorBox(error);
+  if (!slots.length) return shell(B.slotsHeading, head + noticeBox(escapeHtml(B.noSlots)));
+
+  const byDate = new Map();
+  for (const slot of slots) byDate.set(slot.slot_date, [...(byDate.get(slot.slot_date) || []), slot]);
+  const dates = [...byDate.keys()];
+  const firstMonth = addDays(today, REQUEST_WINDOW.minDays).slice(0, 7);
+  const lastMonth = addDays(today, REQUEST_WINDOW.maxDays).slice(0, 7);
+  const validMonth = /^\d{4}-\d{2}$/.test(view.month || '') && view.month >= firstMonth && view.month <= lastMonth;
+
+  // A date in the link is selected; with no date or month, the earliest open date is.
+  const selected = byDate.has(view.date) ? view.date : !validMonth ? dates[0] : '';
+  const month = selected ? selected.slice(0, 7) : view.month;
+  const inMonth = dates.filter((d) => d.startsWith(month));
+  const bookUrl = (query) => `${urls.book}?${query}#calendar`;
+
+  const step = (delta) => {
+    const [y, m] = month.split('-').map(Number);
+    const d = new Date(Date.UTC(y, m - 1 + delta, 1));
+    return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
+  };
+  const nav = (target, label, symbol) =>
+    target >= firstMonth && target <= lastMonth
+      ? `<a class="cal-nav" href="${escapeHtml(bookUrl(`month=${target}`))}" aria-label="${escapeHtml(label)}">${symbol}</a>`
+      : `<span class="cal-nav" aria-hidden="true">${symbol}</span>`;
+
+  const [year, mon] = month.split('-').map(Number);
+  const daysInMonth = new Date(Date.UTC(year, mon, 0)).getUTCDate();
+  const lead = (new Date(Date.UTC(year, mon - 1, 1)).getUTCDay() + 6) % 7; // weeks start on Monday
+  const cells = Array.from({ length: lead }, () => '<td></td>');
+  for (let day = 1; day <= daysInMonth; day += 1) {
+    const date = `${month}-${String(day).padStart(2, '0')}`;
+    if (!byDate.has(date)) {
+      cells.push(`<td><span class="day">${day}</span></td>`);
+      continue;
+    }
+    const isSelected = date === selected;
+    cells.push(
+      `<td><a class="day day--open${isSelected ? ' day--selected' : ''}" href="${escapeHtml(bookUrl(`date=${date}`))}" ` +
+        `aria-label="${escapeHtml(`${weekdayDate(date)}, ${B.calendar.available.toLowerCase()}`)}"${isSelected ? ' aria-current="date"' : ''}>${day}</a></td>`,
+    );
+  }
+  while (cells.length % 7) cells.push('<td></td>');
+  const weeks = [];
+  for (let i = 0; i < cells.length; i += 7) weeks.push(`<tr>${cells.slice(i, i + 7).join('')}</tr>`);
+
+  const monthName = monthYear(month);
+  const calendar =
+    `<div class="cal" id="calendar">` +
+    `<div class="cal-head">${nav(step(-1), B.calendar.previous, '&#8249;')}<h2 aria-live="polite">${escapeHtml(monthName)}</h2>${nav(
+      step(1),
+      B.calendar.next,
+      '&#8250;',
+    )}</div>` +
+    `<table class="cal-grid"><thead><tr>${B.calendar.weekdays
+      .map((d) => `<th scope="col" aria-label="${escapeHtml(d)}">${escapeHtml(d.slice(0, 3))}</th>`)
+      .join('')}</tr></thead><tbody>${weeks.join('')}</tbody></table>` +
+    '<ul class="legend" aria-hidden="true">' +
+    `<li><span class="swatch swatch--open">8</span>${escapeHtml(B.calendar.available)}</li>` +
+    `<li><span class="swatch swatch--selected">8</span>${escapeHtml(B.calendar.selected)}</li>` +
+    `<li><span class="swatch">8</span>${escapeHtml(B.calendar.unavailable)}</li>` +
+    '</ul></div>';
+
+  let below;
+  if (selected) {
+    const choices = byDate.get(selected);
+    below =
+      `<form method="get" action="${escapeHtml(urls.pay)}" class="times">` +
+      `<input type="hidden" name="date" value="${escapeHtml(selected)}">` +
+      `<fieldset><legend>${escapeHtml(B.calendar.timesOn(weekdayDate(selected)))}</legend><ul class="slots">` +
+      choices
+        .map(
+          (slot) =>
+            `<li class="slot"><label><input type="radio" name="slot" value="${slot.id}" required${choices.length === 1 ? ' checked' : ''}><span>${escapeHtml(
+              periodLabel(slot.period),
+            )}</span></label></li>`,
+        )
+        .join('') +
+      '</ul></fieldset>' +
+      `<p><button class="button" type="submit">${escapeHtml(B.continue)}</button></p>` +
+      '</form>';
+  } else if (inMonth.length) {
+    below = `<p class="muted">${escapeHtml(B.calendar.pickDate)}</p>`;
+  } else {
+    const next = dates.find((d) => d > `${month}-31`) || dates[0];
+    below =
+      `<p>${escapeHtml(B.calendar.noneInMonth(monthName.split(' ')[0]))}</p>` +
+      `<p><a href="${escapeHtml(bookUrl(`date=${next}`))}">${escapeHtml(B.calendar.nextAvailable(weekdayDate(next)))}</a></p>`;
+  }
+  return shell(B.slotsHeading, head + calendar + below);
 }
 
 /**
