@@ -25,7 +25,7 @@ import { addDays, packageItem, ukToday } from '../src/lib/admin/quotes.js';
 import { paymentOptions, reminderDates, ukInstant } from '../src/lib/admin/booking.js';
 
 const TOTAL = 43900; // the test quote: Professional £349 + £100 extra + £20 travel − £30 discount
-const DEPOSIT = 7000;
+const DEPOSIT = 15000;
 const one = (t, sql, ...params) => t.db.db.prepare(sql).get(...params);
 const rows = (t, sql, ...params) => t.db.db.prepare(sql).all(...params);
 const plain = (list) => list.map((row) => ({ ...row }));
@@ -57,13 +57,13 @@ async function bookAndPay(t, stripe, token, slotId, plan) {
 test('deposit and balance: fixed by package, counted towards the full total including travel', () => {
   const today = '2026-10-06';
   const far = paymentOptions({ totalPence: TOTAL, pkg: 'professional', slotDate: '2026-10-26', today });
-  assert.deepEqual(far.deposit, { depositPence: 7000, balancePence: TOTAL - 7000, balanceDueOn: '2026-10-26' });
-  assert.equal(paymentOptions({ totalPence: 26900, pkg: 'essential', slotDate: '2026-10-26', today }).deposit.depositPence, 5000);
-  assert.equal(paymentOptions({ totalPence: 51900, pkg: 'bespoke', slotDate: '2026-10-26', today }).deposit.depositPence, 10000);
+  assert.deepEqual(far.deposit, { depositPence: 15000, balancePence: TOTAL - 15000, balanceDueOn: '2026-10-26' });
+  assert.equal(paymentOptions({ totalPence: 26900, pkg: 'essential', slotDate: '2026-10-26', today }).deposit.depositPence, 10000);
+  assert.equal(paymentOptions({ totalPence: 51900, pkg: 'bespoke', slotDate: '2026-10-26', today }).deposit.depositPence, 20000);
   // A deposit is allowed however close the slot is; the balance is due on the day of the shoot.
   assert.deepEqual(paymentOptions({ totalPence: TOTAL, pkg: 'professional', slotDate: '2026-10-08', today }).deposit, {
-    depositPence: 7000,
-    balancePence: TOTAL - 7000,
+    depositPence: 15000,
+    balancePence: TOTAL - 15000,
     balanceDueOn: '2026-10-08',
   });
   // No package: in full only.
@@ -128,7 +128,7 @@ test('payment in full: Stripe Checkout for the full total, slot held, then confi
   });
 });
 
-test('deposit: £70 now, the balance from the full total, due on the day of the shoot', async () => {
+test('deposit: £150 now, the balance from the full total, due on the day of the shoot', async () => {
   const { t, slot, token } = await ready(20);
   await withServices(async ({ stripe, emails }) => {
     const b = await bookAndPay(t, stripe, token, slot.id, 'deposit');
@@ -140,11 +140,11 @@ test('deposit: £70 now, the balance from the full total, due on the day of the 
     assert.equal(b.reminder_14_on, addDays(slot.date, -7));
     assert.equal(b.reminder_8_on, addDays(slot.date, -2));
     const page = await callPage(t.env, `/q/${token}`);
-    assert.match(page.html, /£369\.00/); // balance = 439 − 70
+    assert.match(page.html, /£289\.00/); // balance = 439 − 150
     assert.match(page.html, /On the day of the shoot/);
     assert.match(page.html, /Pay balance/);
     const confirm = emails.find((e) => e.subject.startsWith('ROSS 360 booking confirmed'));
-    assert.match(confirm.text, /The balance of £369\.00 is due on the day of the shoot\. You can pay it in person on the day, or online before then/);
+    assert.match(confirm.text, /The balance of £289\.00 is due on the day of the shoot\. You can pay it in person on the day, or online before then/);
   });
 });
 
@@ -153,7 +153,7 @@ test('a slot a few days away can still be booked with a deposit, with the balanc
   await withServices(async ({ stripe }) => {
     const pay = await callPage(t.env, `/q/${token}/pay?slot=${slot.id}`);
     assert.deepEqual(formOf(pay.html).plans, ['full', 'deposit']);
-    assert.match(pay.html, /The balance of £369\.00 is paid on the day of the shoot, in person, or online before then if you prefer\./);
+    assert.match(pay.html, /The balance of £289\.00 is paid on the day of the shoot, in person, or online before then if you prefer\./);
     assert.doesNotMatch(pay.html, /7 days/);
     const b = await bookAndPay(t, stripe, token, slot.id, 'deposit');
     assert.equal(b.paid_pence, DEPOSIT);
@@ -502,7 +502,7 @@ test('balance reminders 7 and 2 days before (from 09:00 UK), each once, offering
     assert.equal((await runScheduled(t.env, at(first, '11:00'))).reminders, 0, 'once only');
     const reminder = emails.at(-1);
     assert.match(reminder.subject, /^ROSS 360 booking reminder: /);
-    assert.match(reminder.text, /Balance: £369\.00/);
+    assert.match(reminder.text, /Balance: £289\.00/);
     assert.match(reminder.text, /You can pay it in person on the day, or online now/);
     assert.match(reminder.text, /Pay balance: https:\/\/ross360\.test\/q\/.+\/balance/);
     assert.doesNotMatch(reminder.text, /cancelled|refunded/);
@@ -586,7 +586,7 @@ test('ROSS 360 records the balance as paid in person: paid in full, receipt emai
     assert.equal(paid[0].detail.inPerson, true);
     const receipt = emails.filter((e) => e.subject === 'ROSS 360 balance received');
     assert.equal(receipt.length, 1);
-    assert.match(receipt[0].text, /balance payment of £369\.00/);
+    assert.match(receipt[0].text, /balance payment of £289\.00/);
     // Twice does nothing more.
     const again = await t.call(`/bookings/${b.id}/balance-in-person`, { method: 'POST', body: { confirm: true, expectPaidPence: DEPOSIT } });
     assert.equal(again.status, 409);
@@ -651,7 +651,7 @@ test('customer cancels more than 48 hours before: cancelled, everything paid ref
   await withServices(async ({ stripe, emails }) => {
     await bookAndPay(t, stripe, token, slot.id, 'deposit');
     const page = await callPage(t.env, `/q/${token}/cancel`);
-    assert.match(page.html, /£70\.00 is refunded in full/);
+    assert.match(page.html, /£150\.00 is refunded in full/);
     const res = await postForm(t.env, token, 'cancel', `/q/${token}/cancel`);
     assert.equal(res.status, 303);
     const b = one(t, `SELECT * FROM bookings`);
@@ -661,9 +661,9 @@ test('customer cancels more than 48 hours before: cancelled, everything paid ref
     assert.equal(stripe.refunds.at(-1).amount, DEPOSIT);
     const shown = await callPage(t.env, `/q/${token}`);
     assert.match(shown.html, /This booking was cancelled on/);
-    assert.match(shown.html, /A refund of £70\.00 has been issued/);
+    assert.match(shown.html, /A refund of £150\.00 has been issued/);
     assert.match(shown.html, /Book another slot/);
-    assert.ok(emails.find((e) => e.subject === 'ROSS 360 booking cancelled' && /£70\.00 has been refunded in full/.test(e.text)));
+    assert.ok(emails.find((e) => e.subject === 'ROSS 360 booking cancelled' && /£150\.00 has been refunded in full/.test(e.text)));
   });
 });
 

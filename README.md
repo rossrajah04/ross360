@@ -249,7 +249,7 @@ slot and pay on Stripe Checkout** (hosted by Stripe; no card details reach this 
   online booking waits for legal review of the consumer cancellation wording.
 
 - **Packages and deposits.** Essential, Professional and Bespoke quotes can be paid in full or by deposit
-  (£50, £70, £100), whatever the date. Quotes without one of those packages are paid in full. The
+  (£100, £150, £200), whatever the date. Quotes without one of those packages are paid in full. The
   deposit counts toward the total; the balance is the total minus the deposit. Before Stripe the
   customer sees the total, the amount due now and any balance, due on the day of the shoot.
 - **Holding a slot.** Starting Checkout holds the slot for that customer for Stripe's minimum session

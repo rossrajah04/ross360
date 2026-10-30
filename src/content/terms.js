@@ -118,7 +118,7 @@ export const terms = {
           ul: previewLegalWording
             ? [
                 'A booking is confirmed only when payment has been received. Until then, no date is reserved for you.',
-                'When you book online, you can pay in full or, for the Essential, Professional and Bespoke packages, pay a deposit of £50, £70 or £100 respectively. Quotations that do not use one of those packages are paid in full when booking.',
+                'When you book online, you can pay in full or, for the Essential, Professional and Bespoke packages, pay a deposit of £100, £150 or £200 respectively. Quotations that do not use one of those packages are paid in full when booking.',
                 'A deposit counts toward the total price shown on your quotation. The balance is the total price less the deposit, and is due on the day of the shoot. You can pay it in person on the day, or online at any time before then using the link in your booking email.',
                 'Online card payments are processed by Stripe. We do not see or store your full card details.',
                 'You can also pay using any other payment method we agree with you, such as bank transfer.',

@@ -14,8 +14,9 @@
 import { addDays, ukToday } from './quotes.js';
 import { site } from '../../content/site.js';
 
-// Fixed deposits, by package id (src/content/pricing.js): £249 / £349 / £499.
-export const DEPOSITS = { essential: 5000, professional: 7000, bespoke: 10000 };
+// Fixed deposits, by package id (src/content/pricing.js): £100 / £150 / £200 for £249 / £349 / £499
+// (ROSS 360, 30 October 2026).
+export const DEPOSITS = { essential: 10000, professional: 15000, bespoke: 20000 };
 
 export const REMINDER_DAYS = [7, 2]; // balance reminders, days before the slot (first, second)
 export const REMINDER_FROM_HOUR = 9; // reminders are not emailed before 09:00 UK time
