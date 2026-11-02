@@ -3,6 +3,7 @@
    get in touch, the tours and each service. */
 
 .contact-page {
+  display: flow-root;
   min-height: 100vh;
   min-height: 100svh;
   background: var(--bg-dark);
@@ -15,11 +16,14 @@
   padding: 10px 0 48px;
 }
 
-/* Live tour, full width, with the wordmark over the top. The shade and header never block the tour. */
+/* Live tour, set in from the edges with a thin light border, the wordmark over the top. The shade and
+   header never block the tour. */
 .contact-hero {
   position: relative;
-  width: min(100%, 960px);
-  margin-inline: auto;
+  box-sizing: border-box;
+  width: min(100% - 2 * var(--gutter), 960px);
+  margin: var(--gutter) auto 0;
+  border: 1px solid rgba(255, 255, 255, 0.35);
   aspect-ratio: 4 / 5;
   max-height: 78svh;
   overflow: hidden;
