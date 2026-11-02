@@ -6,8 +6,10 @@ import { site } from '../content/site.js';
 import { lowestPrice, streetView } from '../content/pricing.js';
 import '../styles/contact.css';
 
-// The page the QR code on the business card opens: every way to get in touch.
-// It sits outside the main layout (no header, footer or floating buttons) so it reads cleanly on a phone.
+// The page the QR code on the business card opens. A slowly turning 360° view of a real ROSS 360 shoot
+// at the top (a still panorama that pans, not an embedded tour, so it loads instantly), then large tiles
+// for every way to get in touch and each service. It sits outside the main layout (no header, footer or
+// floating buttons) so it reads cleanly on a phone.
 const external = { target: '_blank', rel: 'noopener noreferrer' };
 
 const icons = {
@@ -39,6 +41,12 @@ const icons = {
       <path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3Z" />
     </>
   ),
+  pin: (
+    <>
+      <path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11Z" />
+      <circle cx="12" cy="10" r="2.4" />
+    </>
+  ),
   save: (
     <>
       <circle cx="10" cy="8" r="3.5" />
@@ -52,8 +60,8 @@ function Icon({ name }) {
     <svg
       className="contact-icon"
       viewBox="0 0 24 24"
-      width="22"
-      height="22"
+      width="26"
+      height="26"
       fill="none"
       stroke="currentColor"
       strokeWidth="1.6"
@@ -67,55 +75,34 @@ function Icon({ name }) {
   );
 }
 
-const services = [
-  { label: '360° virtual tours', detail: 'For businesses and property', price: `From £${lowestPrice}`, to: '/virtual-tours' },
-  { label: 'Google Street View', detail: 'Published to your Google listing', price: `From £${streetView.price}`, to: '/google-street-view' },
-];
-
-const rows = [
-  { icon: 'tours', label: 'See our tours', detail: 'See what we can do for your business', to: '/portfolio' },
-  { icon: 'google', label: 'Google', detail: 'Our Google Business Profile', href: site.googleProfileUrl, ...external },
+// Square tiles, two to a row.
+const tiles = [
+  { icon: 'phone', label: 'Call', detail: site.phone.display, href: `tel:${site.phone.tel}` },
+  { icon: 'mail', label: 'Email', detail: 'Send us an email', href: `mailto:${site.email}` },
+  { icon: 'tours', label: '360° virtual tours', detail: `From £${lowestPrice}`, to: '/virtual-tours' },
+  { icon: 'pin', label: 'Google Street View', detail: `From £${streetView.price}`, to: '/google-street-view' },
+  { icon: 'google', label: 'Google', detail: 'Our Business Profile', href: site.googleProfileUrl, ...external },
   { icon: 'globe', label: 'Website', detail: site.domain, to: '/' },
-  { icon: 'save', label: 'Save contact', detail: `Add ${site.brand} to your phone`, href: '/ross360.vcf', download: 'ROSS-360.vcf' },
 ];
 
-function Row({ icon, label, detail, to, ...link }) {
+function Tile({ icon, label, detail, to, className = 'contact-tile', ...link }) {
   const body = (
     <>
-      <span className="contact-links__icon">{icon === 'google' ? <GoogleMark size={20} /> : <Icon name={icon} />}</span>
-      <span className="contact-links__text">
-        <span className="contact-links__label">{label}</span>
-        <span className="contact-links__detail">{detail}</span>
-      </span>
-      <span className="contact-links__arrow" aria-hidden="true">
-        →
+      <span className="contact-tile__icon">{icon === 'google' ? <GoogleMark size={26} /> : <Icon name={icon} />}</span>
+      <span className="contact-tile__text">
+        <span className="contact-tile__label">{label}</span>
+        <span className="contact-tile__detail">{detail}</span>
       </span>
     </>
   );
-  return (
-    <li>
-      {to ? (
-        <Link className="contact-links__row" to={to}>
-          {body}
-        </Link>
-      ) : (
-        <a className="contact-links__row" {...link}>
-          {body}
-        </a>
-      )}
-    </li>
-  );
-}
-
-// A slowly turning sphere outline behind the wordmark: a plain nod to 360°. Decorative only.
-function Orbit() {
-  return (
-    <svg className="contact-orbit" viewBox="0 0 200 200" aria-hidden="true" focusable="false">
-      <circle cx="100" cy="100" r="96" />
-      <ellipse className="contact-orbit__equator" cx="100" cy="100" rx="96" ry="26" />
-      <ellipse className="contact-orbit__meridian" cx="100" cy="100" rx="96" ry="96" />
-      <ellipse className="contact-orbit__meridian contact-orbit__meridian--late" cx="100" cy="100" rx="96" ry="96" />
-    </svg>
+  return to ? (
+    <Link className={className} to={to}>
+      {body}
+    </Link>
+  ) : (
+    <a className={className} {...link}>
+      {body}
+    </a>
   );
 }
 
@@ -123,58 +110,44 @@ export default function Contact() {
   return (
     <main id="main" className="contact-page">
       <Seo page="contact" />
-
       <div className="contact-page__inner">
         <header className="contact-page__head contact-reveal">
-          <Orbit />
           <Wordmark light />
           <h1 className="contact-page__line">360° virtual tours and Google Street View, Manchester</h1>
         </header>
 
-        <div className="contact-actions contact-reveal">
-          <a className="contact-btn contact-btn--primary" href={site.phone.whatsapp} {...external}>
-            <Icon name="whatsapp" />
-            Message on WhatsApp
-          </a>
-          <div className="contact-actions__pair">
-            <a className="contact-btn" href={`tel:${site.phone.tel}`}>
-              <Icon name="phone" />
-              Call
-            </a>
-            <a className="contact-btn" href={`mailto:${site.email}`}>
-              <Icon name="mail" />
-              Email
-            </a>
-          </div>
-          <p className="contact-actions__numbers">
-            {site.phone.display}
-            <span aria-hidden="true"> · </span>
-            {site.email}
-          </p>
-        </div>
+        <Link className="contact-pano contact-reveal" to="/portfolio">
+          <span className="contact-pano__view" aria-hidden="true" />
+          <span className="contact-pano__text">
+            <span className="contact-pano__label">See our tours</span>
+            <span className="contact-pano__detail">See what we can do for your business</span>
+          </span>
+          <span className="contact-pano__arrow" aria-hidden="true">
+            →
+          </span>
+        </Link>
 
-        <section className="contact-services contact-reveal" aria-labelledby="contact-services-title">
-          <h2 id="contact-services-title" className="contact-services__title">
-            What we do
-          </h2>
-          <ul className="contact-services__list">
-            {services.map((item) => (
-              <li key={item.label}>
-                <Link className="contact-services__row" to={item.to}>
-                  <span className="contact-services__name">{item.label}</span>
-                  <span className="contact-services__price">{item.price}</span>
-                  <span className="contact-services__detail">{item.detail}</span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </section>
-
-        <ul className="contact-links contact-reveal">
-          {rows.map((row) => (
-            <Row key={row.label} {...row} />
+        <div className="contact-tiles contact-reveal">
+          <Tile
+            className="contact-tile contact-tile--whatsapp"
+            icon="whatsapp"
+            label="Message on WhatsApp"
+            detail={site.phone.display}
+            href={site.phone.whatsapp}
+            {...external}
+          />
+          {tiles.map((tile) => (
+            <Tile key={tile.label} {...tile} />
           ))}
-        </ul>
+          <Tile
+            className="contact-tile contact-tile--wide"
+            icon="save"
+            label="Save contact"
+            detail={`Add ${site.brand} to your phone`}
+            href="/ross360.vcf"
+            download="ROSS-360.vcf"
+          />
+        </div>
       </div>
     </main>
   );
