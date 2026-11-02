@@ -20,3 +20,7 @@
 /admin/*
   X-Robots-Tag: noindex, nofollow, noarchive
   Referrer-Policy: no-referrer
+
+/ross360.vcf
+  Content-Type: text/vcard; charset=utf-8
+  Content-Disposition: attachment; filename="ROSS-360.vcf"

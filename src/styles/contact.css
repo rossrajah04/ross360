@@ -1,0 +1,217 @@
+/* /contact: the page the business card's QR code opens. Dark, in the site's palette and typeface: the
+   the live Kinetic tour across the top with the wordmark over it, then large tiles for every way to
+   get in touch, the tours and each service. */
+
+.contact-page {
+  display: flow-root;
+  min-height: 100vh;
+  min-height: 100svh;
+  background: var(--bg-dark);
+  color: var(--on-dark);
+}
+
+.contact-page__inner {
+  width: min(100% - 2 * var(--gutter), 560px);
+  margin-inline: auto;
+  padding: 10px 0 48px;
+}
+
+/* Top bar: wordmark on the left, WhatsApp button on the right. */
+.contact-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  width: min(100% - 2 * var(--gutter), 960px);
+  margin: 0 auto;
+  padding: 18px 0;
+}
+
+.contact-head .wordmark {
+  font-size: 1.4rem;
+  color: #ffffff;
+}
+
+.contact-head__whatsapp {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 14px 0 12px;
+  background: var(--bg-soft);
+  color: var(--ink);
+  font-size: 0.92rem;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.contact-head__whatsapp .contact-icon {
+  width: 20px;
+  height: 20px;
+  color: #1fa855;
+}
+
+.contact-head__whatsapp:hover {
+  background: #ffffff;
+}
+
+/* Live tour in a thin light frame, with the caption along its bottom edge. */
+.contact-frame {
+  box-sizing: border-box;
+  width: min(100% - 2 * var(--gutter), 960px);
+  margin: 0 auto;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: #1e1e1c;
+}
+
+.contact-hero {
+  position: relative;
+  aspect-ratio: 4 / 5;
+  max-height: 72svh;
+  overflow: hidden;
+  background: #1e1e1c;
+  color: #ffffff;
+}
+
+.contact-hero .contact-hero__tour {
+  position: absolute;
+  inset: 0;
+  aspect-ratio: auto;
+}
+
+.contact-page__line {
+  margin: 0;
+  padding: 14px 16px;
+  border-top: 1px solid var(--line-on-dark);
+  font-size: 0.92rem;
+  font-weight: 400;
+  line-height: 1.45;
+  color: #e6e4df;
+}
+
+/* Tiles */
+.contact-tiles {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 10px;
+}
+
+.contact-tile {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 18px;
+  min-width: 0;
+  min-height: 132px;
+  padding: 18px;
+  background: #1e1e1c;
+  border: 1px solid #2e2d2a;
+  color: var(--on-dark);
+  text-decoration: none;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.contact-tile:hover {
+  background: #262624;
+  border-color: var(--line-on-dark);
+}
+
+.contact-tile__icon {
+  display: inline-flex;
+  width: 28px;
+  height: 28px;
+  align-items: center;
+}
+
+.contact-tile__text {
+  display: grid;
+  gap: 4px;
+}
+
+.contact-tile__label {
+  font-size: 1.05rem;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.contact-tile__detail {
+  font-size: 0.88rem;
+  color: var(--muted-on-dark);
+  overflow-wrap: anywhere;
+}
+
+/* The main tile: WhatsApp, full width and light. */
+.contact-tile--whatsapp {
+  grid-column: 1 / -1;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 16px;
+  min-height: 0;
+  padding: 20px 18px;
+  background: var(--bg-soft);
+  border-color: var(--bg-soft);
+  color: var(--ink);
+}
+
+.contact-tile--whatsapp:hover {
+  background: var(--bg-tone);
+  border-color: var(--bg-tone);
+}
+
+.contact-tile--whatsapp .contact-tile__icon {
+  color: #1f9e57;
+}
+
+.contact-tile--whatsapp .contact-tile__label {
+  font-size: 1.15rem;
+}
+
+.contact-tile--whatsapp .contact-tile__detail {
+  color: var(--muted);
+}
+
+/* Full-width tiles (See our tours, Save contact). */
+.contact-tile--wide {
+  grid-column: 1 / -1;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 16px;
+  min-height: 0;
+}
+
+/* Sections rise in on arrival */
+.contact-reveal {
+  animation: contact-rise 0.6s ease both;
+}
+
+.contact-tiles.contact-reveal {
+  animation-delay: 0.16s;
+}
+
+@keyframes contact-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .contact-tile {
+    transition: none;
+  }
+  .contact-reveal {
+    animation: none;
+  }
+}
+
+@media (min-width: 700px) {
+  .contact-hero {
+    aspect-ratio: 16 / 10;
+  }
+}

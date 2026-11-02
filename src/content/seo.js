@@ -79,6 +79,13 @@ export const pages = {
       { path: `/guides/${guide.slug}`, title: `${guide.title} | ROSS 360`, description: guide.description },
     ]),
   ),
+  contact: {
+    path: '/contact',
+    title: 'Contact | ROSS 360',
+    description:
+      'Contact ROSS 360 by WhatsApp, phone or email, see our 360° virtual tours, or view our Google Business Profile.',
+    noindex: true,
+  },
   notFound: {
     path: '/404',
     title: 'Page not found | ROSS 360',
