@@ -1,0 +1,95 @@
+/* /contact: the page the business card's QR code opens. One column of full-width rows divided by
+   thin rules, in the site's palette and typeface. */
+
+.contact-page {
+  min-height: 100vh;
+  min-height: 100svh;
+  background: var(--bg);
+  color: var(--ink);
+}
+
+.contact-page__inner {
+  width: min(100% - 2 * var(--gutter), 560px);
+  margin-inline: auto;
+  padding: 40px 0 56px;
+}
+
+.contact-page__head {
+  padding-bottom: 28px;
+}
+
+.contact-page__head .wordmark {
+  font-size: 1.35rem;
+}
+
+.contact-page__line {
+  margin: 14px 0 0;
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.45;
+  color: var(--muted);
+}
+
+.contact-links {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--line);
+}
+
+.contact-links li {
+  border-bottom: 1px solid var(--line);
+}
+
+.contact-links__row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  column-gap: 16px;
+  align-items: center;
+  min-height: 68px;
+  padding: 14px 4px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.contact-links__label {
+  font-size: 1.0625rem;
+  font-weight: 600;
+}
+
+.contact-links__detail {
+  grid-column: 1;
+  font-size: 0.95rem;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+.contact-links__arrow {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  font-size: 1.1rem;
+  color: var(--ink-soft);
+  transition: transform 0.15s ease;
+}
+
+.contact-links__row:hover .contact-links__arrow,
+.contact-links__row:focus-visible .contact-links__arrow {
+  transform: translateX(3px);
+}
+
+.contact-links__row:hover .contact-links__label {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .contact-links__arrow {
+    transition: none;
+  }
+}
+
+@media (min-width: 900px) {
+  .contact-page__inner {
+    padding-top: 72px;
+  }
+}

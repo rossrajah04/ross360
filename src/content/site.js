@@ -67,6 +67,9 @@ export const site = {
     founder: null,
   },
 
+  // Google Business Profile (opens in Google Maps).
+  googleProfileUrl: 'https://maps.app.goo.gl/1FuHte5Mw8ZvijBU9',
+
   google: {
     disclaimer:
       'Google decides whether imagery is accepted and controls processing time, placement and availability. Publication cannot be guaranteed and does not guarantee any change in search rankings.',
