@@ -1,5 +1,5 @@
 /* /contact: the page the business card's QR code opens. Dark, in the site's palette and typeface:
-   the wordmark, the main ways to get in touch, further links divided by thin rules, then a live tour. */
+   the wordmark, the main ways to get in touch, and further links divided by thin rules. */
 
 .contact-page {
   min-height: 100vh;
@@ -12,28 +12,6 @@
   width: min(100% - 2 * var(--gutter), 560px);
   margin-inline: auto;
   padding: 44px 0 56px;
-}
-
-/* Live tour, under all the links */
-.contact-tour {
-  margin-top: 32px;
-}
-
-.contact-tour .contact-tour__stage {
-  aspect-ratio: 4 / 3;
-}
-
-.contact-tour__stage .tour-stage__frame {
-  display: block;
-  width: 100%;
-  height: 100%;
-  border: 0;
-}
-
-.contact-tour__caption {
-  margin: 10px 0 0;
-  font-size: 0.82rem;
-  color: var(--muted-on-dark);
 }
 
 /* Wordmark and line */

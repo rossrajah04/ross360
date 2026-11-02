@@ -1,15 +1,13 @@
 import { Link } from 'react-router-dom';
 import Seo from '../components/Seo.jsx';
 import Wordmark from '../components/Wordmark.jsx';
-import TourEmbed from '../components/TourEmbed.jsx';
 import { GoogleMark } from '../components/home/GoogleReviews.jsx';
 import { site } from '../content/site.js';
 import '../styles/contact.css';
 
-// The page the QR code on the business card opens: every way to get in touch, then a live tour.
+// The page the QR code on the business card opens: every way to get in touch.
 // It sits outside the main layout (no header, footer or floating buttons) so it reads cleanly on a phone.
 const external = { target: '_blank', rel: 'noopener noreferrer' };
-const tour = site.stepInsideTour;
 
 const icons = {
   whatsapp: (
@@ -69,7 +67,7 @@ function Icon({ name }) {
 }
 
 const rows = [
-  { icon: 'tours', label: 'See our tours', detail: 'Kinetic Sports & Health and Sabai Studio', to: '/portfolio' },
+  { icon: 'tours', label: 'See our tours', detail: 'See what we can do for your business', to: '/portfolio' },
   { icon: 'google', label: 'Google', detail: 'Our Google Business Profile', href: site.googleProfileUrl, ...external },
   { icon: 'globe', label: 'Website', detail: site.domain, to: '/' },
   { icon: 'save', label: 'Save contact', detail: `Add ${site.brand} to your phone`, href: '/ross360.vcf', download: 'ROSS-360.vcf' },
@@ -141,13 +139,6 @@ export default function Contact() {
             <Row key={row.label} {...row} />
           ))}
         </ul>
-
-        <section className="contact-tour" aria-label={`${tour.title}: 360° tour`}>
-          <TourEmbed tour={tour} className="contact-tour__stage" />
-          <p className="contact-tour__caption">
-            {tour.title}, Didsbury. Drag to look around.
-          </p>
-        </section>
       </div>
     </main>
   );
