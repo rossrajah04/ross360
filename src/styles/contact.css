@@ -1,6 +1,5 @@
 /* /contact: the page the business card's QR code opens. Dark, in the site's palette and typeface: the
-   wordmark, a slowly turning 360° view of a real shoot, then large tiles for every way to get in touch
-   and each service. */
+   wordmark, then large tiles for every way to get in touch, the tours and each service. */
 
 .contact-page {
   min-height: 100vh;
@@ -28,91 +27,12 @@
   color: var(--muted-on-dark);
 }
 
-/* Turning 360° view: a full equirectangular strip, repeated sideways and panned so the room turns
-   slowly and seamlessly. */
-.contact-pano {
-  --pano-h: 230px;
-  position: relative;
-  display: block;
-  height: var(--pano-h);
-  margin-top: 28px;
-  overflow: hidden;
-  color: #ffffff;
-  text-decoration: none;
-  background: #1e1e1c;
-}
-
-.contact-pano__view {
-  position: absolute;
-  inset: 0;
-  background-image: url('/images/contact/pano-2800.jpg');
-  background-image: image-set(
-    url('/images/contact/pano-2800.webp') type('image/webp'),
-    url('/images/contact/pano-2800.jpg') type('image/jpeg')
-  );
-  background-repeat: repeat-x;
-  background-size: auto 100%;
-  animation: contact-pan 70s linear infinite;
-}
-
-/* Darkens the lower part so the words read over any part of the room. */
-.contact-pano::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(to bottom, rgba(20, 20, 19, 0.05) 30%, rgba(20, 20, 19, 0.88) 100%);
-}
-
-@keyframes contact-pan {
-  from {
-    background-position: 0 0;
-  }
-  to {
-    /* One full turn: the strip width at this height (2800 × 380 image). */
-    background-position: calc(var(--pano-h) * -2800 / 380) 0;
-  }
-}
-
-.contact-pano__text {
-  position: absolute;
-  z-index: 1;
-  left: 18px;
-  right: 56px;
-  bottom: 16px;
-  display: grid;
-  gap: 3px;
-}
-
-.contact-pano__label {
-  font-size: 1.25rem;
-  font-weight: 600;
-}
-
-.contact-pano__detail {
-  font-size: 0.95rem;
-  color: #e6e4df;
-}
-
-.contact-pano__arrow {
-  position: absolute;
-  z-index: 1;
-  right: 18px;
-  bottom: 18px;
-  font-size: 1.3rem;
-  transition: transform 0.15s ease;
-}
-
-.contact-pano:hover .contact-pano__arrow,
-.contact-pano:focus-visible .contact-pano__arrow {
-  transform: translateX(3px);
-}
-
 /* Tiles */
 .contact-tiles {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 10px;
-  margin-top: 10px;
+  margin-top: 28px;
 }
 
 .contact-tile {
@@ -190,7 +110,7 @@
   color: var(--muted);
 }
 
-/* Save contact: full width, one line. */
+/* Full-width tiles (See our tours, Save contact). */
 .contact-tile--wide {
   grid-column: 1 / -1;
   flex-direction: row;
@@ -205,12 +125,8 @@
   animation: contact-rise 0.6s ease both;
 }
 
-.contact-pano.contact-reveal {
-  animation-delay: 0.08s;
-}
-
 .contact-tiles.contact-reveal {
-  animation-delay: 0.16s;
+  animation-delay: 0.08s;
 }
 
 @keyframes contact-rise {
@@ -225,18 +141,10 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .contact-tile,
-  .contact-pano__arrow {
+  .contact-tile {
     transition: none;
   }
-  .contact-pano__view,
   .contact-reveal {
     animation: none;
-  }
-}
-
-@media (min-width: 600px) {
-  .contact-pano {
-    --pano-h: 280px;
   }
 }

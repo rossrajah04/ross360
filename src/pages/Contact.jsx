@@ -6,9 +6,8 @@ import { site } from '../content/site.js';
 import { lowestPrice, streetView } from '../content/pricing.js';
 import '../styles/contact.css';
 
-// The page the QR code on the business card opens. A slowly turning 360° view of a real ROSS 360 shoot
-// at the top (a still panorama that pans, not an embedded tour, so it loads instantly), then large tiles
-// for every way to get in touch and each service. It sits outside the main layout (no header, footer or
+// The page the QR code on the business card opens: large tiles for every way to get in touch, the
+// tours and each service. It sits outside the main layout (no header, footer or
 // floating buttons) so it reads cleanly on a phone.
 const external = { target: '_blank', rel: 'noopener noreferrer' };
 
@@ -116,17 +115,6 @@ export default function Contact() {
           <h1 className="contact-page__line">360° virtual tours and Google Street View, Manchester</h1>
         </header>
 
-        <Link className="contact-pano contact-reveal" to="/portfolio">
-          <span className="contact-pano__view" aria-hidden="true" />
-          <span className="contact-pano__text">
-            <span className="contact-pano__label">See our tours</span>
-            <span className="contact-pano__detail">See what we can do for your business</span>
-          </span>
-          <span className="contact-pano__arrow" aria-hidden="true">
-            →
-          </span>
-        </Link>
-
         <div className="contact-tiles contact-reveal">
           <Tile
             className="contact-tile contact-tile--whatsapp"
@@ -135,6 +123,13 @@ export default function Contact() {
             detail={site.phone.display}
             href={site.phone.whatsapp}
             {...external}
+          />
+          <Tile
+            className="contact-tile contact-tile--wide contact-tile--feature"
+            icon="tours"
+            label="See our tours"
+            detail="See what we can do for your business"
+            to="/portfolio"
           />
           {tiles.map((tile) => (
             <Tile key={tile.label} {...tile} />
