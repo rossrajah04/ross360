@@ -122,7 +122,7 @@ export default function Contact() {
         <div className="contact-hero">
           <TourEmbed tour={site.stepInsideTour} className="contact-hero__tour" />
         </div>
-        <h1 className="contact-page__line">360° virtual tours and Google Street View, Manchester</h1>
+        <h1 className="contact-page__line">Let customers explore your business before they visit.</h1>
       </section>
 
       <div className="contact-page__inner">
