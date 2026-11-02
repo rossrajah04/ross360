@@ -1,95 +1,187 @@
-/* /contact: the page the business card's QR code opens. One column of full-width rows divided by
-   thin rules, in the site's palette and typeface. */
+/* /contact: the page the business card's QR code opens. Dark, in the site's palette and typeface:
+   a live tour across the top, then the wordmark, the main ways to get in touch, and further links
+   divided by thin rules. */
 
 .contact-page {
   min-height: 100vh;
   min-height: 100svh;
-  background: var(--bg);
-  color: var(--ink);
+  background: var(--bg-dark);
+  color: var(--on-dark);
+}
+
+/* Live tour */
+.contact-tour {
+  width: min(100%, 960px);
+  margin-inline: auto;
+}
+
+.contact-tour .contact-tour__stage {
+  aspect-ratio: auto;
+  height: 46vh;
+  height: 46svh;
+  min-height: 260px;
+  max-height: 520px;
+}
+
+.contact-tour__stage .tour-stage__frame {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+.contact-tour__caption {
+  width: min(100% - 2 * var(--gutter), 560px);
+  margin: 10px auto 0;
+  font-size: 0.82rem;
+  color: var(--muted-on-dark);
 }
 
 .contact-page__inner {
   width: min(100% - 2 * var(--gutter), 560px);
   margin-inline: auto;
-  padding: 40px 0 56px;
+  padding: 32px 0 56px;
 }
 
-.contact-page__head {
-  padding-bottom: 28px;
-}
-
+/* Wordmark and line */
 .contact-page__head .wordmark {
-  font-size: 1.35rem;
+  font-size: 1.75rem;
 }
 
 .contact-page__line {
-  margin: 14px 0 0;
+  margin: 10px 0 0;
   font-size: 1rem;
   font-weight: 400;
   line-height: 1.45;
-  color: var(--muted);
+  color: var(--muted-on-dark);
 }
 
+/* Main actions */
+.contact-actions {
+  display: grid;
+  gap: 10px;
+  margin-top: 28px;
+}
+
+.contact-actions__pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.contact-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 54px;
+  padding: 0 18px;
+  border: 1px solid var(--line-on-dark);
+  color: var(--on-dark);
+  font-size: 1rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.contact-btn:hover {
+  border-color: var(--on-dark);
+}
+
+.contact-btn--primary {
+  min-height: 58px;
+  background: #ffffff;
+  border-color: #ffffff;
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.contact-btn--primary:hover {
+  background: var(--bg-tone);
+  border-color: var(--bg-tone);
+}
+
+.contact-btn--primary .contact-icon {
+  color: #1f9e57;
+}
+
+.contact-actions__numbers {
+  margin: 4px 0 0;
+  font-size: 0.85rem;
+  color: var(--muted-on-dark);
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+/* Further links */
 .contact-links {
   list-style: none;
-  margin: 0;
+  margin: 32px 0 0;
   padding: 0;
-  border-top: 1px solid var(--line);
+  border-top: 1px solid var(--line-on-dark);
 }
 
 .contact-links li {
-  border-bottom: 1px solid var(--line);
+  border-bottom: 1px solid var(--line-on-dark);
 }
 
 .contact-links__row {
   display: grid;
-  grid-template-columns: 1fr auto;
-  column-gap: 16px;
+  grid-template-columns: 40px 1fr auto;
   align-items: center;
+  column-gap: 8px;
   min-height: 68px;
-  padding: 14px 4px;
+  padding: 12px 2px;
   color: inherit;
   text-decoration: none;
 }
 
+.contact-links__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  color: var(--on-dark);
+}
+
+.contact-links__text {
+  display: grid;
+  gap: 2px;
+}
+
 .contact-links__label {
-  font-size: 1.0625rem;
+  font-size: 1.02rem;
   font-weight: 600;
 }
 
 .contact-links__detail {
-  grid-column: 1;
-  font-size: 0.95rem;
-  color: var(--muted);
+  font-size: 0.9rem;
+  color: var(--muted-on-dark);
   overflow-wrap: anywhere;
 }
 
 .contact-links__arrow {
-  grid-column: 2;
-  grid-row: 1 / span 2;
   font-size: 1.1rem;
-  color: var(--ink-soft);
-  transition: transform 0.15s ease;
+  color: var(--muted-on-dark);
+  transition: transform 0.15s ease, color 0.15s ease;
 }
 
 .contact-links__row:hover .contact-links__arrow,
 .contact-links__row:focus-visible .contact-links__arrow {
   transform: translateX(3px);
-}
-
-.contact-links__row:hover .contact-links__label {
-  text-decoration: underline;
-  text-underline-offset: 3px;
+  color: var(--on-dark);
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .contact-btn,
   .contact-links__arrow {
     transition: none;
   }
 }
 
 @media (min-width: 900px) {
-  .contact-page__inner {
-    padding-top: 72px;
+  .contact-tour {
+    padding-top: 40px;
   }
 }
