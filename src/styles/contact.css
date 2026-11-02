@@ -16,15 +16,58 @@
   padding: 10px 0 48px;
 }
 
-/* Live tour under the wordmark, set in from the edges with a thin light border. */
-.contact-hero {
-  position: relative;
+/* Top bar: wordmark on the left, WhatsApp button on the right. */
+.contact-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  width: min(100% - 2 * var(--gutter), 960px);
+  margin: 0 auto;
+  padding: 18px 0;
+}
+
+.contact-head .wordmark {
+  font-size: 1.4rem;
+  color: #ffffff;
+}
+
+.contact-head__whatsapp {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 14px 0 12px;
+  background: var(--bg-soft);
+  color: var(--ink);
+  font-size: 0.92rem;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.contact-head__whatsapp .contact-icon {
+  width: 20px;
+  height: 20px;
+  color: #1fa855;
+}
+
+.contact-head__whatsapp:hover {
+  background: #ffffff;
+}
+
+/* Live tour in a thin light frame, with the caption along its bottom edge. */
+.contact-frame {
   box-sizing: border-box;
   width: min(100% - 2 * var(--gutter), 960px);
   margin: 0 auto;
   border: 1px solid rgba(255, 255, 255, 0.35);
+  background: #1e1e1c;
+}
+
+.contact-hero {
+  position: relative;
   aspect-ratio: 4 / 5;
-  max-height: 78svh;
+  max-height: 72svh;
   overflow: hidden;
   background: #1e1e1c;
   color: #ffffff;
@@ -36,23 +79,13 @@
   aspect-ratio: auto;
 }
 
-.contact-head {
-  width: min(100% - 2 * var(--gutter), 960px);
-  margin: 0 auto;
-  padding: 28px 0 18px;
-}
-
-.contact-head .wordmark {
-  font-size: 1.75rem;
-  color: #ffffff;
-}
-
 .contact-page__line {
-  margin: 8px 0 0;
-  max-width: 28ch;
-  font-size: 0.98rem;
+  margin: 0;
+  padding: 14px 16px;
+  border-top: 1px solid var(--line-on-dark);
+  font-size: 0.92rem;
   font-weight: 400;
-  line-height: 1.4;
+  line-height: 1.45;
   color: #e6e4df;
 }
 

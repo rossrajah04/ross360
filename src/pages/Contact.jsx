@@ -7,8 +7,8 @@ import { site } from '../content/site.js';
 import { lowestPrice, streetView } from '../content/pricing.js';
 import '../styles/contact.css';
 
-// The page the QR code on the business card opens: the live Kinetic tour across the top with the wordmark
-// over it, then large tiles for every way to get in touch, the tours and each service. It sits outside the main layout (no header, footer or
+// The page the QR code on the business card opens: the wordmark and a WhatsApp button, the live
+// Kinetic tour in a frame with a caption, then large tiles for every way to get in touch, the tours and each service. It sits outside the main layout (no header, footer or
 // floating buttons) so it reads cleanly on a phone.
 const external = { target: '_blank', rel: 'noopener noreferrer' };
 
@@ -112,11 +112,17 @@ export default function Contact() {
       <Seo page="contact" />
       <header className="contact-head">
         <Wordmark light />
-        <h1 className="contact-page__line">360° virtual tours and Google Street View, Manchester</h1>
+        <a className="contact-head__whatsapp" href={site.phone.whatsapp} {...external}>
+          <Icon name="whatsapp" />
+          WhatsApp
+        </a>
       </header>
 
-      <section className="contact-hero" aria-label={`${site.stepInsideTour.title}: 360° virtual tour`}>
-        <TourEmbed tour={site.stepInsideTour} className="contact-hero__tour" />
+      <section className="contact-frame" aria-label={`${site.stepInsideTour.title}: 360° virtual tour`}>
+        <div className="contact-hero">
+          <TourEmbed tour={site.stepInsideTour} className="contact-hero__tour" />
+        </div>
+        <h1 className="contact-page__line">360° virtual tours and Google Street View, Manchester</h1>
       </section>
 
       <div className="contact-page__inner">
