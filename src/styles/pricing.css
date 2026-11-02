@@ -18,6 +18,11 @@
   padding: var(--h-gap) 0 0;
 }
 
+/* After the Street View band, whose own bottom padding already gives the space, so the two don't double up. */
+.sp-price + .pr-packages {
+  padding-top: 0;
+}
+
 .pr-plans {
   display: grid;
   gap: 40px;
