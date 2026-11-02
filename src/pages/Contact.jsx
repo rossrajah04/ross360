@@ -110,12 +110,13 @@ export default function Contact() {
   return (
     <main id="main" className="contact-page">
       <Seo page="contact" />
+      <header className="contact-head">
+        <Wordmark light />
+        <h1 className="contact-page__line">360° virtual tours and Google Street View, Manchester</h1>
+      </header>
+
       <section className="contact-hero" aria-label={`${site.stepInsideTour.title}: 360° virtual tour`}>
         <TourEmbed tour={site.stepInsideTour} className="contact-hero__tour" />
-        <header className="contact-hero__head">
-          <Wordmark light />
-          <h1 className="contact-page__line">360° virtual tours and Google Street View, Manchester</h1>
-        </header>
       </section>
 
       <div className="contact-page__inner">

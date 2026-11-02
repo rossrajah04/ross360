@@ -16,13 +16,12 @@
   padding: 10px 0 48px;
 }
 
-/* Live tour, set in from the edges with a thin light border, the wordmark over the top. The shade and
-   header never block the tour. */
+/* Live tour under the wordmark, set in from the edges with a thin light border. */
 .contact-hero {
   position: relative;
   box-sizing: border-box;
   width: min(100% - 2 * var(--gutter), 960px);
-  margin: var(--gutter) auto 0;
+  margin: 0 auto;
   border: 1px solid rgba(255, 255, 255, 0.35);
   aspect-ratio: 4 / 5;
   max-height: 78svh;
@@ -37,33 +36,15 @@
   aspect-ratio: auto;
 }
 
-/* Shade at the top so the words read over any part of the room. Never blocks the tour. */
-.contact-hero::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 1;
-  pointer-events: none;
-  height: 34%;
-  background: linear-gradient(to bottom, rgba(20, 20, 19, 0.8), rgba(20, 20, 19, 0));
+.contact-head {
+  width: min(100% - 2 * var(--gutter), 960px);
+  margin: 0 auto;
+  padding: 28px 0 18px;
 }
 
-.contact-hero__head {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 2;
-  padding: 26px var(--gutter) 0;
-  pointer-events: none;
-}
-
-.contact-hero__head .wordmark {
+.contact-head .wordmark {
   font-size: 1.75rem;
   color: #ffffff;
-  pointer-events: auto;
 }
 
 .contact-page__line {
