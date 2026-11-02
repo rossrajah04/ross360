@@ -18,6 +18,19 @@
   padding: var(--h-gap) 0 0;
 }
 
+/* Street View band straight under the hero: no rule above it and no extra space, so it starts with the text. */
+.pr-streetview {
+  padding-top: 0;
+}
+.pr-streetview .sp-price__inner {
+  border-top: 0;
+}
+
+/* After the Street View band, whose own bottom padding already gives the space, so the two don't double up. */
+.sp-price + .pr-packages {
+  padding-top: 0;
+}
+
 .pr-plans {
   display: grid;
   gap: 40px;

@@ -34,7 +34,7 @@ export default function Pricing() {
         </div>
       </section>
 
-      <section className="sp-price" aria-labelledby="pr-streetview-title">
+      <section className="sp-price pr-streetview" aria-labelledby="pr-streetview-title">
         <div className="h-wrap">
           <div className="sp-price__inner" data-reveal>
             <div>

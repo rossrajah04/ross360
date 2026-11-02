@@ -6,7 +6,7 @@
 // { h } sub-heading, { p } paragraph, { ul } list. {quote}, {pricing}, {streetview} and {virtualtours}
 // become links. Add a guide's SEO entry automatically by adding it here (see seo.js).
 
-import { plans, streetView, lowestPrice } from './pricing.js';
+import { plans, streetView, streetViewPointsText, lowestPrice } from './pricing.js';
 
 const plan = (id) => plans.find((p) => p.id === id);
 
@@ -30,7 +30,7 @@ export const guides = [
         title: 'Google Street View photography',
         blocks: [
           {
-            p: `If the main aim is for customers to see inside your premises on Google Maps, 360° photographs published to your Google Business Profile are the simplest option. ROSS 360 charges from £${streetView.price} for smaller premises; larger premises need more photographs and are quoted accordingly.`,
+            p: `If the main aim is for customers to see inside your premises on Google Maps, 360° photographs published to your Google Business Profile are the simplest option. ROSS 360 charges from £${streetView.price}. ${streetViewPointsText}`,
           },
           { p: 'This option does not include an interactive tour, a website embed or a shareable tour link. See {streetview} for how it looks on a real listing.' },
         ],

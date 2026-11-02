@@ -13,6 +13,8 @@ import {
   mileageTravel,
   packageById,
   packageItem,
+  streetViewExtraItem,
+  STREET_VIEW_EXTRA_POINTS_MAX,
   typedMilesTenths,
   typedPence,
 } from '../../src/lib/admin/quotes.js';
@@ -185,6 +187,19 @@ export default function Quote() {
         ? [{ kind: 'package', description: line.description, quantity: '1', unit: penceToPounds(line.unitPence) }, ...rest]
         : rest,
     });
+  };
+  const addStreetViewPoint = () => {
+    const extra = streetViewExtraItem();
+    const index = form.items.findIndex((item) => item.kind === 'custom' && item.description === extra.description);
+    if (index === -1) {
+      setForm({
+        ...form,
+        items: [...form.items, { kind: 'custom', description: extra.description, quantity: '1', unit: penceToPounds(extra.unitPence) }],
+      });
+      return;
+    }
+    const current = Number.parseInt(form.items[index].quantity, 10) || 0;
+    setItem(index, 'quantity', String(Math.min(current + 1, STREET_VIEW_EXTRA_POINTS_MAX)));
   };
   const addLine = () =>
     setForm({ ...form, items: [...form.items, { kind: 'custom', description: '', quantity: '1', unit: '' }] });
@@ -403,6 +418,20 @@ export default function Quote() {
               <p className="ad-note ad-note--tight">
                 The {packageById(form.package)?.name} line starts at the published price. Change its price below if
                 this project needs a different figure.
+              </p>
+            ) : null}
+            {form.package === 'streetview' ? (
+              <p className="ad-note ad-note--tight">
+                Covers up to 3 photo points. Extra points are £25 each, up to 6 in total; beyond that, quote a full
+                tour.{' '}
+                <button
+                  type="button"
+                  className="ad-button ad-button--quiet ad-button--small"
+                  onClick={addStreetViewPoint}
+                  disabled={form.items.length >= QUOTE_LIMITS.maxItems}
+                >
+                  Add extra photo point
+                </button>
               </p>
             ) : null}
 

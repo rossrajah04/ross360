@@ -53,15 +53,24 @@ export const plans = [
 export const lowestPrice = plans[0].price;
 
 // Google Street View only (agreed with ROSS 360, 22 October 2026): 360° photographs published
-// to the business's Google listing, with no interactive tour, website embed or tour URL. No photograph
-// count (removed at ROSS 360's request): the quotation sets the scope. Kept out of `plans`, so
-// "Business tours from £249" stays true wherever it is shown.
+// to the business's Google listing, with no interactive tour, website embed or tour URL. Kept out of
+// `plans`, so "Business tours from £249" stays true wherever it is shown.
+// Priced by photo point (agreed with ROSS 360, 2 November 2026): £99 covers up to 3 points, each extra
+// point is £25, up to 6 in total. Beyond that, a full tour is quoted instead.
 export const streetView = {
   id: 'streetview',
   name: 'Google Street View',
   price: 99,
-  quoteLine: 'Google Street View publishing',
+  includedPoints: 3,
+  extraPointPrice: 25,
+  maxPoints: 6,
+  quoteLine: 'Google Street View publishing (up to 3 photo points)',
+  extraPointLine: 'Additional Street View photo point',
 };
+
+// "£99 covers up to 3 photo points … Additional points are £25 each, up to 6 in total." Shared by the
+// Pricing page, the Street View page and the guides so the wording stays the same everywhere.
+export const streetViewPointsText = `£${streetView.price} covers up to ${streetView.includedPoints} photo points, for example one in each of three rooms. Additional points are £${streetView.extraPointPrice} each, up to ${streetView.maxPoints} in total.`;
 
 export const formatFrom = (price) => `From £${price}`;
 
@@ -95,10 +104,10 @@ export const pricing = {
 
   streetView: {
     title: 'Google Street View only',
-    text: 'For businesses that want their premises on Google Maps without a full virtual tour. We capture 360° photographs of your premises and publish them to your Google Business Profile. £99 covers smaller premises; larger premises need more photographs and are quoted accordingly.',
+    text: `For businesses that want their premises on Google Maps without a full virtual tour. We capture 360° photographs of your premises and publish them to your Google Business Profile. ${streetViewPointsText} Premises that need more are better suited to a full virtual tour.`,
     listLabel: 'Includes:',
     items: [
-      '360° photographs of the agreed areas',
+      '360° photographs at up to 3 agreed photo points',
       'Publication to your Google Business Profile',
       'No login details or passwords needed from you',
       'Quality check before publication',
