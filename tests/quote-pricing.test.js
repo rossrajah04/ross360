@@ -11,6 +11,8 @@ import {
   formatQuoteReference,
   longDate,
   packageItem,
+  streetViewExtraItem,
+  STREET_VIEW_EXTRA_POINTS_MAX,
   sendProblems,
   typedPence,
   ukToday,
@@ -31,7 +33,7 @@ test('packages come from the published starting prices, in pence', () => {
     ],
   );
   assert.equal(PACKAGES.length, plans.length + 1);
-  assert.equal(packageItem('streetview').description, 'Google Street View publishing');
+  assert.equal(packageItem('streetview').description, 'Google Street View publishing (up to 3 photo points)');
   assert.deepEqual(packageItem('professional'), {
     kind: 'package',
     description: 'Professional 360° virtual tour',
@@ -156,4 +158,14 @@ test('a quote needs a name, a valid email, at least one line and a customer type
   // Never inferred from the business name.
   assert.equal(sendProblems({ customerName: 'Alex', customerBusiness: 'Alex Ltd', customerEmail: 'alex@example.test', items: [line()] }).length, 1);
   assert.equal(validateQuoteDraft({ customerType: 'company' }).valid, false);
+});
+
+test('Street View extra photo points are £25 lines, up to 6 points in total', () => {
+  assert.deepEqual(streetViewExtraItem(2), {
+    kind: 'custom',
+    description: 'Additional Street View photo point',
+    quantity: 2,
+    unitPence: 2500,
+  });
+  assert.equal(STREET_VIEW_EXTRA_POINTS_MAX, 3);
 });

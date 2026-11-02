@@ -44,6 +44,15 @@ export function packageItem(id) {
   return { kind: 'package', description: pkg.description, quantity: 1, unitPence: pkg.pence };
 }
 
+// Google Street View only covers up to 3 photo points; each extra point is an ordinary line at £25,
+// up to 6 points in total (src/content/pricing.js). Beyond that, quote a full tour instead.
+export const STREET_VIEW_EXTRA_POINTS_MAX = streetView.maxPoints - streetView.includedPoints;
+
+/** The line for extra Street View photo points, at the published price per point. */
+export function streetViewExtraItem(quantity = 1) {
+  return { kind: 'custom', description: streetView.extraPointLine, quantity, unitPence: streetView.extraPointPrice * 100 };
+}
+
 export const QUOTE_LIMITS = {
   maxItems: 20,
   description: 200,

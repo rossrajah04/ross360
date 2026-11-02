@@ -2,7 +2,7 @@
 // at their request). First person, as ROSS 360 wrote it. No photograph counts, no slogans, and no promise
 // that Google will publish: Google decides (site.google.disclaimer).
 
-import { streetView } from './pricing.js';
+import { streetView, streetViewPointsText, lowestPrice } from './pricing.js';
 
 export const googleStreetView = {
   hero: {
@@ -89,7 +89,7 @@ export const googleStreetView = {
   price: {
     label: 'Google Street View only',
     title: `From £${streetView.price}`,
-    text: `£${streetView.price} covers smaller premises. Larger premises need more photographs and are quoted accordingly.`,
+    text: `${streetViewPointsText} Premises that need more are better suited to a full virtual tour, from £${lowestPrice}.`,
     link: 'View all pricing',
     to: '/pricing',
   },
@@ -107,8 +107,12 @@ export const googleStreetView = {
       },
       {
         question: 'How is this different from a virtual tour?',
-        answer: 'Street View photographs appear on Google. A virtual tour also gives you a shareable link and can be added to your own website.',
+        answer: `Street View photography puts a few 360° photographs of your premises on Google Maps. A virtual tour is a complete walkthrough, with several points in each room, that you can add to your own website, share by link and use on Google as well. Tours start at £${lowestPrice}.`,
         link: { label: 'About virtual tours', to: '/virtual-tours' },
+      },
+      {
+        question: 'What is a photo point?',
+        answer: `One position where I take a 360° photograph. Most rooms need one, so a three-room studio or clinic is usually covered by the £${streetView.price} price.`,
       },
       {
         question: 'Do you cover my area?',
