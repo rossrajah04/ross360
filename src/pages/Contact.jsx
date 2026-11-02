@@ -3,6 +3,7 @@ import Seo from '../components/Seo.jsx';
 import Wordmark from '../components/Wordmark.jsx';
 import { GoogleMark } from '../components/home/GoogleReviews.jsx';
 import { site } from '../content/site.js';
+import { lowestPrice, streetView } from '../content/pricing.js';
 import '../styles/contact.css';
 
 // The page the QR code on the business card opens: every way to get in touch.
@@ -66,6 +67,11 @@ function Icon({ name }) {
   );
 }
 
+const services = [
+  { label: '360° virtual tours', detail: 'For businesses and property', price: `From £${lowestPrice}`, to: '/virtual-tours' },
+  { label: 'Google Street View', detail: 'Published to your Google listing', price: `From £${streetView.price}`, to: '/google-street-view' },
+];
+
 const rows = [
   { icon: 'tours', label: 'See our tours', detail: 'See what we can do for your business', to: '/portfolio' },
   { icon: 'google', label: 'Google', detail: 'Our Google Business Profile', href: site.googleProfileUrl, ...external },
@@ -101,18 +107,31 @@ function Row({ icon, label, detail, to, ...link }) {
   );
 }
 
+// A slowly turning sphere outline behind the wordmark: a plain nod to 360°. Decorative only.
+function Orbit() {
+  return (
+    <svg className="contact-orbit" viewBox="0 0 200 200" aria-hidden="true" focusable="false">
+      <circle cx="100" cy="100" r="96" />
+      <ellipse className="contact-orbit__equator" cx="100" cy="100" rx="96" ry="26" />
+      <ellipse className="contact-orbit__meridian" cx="100" cy="100" rx="96" ry="96" />
+      <ellipse className="contact-orbit__meridian contact-orbit__meridian--late" cx="100" cy="100" rx="96" ry="96" />
+    </svg>
+  );
+}
+
 export default function Contact() {
   return (
     <main id="main" className="contact-page">
       <Seo page="contact" />
 
       <div className="contact-page__inner">
-        <header className="contact-page__head">
+        <header className="contact-page__head contact-reveal">
+          <Orbit />
           <Wordmark light />
           <h1 className="contact-page__line">360° virtual tours and Google Street View, Manchester</h1>
         </header>
 
-        <div className="contact-actions">
+        <div className="contact-actions contact-reveal">
           <a className="contact-btn contact-btn--primary" href={site.phone.whatsapp} {...external}>
             <Icon name="whatsapp" />
             Message on WhatsApp
@@ -134,7 +153,24 @@ export default function Contact() {
           </p>
         </div>
 
-        <ul className="contact-links">
+        <section className="contact-services contact-reveal" aria-labelledby="contact-services-title">
+          <h2 id="contact-services-title" className="contact-services__title">
+            What we do
+          </h2>
+          <ul className="contact-services__list">
+            {services.map((item) => (
+              <li key={item.label}>
+                <Link className="contact-services__row" to={item.to}>
+                  <span className="contact-services__name">{item.label}</span>
+                  <span className="contact-services__price">{item.price}</span>
+                  <span className="contact-services__detail">{item.detail}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+
+        <ul className="contact-links contact-reveal">
           {rows.map((row) => (
             <Row key={row.label} {...row} />
           ))}
