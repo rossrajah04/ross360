@@ -945,3 +945,277 @@ body {
 .ad-slot__booking {
   margin: 0.25rem 0 0;
 }
+
+/* Availability calendar ---------------------------------------------------- */
+
+.ad-quick {
+  display: grid;
+  gap: 16px;
+}
+
+.ad-quick__item p {
+  margin: 0 0 8px;
+}
+
+.ad-quick__weeks {
+  width: auto;
+}
+
+.ad-quick__more {
+  margin-top: 12px;
+  font-size: 14px;
+}
+
+.ad-checks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  border: 0;
+  margin: 12px 0;
+  padding: 0;
+}
+
+.ad-checks legend {
+  width: 100%;
+  margin-bottom: 4px;
+}
+
+.ad-checks .ad-check {
+  margin: 0;
+}
+
+.ad-cal__nav {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ad-cal__month {
+  margin: 0;
+  min-width: 10em;
+  text-align: center;
+}
+
+.ad-cal__summary {
+  margin: 8px 0;
+  font-size: 14px;
+}
+
+.ad-cal__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  list-style: none;
+  margin: 0 0 12px;
+  padding: 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.ad-cal__legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ad-cal__legend .ad-pill {
+  width: 18px;
+  min-height: 12px;
+  padding: 0;
+  cursor: default;
+}
+
+.ad-cal {
+  display: grid;
+  gap: 4px;
+}
+
+.ad-cal__row {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 4px;
+}
+
+.ad-cal__weekday {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  text-align: center;
+  padding: 2px 0;
+}
+
+.ad-cal__weekday--shoot {
+  color: var(--ink);
+}
+
+.ad-cal__cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg);
+}
+
+.ad-cal__cell--shoot {
+  background: var(--bg-soft);
+}
+
+.ad-cal__cell--empty {
+  border-color: transparent;
+  background: none;
+}
+
+.ad-cal__cell--past {
+  opacity: 0.45;
+}
+
+.ad-cal__cell--selected {
+  border-color: var(--ink);
+  box-shadow: inset 0 0 0 1px var(--ink);
+}
+
+.ad-cal__date {
+  position: relative;
+  align-self: flex-start;
+  padding: 0 4px;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: inherit;
+  cursor: pointer;
+}
+
+.ad-cal__date:hover {
+  text-decoration: underline;
+}
+
+.ad-cal__date--today {
+  background: var(--ink);
+  color: #fff;
+}
+
+.ad-cal__dot {
+  position: absolute;
+  top: 0;
+  right: -4px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.ad-cal__pills {
+  display: grid;
+  gap: 3px;
+}
+
+.ad-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 30px;
+  padding: 2px 4px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--muted);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+}
+
+.ad-pill:disabled {
+  cursor: default;
+}
+
+.ad-pill--closed {
+  border-style: dashed;
+}
+
+.ad-pill--open {
+  background: var(--ok);
+  border-color: var(--ok);
+  color: #fff;
+}
+
+.ad-pill--booked {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: #fff;
+}
+
+.ad-pill--holding {
+  background: #fff7e6;
+  border-color: #e0b85c;
+  color: #7a5200;
+}
+
+.ad-pill--working {
+  opacity: 0.5;
+}
+
+.ad-tag--state-open {
+  color: var(--ok);
+  border-color: currentColor;
+}
+
+.ad-tag--state-closed {
+  color: var(--muted);
+  border-color: currentColor;
+}
+
+.ad-tag--state-booked {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: #fff;
+}
+
+.ad-tag--state-holding {
+  background: #fff7e6;
+  border-color: #f2d9a6;
+}
+
+.ad-day {
+  margin-top: 16px;
+}
+
+.ad-day__head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ad-day__title {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.ad-panel .ad-day__hint {
+  margin: 8px 0 0;
+  font-size: 14px;
+}
+
+@media (min-width: 720px) {
+  .ad-quick {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .ad-cal__cell {
+    padding: 6px;
+  }
+
+  .ad-pill {
+    min-height: 34px;
+    font-size: 13px;
+  }
+}
