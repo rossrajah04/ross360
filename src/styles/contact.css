@@ -33,17 +33,6 @@
   aspect-ratio: auto;
 }
 
-/* Panoee draws its scene bar, title and credit along the bottom of the frame, and they can't be
-   switched off from the page. The frame runs taller than the stage so that strip sits out of view;
-   the room itself and its in-tour arrows stay visible. */
-.contact-hero__tour .tour-stage__frame {
-  display: block;
-  inset: 0 0 auto 0;
-  width: 100%;
-  height: calc(100% + 160px);
-  border: 0;
-}
-
 /* Shade at the top so the words read over any part of the room. Never blocks the tour. */
 .contact-hero::before {
   content: '';
