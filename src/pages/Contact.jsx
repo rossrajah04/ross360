@@ -1,15 +1,14 @@
 import { Link } from 'react-router-dom';
 import Seo from '../components/Seo.jsx';
 import Wordmark from '../components/Wordmark.jsx';
-import PanoView from '../components/PanoView.jsx';
+import TourEmbed from '../components/TourEmbed.jsx';
 import { GoogleMark } from '../components/home/GoogleReviews.jsx';
 import { site } from '../content/site.js';
 import { lowestPrice, streetView } from '../content/pricing.js';
 import '../styles/contact.css';
 
-// The page the QR code on the business card opens: a 360° photograph from a ROSS 360 shoot that visitors
-// drag to look around, with the wordmark over it and a link to the tours, then large tiles for every way
-// to get in touch and each service. It sits outside the main layout (no header, footer or
+// The page the QR code on the business card opens: the live Kinetic tour across the top with the wordmark
+// over it, then large tiles for every way to get in touch, the tours and each service. It sits outside the main layout (no header, footer or
 // floating buttons) so it reads cleanly on a phone.
 const external = { target: '_blank', rel: 'noopener noreferrer' };
 
@@ -111,45 +110,12 @@ export default function Contact() {
   return (
     <main id="main" className="contact-page">
       <Seo page="contact" />
-      <section className="contact-hero" aria-label="360° photograph from a ROSS 360 shoot">
-        <PanoView
-          className="contact-hero__view"
-          src="/images/contact/entrance-360.jpg"
-          yaw={-110}
-          pitch={14}
-          fov={95}
-          alt="A clinic waiting area photographed by ROSS 360. Drag to look around."
-          poster={
-            <picture>
-              <source type="image/webp" srcSet="/images/contact/space-800.webp 800w, /images/contact/space-1200.webp 1200w" sizes="100vw" />
-              <img
-                className="pano-view__poster"
-                src="/images/contact/space-800.jpg"
-                srcSet="/images/contact/space-800.jpg 800w, /images/contact/space-1200.jpg 1200w"
-                sizes="100vw"
-                width="1200"
-                height="750"
-                alt=""
-              />
-            </picture>
-          }
-        />
+      <section className="contact-hero" aria-label={`${site.stepInsideTour.title}: 360° virtual tour`}>
+        <TourEmbed tour={site.stepInsideTour} className="contact-hero__tour" />
         <header className="contact-hero__head">
           <Wordmark light />
           <h1 className="contact-page__line">360° virtual tours and Google Street View, Manchester</h1>
         </header>
-        <div className="contact-hero__foot">
-          <p className="contact-hero__hint">Drag to look around</p>
-          <Link className="contact-hero__link" to="/portfolio">
-            <span className="contact-hero__text">
-              <span className="contact-hero__label">See our tours</span>
-              <span className="contact-hero__detail">See what we can do for your business</span>
-            </span>
-            <span className="contact-hero__arrow" aria-hidden="true">
-              →
-            </span>
-          </Link>
-        </div>
       </section>
 
       <div className="contact-page__inner">
@@ -161,6 +127,13 @@ export default function Contact() {
             detail={site.phone.display}
             href={site.phone.whatsapp}
             {...external}
+          />
+          <Tile
+            className="contact-tile contact-tile--wide"
+            icon="tours"
+            label="See our tours"
+            detail="See what we can do for your business"
+            to="/portfolio"
           />
           {tiles.map((tile) => (
             <Tile key={tile.label} {...tile} />

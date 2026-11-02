@@ -1,6 +1,6 @@
 /* /contact: the page the business card's QR code opens. Dark, in the site's palette and typeface: the
-   a 360° photograph from a shoot that visitors drag to look around, with the wordmark over it, then
-   large tiles for every way to get in touch and each service. */
+   the live Kinetic tour across the top with the wordmark over it, then large tiles for every way to
+   get in touch, the tours and each service. */
 
 .contact-page {
   min-height: 100vh;
@@ -15,7 +15,7 @@
   padding: 10px 0 48px;
 }
 
-/* Opening 360° view, full width, with the wordmark over the top and the tours link at the foot */
+/* Live tour, full width, with the wordmark over the top. The shade and header never block the tour. */
 .contact-hero {
   position: relative;
   width: min(100%, 960px);
@@ -27,76 +27,40 @@
   color: #ffffff;
 }
 
-.pano-view {
+.contact-hero .contact-hero__tour {
   position: absolute;
   inset: 0;
+  aspect-ratio: auto;
 }
 
-.pano-view picture,
-.pano-view__poster,
-.pano-view__canvas {
-  position: absolute;
-  inset: 0;
+.contact-hero__tour .tour-stage__frame {
   display: block;
   width: 100%;
   height: 100%;
+  border: 0;
 }
 
-.pano-view__poster {
-  object-fit: cover;
-}
-
-.pano-view__canvas {
-  opacity: 0;
-  cursor: grab;
-  touch-action: pan-y;
-  transition: opacity 0.4s ease;
-}
-
-.pano-view__canvas:active {
-  cursor: grabbing;
-}
-
-.pano-view--ready .pano-view__canvas {
-  opacity: 1;
-}
-
-/* Shade at the top and foot so the words read over any part of the room. Never blocks dragging. */
-.contact-hero::before,
-.contact-hero::after {
+/* Shade at the top so the words read over any part of the room. Never blocks the tour. */
+.contact-hero::before {
   content: '';
   position: absolute;
+  top: 0;
   left: 0;
   right: 0;
   z-index: 1;
   pointer-events: none;
-}
-
-.contact-hero::before {
-  top: 0;
-  height: 42%;
-  background: linear-gradient(to bottom, rgba(20, 20, 19, 0.78), rgba(20, 20, 19, 0));
-}
-
-.contact-hero::after {
-  bottom: 0;
-  height: 45%;
-  background: linear-gradient(to top, rgba(20, 20, 19, 0.88), rgba(20, 20, 19, 0));
-}
-
-.contact-hero__head,
-.contact-hero__foot {
-  position: absolute;
-  left: 0;
-  right: 0;
-  z-index: 2;
-  padding-inline: var(--gutter);
-  pointer-events: none;
+  height: 34%;
+  background: linear-gradient(to bottom, rgba(20, 20, 19, 0.8), rgba(20, 20, 19, 0));
 }
 
 .contact-hero__head {
+  position: absolute;
   top: 0;
-  padding-top: 26px;
+  left: 0;
+  right: 0;
+  z-index: 2;
+  padding: 26px var(--gutter) 0;
+  pointer-events: none;
 }
 
 .contact-hero__head .wordmark {
@@ -112,52 +76,6 @@
   font-weight: 400;
   line-height: 1.4;
   color: #e6e4df;
-}
-
-.contact-hero__foot {
-  bottom: 0;
-  padding-bottom: 18px;
-}
-
-.contact-hero__hint {
-  margin: 0 0 10px;
-  font-size: 0.82rem;
-  color: #d4d2cc;
-}
-
-.contact-hero__link {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  align-items: end;
-  gap: 12px;
-  color: #ffffff;
-  text-decoration: none;
-  pointer-events: auto;
-}
-
-.contact-hero__text {
-  display: grid;
-  gap: 3px;
-}
-
-.contact-hero__label {
-  font-size: 1.3rem;
-  font-weight: 600;
-}
-
-.contact-hero__detail {
-  font-size: 0.95rem;
-  color: #e6e4df;
-}
-
-.contact-hero__arrow {
-  font-size: 1.3rem;
-  transition: transform 0.15s ease;
-}
-
-.contact-hero__link:hover .contact-hero__arrow,
-.contact-hero__link:focus-visible .contact-hero__arrow {
-  transform: translateX(3px);
 }
 
 /* Tiles */
@@ -242,7 +160,7 @@
   color: var(--muted);
 }
 
-/* Save contact: full width, one line. */
+/* Full-width tiles (See our tours, Save contact). */
 .contact-tile--wide {
   grid-column: 1 / -1;
   flex-direction: row;
@@ -273,9 +191,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .contact-tile,
-  .contact-hero__arrow,
-  .pano-view__canvas {
+  .contact-tile {
     transition: none;
   }
   .contact-reveal {
