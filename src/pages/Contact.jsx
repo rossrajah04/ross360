@@ -6,7 +6,8 @@ import { GoogleMark } from '../components/home/GoogleReviews.jsx';
 import { site } from '../content/site.js';
 import '../styles/contact.css';
 
-// The page the QR code on the business card opens: a live tour, then every way to get in touch.
+// The page the QR code on the business card opens: every way to get in touch, with a live tour
+// under the main buttons.
 // It sits outside the main layout (no header, footer or floating buttons) so it reads cleanly on a phone.
 const external = { target: '_blank', rel: 'noopener noreferrer' };
 const tour = site.stepInsideTour;
@@ -108,13 +109,6 @@ export default function Contact() {
     <main id="main" className="contact-page">
       <Seo page="contact" />
 
-      <section className="contact-tour" aria-label={`${tour.title}: 360° tour`}>
-        <TourEmbed tour={tour} className="contact-tour__stage" />
-        <p className="contact-tour__caption">
-          {tour.title}, Didsbury. Drag to look around.
-        </p>
-      </section>
-
       <div className="contact-page__inner">
         <header className="contact-page__head">
           <Wordmark light />
@@ -142,6 +136,13 @@ export default function Contact() {
             {site.email}
           </p>
         </div>
+
+        <section className="contact-tour" aria-label={`${tour.title}: 360° tour`}>
+          <TourEmbed tour={tour} className="contact-tour__stage" />
+          <p className="contact-tour__caption">
+            {tour.title}, Didsbury. Drag to look around.
+          </p>
+        </section>
 
         <ul className="contact-links">
           {rows.map((row) => (

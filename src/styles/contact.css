@@ -1,6 +1,5 @@
 /* /contact: the page the business card's QR code opens. Dark, in the site's palette and typeface:
-   a live tour across the top, then the wordmark, the main ways to get in touch, and further links
-   divided by thin rules. */
+   the wordmark, the main ways to get in touch, a live tour, and further links divided by thin rules. */
 
 .contact-page {
   min-height: 100vh;
@@ -9,18 +8,19 @@
   color: var(--on-dark);
 }
 
-/* Live tour */
-.contact-tour {
-  width: min(100%, 960px);
+.contact-page__inner {
+  width: min(100% - 2 * var(--gutter), 560px);
   margin-inline: auto;
+  padding: 44px 0 56px;
+}
+
+/* Live tour, under the main buttons */
+.contact-tour {
+  margin-top: 32px;
 }
 
 .contact-tour .contact-tour__stage {
-  aspect-ratio: auto;
-  height: 46vh;
-  height: 46svh;
-  min-height: 260px;
-  max-height: 520px;
+  aspect-ratio: 4 / 3;
 }
 
 .contact-tour__stage .tour-stage__frame {
@@ -31,16 +31,9 @@
 }
 
 .contact-tour__caption {
-  width: min(100% - 2 * var(--gutter), 560px);
-  margin: 10px auto 0;
+  margin: 10px 0 0;
   font-size: 0.82rem;
   color: var(--muted-on-dark);
-}
-
-.contact-page__inner {
-  width: min(100% - 2 * var(--gutter), 560px);
-  margin-inline: auto;
-  padding: 32px 0 56px;
 }
 
 /* Wordmark and line */
@@ -177,11 +170,5 @@
   .contact-btn,
   .contact-links__arrow {
     transition: none;
-  }
-}
-
-@media (min-width: 900px) {
-  .contact-tour {
-    padding-top: 40px;
   }
 }
