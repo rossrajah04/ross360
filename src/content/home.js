@@ -17,6 +17,7 @@ export const home = {
     title: 'Explore a real 360° virtual tour.',
     text: 'Move through Kinetic Sports & Health and see how a finished 360° tour can let visitors explore a space online before they arrive.',
     open: 'Open full tour',
+    portfolio: 'Open our portfolio',
     // Shown in the tour frame until the Panoee tour is set in site.exampleTour.
     placeholderLabel: '360° virtual tour',
     placeholder: 'The interactive tour will be embedded here.',

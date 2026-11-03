@@ -227,6 +227,12 @@
   color: #ffffff;
 }
 
+.h-tour__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px 32px;
+}
+
 .h-tour__note {
   display: flex;
   flex-wrap: wrap;
