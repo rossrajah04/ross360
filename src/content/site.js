@@ -35,7 +35,7 @@ export const site = {
   nav: [
     { label: 'Home', to: '/' },
     { label: 'Virtual Tours', to: '/virtual-tours', menu: true },
-    { label: 'Google Street View', to: '/google-street-view', menu: true },
+    { label: 'Google Street View', to: '/google-street-view' },
     { label: 'Businesses', to: '/businesses' },
     { label: 'Property', to: '/property' },
     { label: 'Portfolio', to: '/portfolio', menu: true },

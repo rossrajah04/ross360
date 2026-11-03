@@ -56,13 +56,19 @@ export function StepInside() {
         </div>
         <div className="h-tour__aside" data-reveal>
           <p>{tour.text}</p>
-          {example.openUrl ? (
-            <a className="h-link" href={example.openUrl} target="_blank" rel="noopener noreferrer">
-              {tour.open}
+          <div className="h-tour__links">
+            {example.openUrl ? (
+              <a className="h-link" href={example.openUrl} target="_blank" rel="noopener noreferrer">
+                {tour.open}
+                <Arrow />
+                <span className="visually-hidden"> (opens in a new tab)</span>
+              </a>
+            ) : null}
+            <Link className="h-link" to="/portfolio">
+              {tour.portfolio}
               <Arrow />
-              <span className="visually-hidden"> (opens in a new tab)</span>
-            </a>
-          ) : null}
+            </Link>
+          </div>
         </div>
       </div>
       <div className="h-wrap">
