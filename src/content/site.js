@@ -11,7 +11,7 @@ export const site = {
   email: 'contact@ross360.co.uk',
 
   phone: {
-    display: '07925 213557',
+    display: '+44 7925 213557',
     tel: '+447925213557',
     whatsapp: 'https://wa.me/447925213557',
   },
