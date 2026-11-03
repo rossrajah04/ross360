@@ -110,6 +110,7 @@ export default function Contact() {
   return (
     <main id="main" className="contact-page">
       <Seo page="contact" />
+      <h1 className="visually-hidden">Contact ROSS 360</h1>
       <header className="contact-head">
         <Wordmark light />
         <a className="contact-head__whatsapp" href={site.phone.whatsapp} {...external}>
@@ -122,7 +123,6 @@ export default function Contact() {
         <div className="contact-hero">
           <TourEmbed tour={site.stepInsideTour} className="contact-hero__tour" />
         </div>
-        <h1 className="contact-page__line">Let customers explore your business before they visit.</h1>
       </section>
 
       <div className="contact-page__inner">

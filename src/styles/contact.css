@@ -55,7 +55,7 @@
   background: #ffffff;
 }
 
-/* Live tour in a thin light frame, with the caption along its bottom edge. */
+/* Live tour in a thin light frame. */
 .contact-frame {
   box-sizing: border-box;
   width: min(100% - 2 * var(--gutter), 960px);
@@ -78,17 +78,6 @@
   inset: 0;
   aspect-ratio: auto;
 }
-
-.contact-page__line {
-  margin: 0;
-  padding: 14px 16px;
-  border-top: 1px solid var(--line-on-dark);
-  font-size: 0.92rem;
-  font-weight: 400;
-  line-height: 1.45;
-  color: #e6e4df;
-}
-
 /* Tiles */
 .contact-tiles {
   display: grid;
