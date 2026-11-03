@@ -229,8 +229,26 @@
 
 .h-tour__links {
   display: flex;
-  flex-wrap: wrap;
-  gap: 16px 32px;
+  flex-wrap: nowrap;
+  gap: 32px;
+}
+
+@media (max-width: 560px) {
+  .h-tour__links {
+    gap: 16px;
+  }
+
+  .h-tour__links .h-link {
+    gap: 8px;
+    letter-spacing: 0.1em;
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 370px) {
+  .h-tour__links .h-link {
+    font-size: 0.66rem;
+  }
 }
 
 .h-tour__note {
