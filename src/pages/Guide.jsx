@@ -15,7 +15,7 @@ import '../styles/legal.css';
 
 const closing = {
   title: 'Ask about your premises',
-  text: 'Tell me about your business and I will send you a fixed quote.',
+  text: 'Send the address and what you’d like covered, and I’ll reply with a fixed quote.',
   cta: 'Get a Quote',
   to: '/get-a-quote',
 };

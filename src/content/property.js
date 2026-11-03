@@ -2,14 +2,11 @@
 // No claims of faster sales, higher valuations, more enquiries, fewer viewings or better SEO.
 // Google Street View is optional for property, never the default deliverable. No published property price.
 
-import { virtualTours } from './virtualTours.js';
-
-const [, , , handled] = virtualTours.why.items;
 
 export const property = {
   hero: {
     title: '360° Virtual Tours for Property',
-    lead: 'Give buyers, tenants and clients a better way to explore a property remotely. ROSS 360 creates interactive 360° property tours that let people move through a space and understand it before arranging a viewing.',
+    lead: '360° tours for sales and lettings, so buyers and tenants can walk through a property before they book a viewing.',
     quote: 'Get a Quote',
     fact: 'Property tours individually quoted',
   },
@@ -30,14 +27,14 @@ export const property = {
   who: {
     title: 'For property professionals',
     items: [
-      { title: 'Estate agents', text: 'Create a more immersive way for prospective buyers to explore properties.' },
+      { title: 'Estate agents', text: 'Let buyers walk through a property before they book a viewing.' },
       { title: 'Letting agents', text: 'Help prospective tenants understand a property before arranging a viewing.' },
       { title: 'Property developers', text: 'Show completed or staged spaces to prospective buyers and stakeholders.' },
       {
         title: 'Commercial property professionals',
         text: 'Give prospective occupiers a clearer view of commercial premises.',
       },
-      { title: 'Property managers', text: 'Provide an accessible way to showcase spaces where appropriate.' },
+      { title: 'Property managers', text: 'Show available units without arranging access for every enquiry.' },
       {
         title: 'Property owners',
         text: 'Selected private property projects may also be considered, subject to requirements.',
@@ -48,8 +45,8 @@ export const property = {
   includes: {
     title: 'A property tour built around the space',
     items: [
-      { title: '360° property photography', text: 'Capture the agreed rooms and areas in 360°.' },
-      { title: 'Connected interactive tour', text: 'Allow visitors to move between connected viewpoints.' },
+      { title: '360° property photography', text: 'Every room and outside area agreed in your quotation.' },
+      { title: 'Connected interactive tour', text: 'Applicants move from room to room in the order of a viewing.' },
       { title: 'Shareable tour URL', text: 'A direct link for prospective buyers, tenants or clients.' },
       {
         title: 'Website/listing integration',
@@ -57,7 +54,7 @@ export const property = {
       },
       {
         title: 'Optional Google publication',
-        text: 'Only where appropriate, authorised and technically suitable.',
+        text: 'For commercial premises that have a Google listing.',
       },
     ],
   },
@@ -78,24 +75,27 @@ export const property = {
     ],
   },
 
-  // The same four standards as the Virtual Tours page, with the first three worded for property
-  // (written for this page).
+  // How ROSS 360 works with agents and landlords (written for this page, so it does not repeat the
+  // Virtual Tours page's "Why ROSS 360").
   standard: {
-    title: 'The ROSS 360 Standard',
+    title: 'Working with agents and landlords',
     items: [
       {
         title: 'Planned around your space',
         text: 'We plan the capture around how buyers and tenants should move through the property, connecting rooms and areas into a natural journey.',
       },
       {
-        title: 'Ready to use from day one',
-        text: 'Your finished tour comes with a shareable URL and the files you need to add it to your website or listing where supported.',
+        title: 'Ready for the listing',
+        text: 'A link you can add to listings and send to applicants, where the portal supports it.',
       },
       {
-        title: 'Checked before delivery',
-        text: 'Every tour is reviewed before it reaches you, including navigation, imagery, agreed rooms and areas and the experience across desktop and mobile.',
+        title: 'Checked room by room',
+        text: 'Every room in the agreed scope is checked on desktop and mobile before the tour reaches you.',
       },
-      handled,
+      {
+        title: 'Arranged around access',
+        text: 'We work to your access arrangements, whether the property is vacant, tenanted or staged.',
+      },
     ],
   },
 
