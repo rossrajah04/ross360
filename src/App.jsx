@@ -16,12 +16,13 @@ import Guides from './pages/Guides.jsx';
 import Guide from './pages/Guide.jsx';
 import NotFound from './pages/NotFound.jsx';
 import Contact from './pages/Contact.jsx';
+import Card from './pages/Card.jsx';
 
 export default function App() {
   return (
     <Routes>
       {/* Business card QR page: stands alone, without the site header and footer. */}
-      <Route path="contact" element={<Contact />} />
+      <Route path="card" element={<Card />} />
       <Route element={<Layout />}>
         <Route index element={<Home />} />
         <Route path="virtual-tours" element={<VirtualTours />} />
@@ -44,6 +45,7 @@ export default function App() {
         <Route path="guides/:slug" element={<Guide />} />
         <Route path="pricing" element={<Pricing />} />
         <Route path="about" element={<About />} />
+        <Route path="contact" element={<Contact />} />
         <Route path="get-a-quote" element={<Quote />} />
         <Route path="privacy" element={<Privacy />} />
         <Route path="terms" element={<Terms />} />
