@@ -81,7 +81,14 @@ export const pages = {
   ),
   contact: {
     path: '/contact',
-    title: 'Contact | ROSS 360',
+    title: 'Contact | 360° Virtual Tours, Manchester | ROSS 360',
+    description:
+      'Contact ROSS 360 by phone, WhatsApp or email about a 360° virtual tour or Google Street View for your premises. Based in Manchester, working UK-wide.',
+  },
+  // The page the business card QR code opens. Kept out of search.
+  card: {
+    path: '/card',
+    title: 'ROSS 360 | 360° Virtual Tours',
     description:
       'Contact ROSS 360 by WhatsApp, phone or email, see our 360° virtual tours, or view our Google Business Profile.',
     noindex: true,

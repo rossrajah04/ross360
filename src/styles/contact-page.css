@@ -1,0 +1,123 @@
+/* Site Contact page (/contact). Built on the About page's heading-beside-text sections; this file adds
+   the ruled contact rows, the list and the links. The business card page at /card uses contact.css. */
+
+.ct-methods {
+  padding: clamp(8px, 2vw, 24px) 0 0;
+}
+
+.ct-methods__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--line-strong);
+}
+
+.ct-methods__list li {
+  border-bottom: 1px solid var(--line-strong);
+}
+
+.ct-method {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-areas:
+    'label action'
+    'value value';
+  gap: 6px 16px;
+  align-items: baseline;
+  padding: 22px 0;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.ct-method__label {
+  grid-area: label;
+  color: var(--muted);
+  font-size: 1rem;
+}
+
+.ct-method__value {
+  grid-area: value;
+  font-size: clamp(1.35rem, 3.2vw, 2.1rem);
+  font-weight: 400;
+  line-height: 1.2;
+  letter-spacing: -0.015em;
+  overflow-wrap: anywhere;
+}
+
+.ct-method__action {
+  grid-area: action;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.76rem;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.ct-method:hover .h-arrow {
+  transform: translateX(6px);
+}
+
+.ct-method:hover .ct-method__value {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 6px;
+}
+
+.ct-method:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 4px;
+}
+
+@media (min-width: 760px) {
+  .ct-method {
+    grid-template-columns: minmax(140px, 1fr) 3fr auto;
+    grid-template-areas: 'label value action';
+    padding: 30px 0;
+  }
+}
+
+@media (min-width: 1000px) {
+  .ct-method {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: 0 32px;
+  }
+  .ct-method__label {
+    grid-column: 1 / 6;
+  }
+  .ct-method__value {
+    grid-column: 6 / 11;
+  }
+  .ct-method__action {
+    grid-column: 11 / 13;
+    justify-self: end;
+  }
+}
+
+.ct-list {
+  max-width: 56ch;
+  margin: 20px 0 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--line);
+}
+
+.ct-list li {
+  padding: 14px 0;
+  border-bottom: 1px solid var(--line);
+  color: var(--ink);
+  font-size: clamp(1.05rem, 1.3vw, 1.15rem);
+  line-height: 1.5;
+}
+
+.ct-link {
+  margin-top: 24px;
+}
+
+.ct-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 32px;
+}
