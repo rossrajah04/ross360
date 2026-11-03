@@ -79,9 +79,8 @@ export default function Home() {
                 margin: '0 0 26px',
               }}
             >
-              Showcase your premises with professional 360° photography
-              and an immersive virtual tour that helps customers see
-              what makes your business special.
+              Professional 360° photography of your premises, published
+              to Google Maps and Search, where customers already look.
             </p>
 
             <Link
