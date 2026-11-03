@@ -2,12 +2,10 @@
 // A brand page, not a biography: no personal name, history, years of experience, client numbers,
 // awards or statistics. The sectors describe who the service is for, not past clients. No hosting.
 
-import { virtualTours } from './virtualTours.js';
-
 export const about = {
   hero: {
     title: 'About ROSS 360',
-    lead: 'ROSS 360 creates professional 360° virtual tours for businesses and property, giving people a more immersive way to explore spaces online.',
+    lead: 'ROSS 360 is a Manchester-based 360° photography service, producing virtual tours for businesses and property.',
   },
 
   does: {
@@ -60,7 +58,7 @@ export const about = {
       { title: 'Quality checked', text: 'The finished tour is reviewed before it is delivered.' },
       {
         title: 'Ready to use',
-        text: 'Customers receive the finished tour with a shareable URL and website embed information, with Google Street View publication where appropriate and authorised.',
+        text: 'Customers receive the finished tour with a shareable URL and website embed information, with Google Street View publishing on request.',
       },
     ],
   },
@@ -94,23 +92,17 @@ export const about = {
     ],
   },
 
-  // The same four standards as the Virtual Tours, Businesses and Property pages.
-  standard: {
-    title: 'The ROSS 360 Standard',
-    items: virtualTours.why.items,
-  },
-
   ukWide: {
     title: 'UK-wide service',
     paragraphs: [
-      'ROSS 360 provides 360° virtual tour services across the UK.',
-      'Projects are quoted according to the space, requirements, access and location. The full price is confirmed in your quotation before booking.',
+      'ROSS 360 is based in Manchester and works across the UK.',
+      'Every price is confirmed in a written quotation before you book.',
     ],
   },
 
   closing: {
-    title: 'Have a space worth exploring?',
-    text: "Tell us about your space and we'll confirm the most suitable option for your project.",
+    title: 'Start with a quotation',
+    text: 'Send the address and the areas you’d like covered, and we’ll reply with a price.',
     cta: 'Get a Quote',
     to: '/get-a-quote',
   },

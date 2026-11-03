@@ -84,12 +84,12 @@ export const pricing = {
   includes: {
     title: 'Every business tour includes',
     items: [
-      { title: '360° photography', text: 'Professional 360° imagery of the agreed areas.' },
-      { title: 'Interactive virtual tour', text: 'A connected tour visitors can navigate themselves.' },
-      { title: 'Website-ready embed', text: 'Information/code needed to embed the finished tour into a website.' },
-      { title: 'Shareable tour URL', text: 'A direct link that can be shared with customers, clients or prospects.' },
-      { title: 'Quality check', text: 'The finished tour is reviewed before delivery.' },
-      { title: 'Google Street View', text: 'Where appropriate, authorised and technically suitable.' },
+      { title: '360° photography', text: 'Every area agreed in your quotation.' },
+      { title: 'Interactive virtual tour', text: 'Built and connected after the shoot.' },
+      { title: 'Website-ready embed', text: 'Embed code for your website.' },
+      { title: 'Shareable tour URL', text: 'One link for emails, bookings and social media.' },
+      { title: 'Quality check', text: 'Checked on desktop and mobile before delivery.' },
+      { title: 'Google Street View', text: 'Published to your Google listing, subject to Google’s approval.' },
     ],
   },
 

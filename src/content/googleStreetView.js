@@ -89,7 +89,7 @@ export const googleStreetView = {
   price: {
     label: 'Google Street View only',
     title: `From £${streetView.price}`,
-    text: `£${streetView.price} covers smaller premises. Larger premises need more photographs and are quoted accordingly.`,
+    text: 'The price depends on how many photographs your premises need. You receive a fixed quote before anything is booked.',
     link: 'View all pricing',
     to: '/pricing',
   },

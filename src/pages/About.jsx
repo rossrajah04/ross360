@@ -1,5 +1,5 @@
 import Seo from '../components/Seo.jsx';
-import { Standards, Stages, Deliverables, ClosingCta } from '../components/service/ServiceSections.jsx';
+import { Stages, Deliverables, ClosingCta } from '../components/service/ServiceSections.jsx';
 import useReveal from '../lib/useReveal.js';
 import { about } from '../content/about.js';
 import '../styles/home.css';
@@ -7,13 +7,13 @@ import '../styles/virtual-tours.css';
 import '../styles/service-pages.css';
 import '../styles/about.css';
 
-// About: what ROSS 360 does, its approach, what customers can expect, who the service is for, the
-// ROSS 360 Standard and where it works, then the enquiry. A brand page built from the service pages'
+// About: what ROSS 360 does, its approach, what customers can expect, who the service is for and
+// where it works, then the enquiry. A brand page built from the service pages'
 // styles, set in type alone: no portraits, team or office photographs.
 
 export default function About() {
   useReveal();
-  const { hero, does, approach, expect, who, standard, ukWide, closing } = about;
+  const { hero, does, approach, expect, who, ukWide, closing } = about;
 
   return (
     <div className="home vt sp ab">
@@ -71,8 +71,6 @@ export default function About() {
           </div>
         </div>
       </section>
-
-      <Standards id="ab-standard-title" title={standard.title} items={standard.items} />
 
       <section className="ab-split sp-last" aria-labelledby="ab-uk-title">
         <div className="h-wrap ab-split__grid ab-split__grid--ruled">
