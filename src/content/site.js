@@ -31,16 +31,17 @@ export const site = {
     finalHeading: 'Tell us about the property or premises you would like photographed.',
   },
 
-  // Main navigation
+  // Every page, as listed in the footer. Items with `menu: true` also appear in the header menu.
   nav: [
     { label: 'Home', to: '/' },
-    { label: 'Virtual Tours', to: '/virtual-tours' },
-    { label: 'Google Street View', to: '/google-street-view' },
+    { label: 'Virtual Tours', to: '/virtual-tours', menu: true },
+    { label: 'Google Street View', to: '/google-street-view', menu: true },
     { label: 'Businesses', to: '/businesses' },
     { label: 'Property', to: '/property' },
-    { label: 'Portfolio', to: '/portfolio' },
-    { label: 'Pricing', to: '/pricing' },
-    { label: 'About', to: '/about' },
+    { label: 'Portfolio', to: '/portfolio', menu: true },
+    { label: 'Pricing', to: '/pricing', menu: true },
+    { label: 'About', to: '/about', menu: true },
+    { label: 'Contact', to: '/contact', menu: true },
   ],
 
   quoteLink: { label: 'Get a Quote', to: '/get-a-quote' },

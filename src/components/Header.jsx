@@ -45,7 +45,7 @@ export default function Header() {
 
         <nav id="site-nav" className="nav" data-open={open} aria-label="Main">
           <ul className="nav__list">
-            {site.nav.map((item) => (
+            {site.nav.filter((item) => item.menu).map((item) => (
               <li key={item.to}>
                 <NavLink to={item.to} end={item.to === '/'} className="nav__link" onClick={close}>
                   {item.label}
