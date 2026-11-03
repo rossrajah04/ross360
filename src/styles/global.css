@@ -595,6 +595,21 @@ main:focus {
   }
 }
 
+/* Keep the desktop menu on one line between 1000px and 1199px: labels never wrap and sit a little closer. */
+@media (min-width: 1000px) and (max-width: 1199px) {
+  .nav__link {
+    padding: 8px 8px;
+    font-size: 0.88rem;
+    white-space: nowrap;
+  }
+  .nav__cta {
+    margin-left: 10px;
+  }
+  .nav__cta .btn {
+    white-space: nowrap;
+  }
+}
+
 /* Homepage: transparent over the opening photograph, solid once scrolled past it (see Header.jsx). */
 
 .site-header {

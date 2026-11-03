@@ -41,6 +41,7 @@ export const site = {
     { label: 'Portfolio', to: '/portfolio' },
     { label: 'Pricing', to: '/pricing' },
     { label: 'About', to: '/about' },
+    { label: 'Contact', to: '/contact' },
   ],
 
   quoteLink: { label: 'Get a Quote', to: '/get-a-quote' },
