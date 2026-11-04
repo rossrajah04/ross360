@@ -86,6 +86,8 @@ export const pricing = {
     items: [
       { title: '360° photography', text: 'Every area agreed in your quotation.' },
       { title: 'Interactive virtual tour', text: 'Built and connected after the shoot.' },
+      { title: 'Information points', text: 'Prices, hours or other details you want visitors to see.' },
+      { title: 'Contact buttons', text: 'Call, WhatsApp or book from inside the tour.' },
       { title: 'Website-ready embed', text: 'Embed code for your website.' },
       { title: 'Shareable tour URL', text: 'One link for emails, bookings and social media.' },
       { title: 'Quality check', text: 'Checked on desktop and mobile before delivery.' },

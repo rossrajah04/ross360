@@ -37,7 +37,22 @@ export const virtualTours = {
     title: 'What you receive',
     items: [
       { title: '360° photography', text: 'Professional 360° imagery of the agreed areas.' },
-      { title: 'Interactive virtual tour', text: 'A connected tour visitors can navigate themselves.' },
+      {
+        title: 'Interactive virtual tour',
+        text: 'A connected tour visitors move through themselves, with viewpoints close enough together that it feels like walking round.',
+      },
+      {
+        title: 'Information points',
+        text: 'Details visitors can open inside the tour, such as prices, opening hours, class times, equipment or staff, written from what you send us.',
+      },
+      {
+        title: 'Call and booking buttons',
+        text: 'Buttons inside the tour that open your phone number, WhatsApp or booking page.',
+      },
+      {
+        title: 'Video hotspots',
+        text: 'Your own videos placed in the tour, such as a how-to on each machine. Quoted separately.',
+      },
       { title: 'Website-ready embed', text: 'Your tour can be embedded directly into your website.' },
       { title: 'Shareable tour URL', text: 'A direct link you can send to customers, clients, buyers or tenants.' },
       { title: 'Google Street View', text: 'Publication to Google Street View where appropriate and authorised.' },
@@ -63,7 +78,7 @@ export const virtualTours = {
       { title: 'Traditional photography', text: 'Selected images showing individual views of a space.' },
       {
         title: 'ROSS 360 virtual tour',
-        text: 'An interactive experience allowing visitors to look around and move between connected viewpoints.',
+        text: 'An interactive experience allowing visitors to look around, move between connected viewpoints and contact you without leaving the tour.',
         ours: true,
       },
       {
