@@ -124,6 +124,10 @@ export default function CustomerLink({ quote }) {
         </div>
       ) : null}
 
+      {quote.status === 'sent' && quote.customerType === 'business' && !data.bookings.some((b) => ['holding', 'confirmed', 'cancel_requested'].includes(b.status)) ? (
+        <BookWithoutDeposit quote={quote} onBooked={load} />
+      ) : null}
+
       <h3 className="ad-h3">Bookings</h3>
       {data.bookings.length ? (
         <ul className="ad-rows">
@@ -144,5 +148,92 @@ export default function CustomerLink({ quote }) {
         <p className="ad-muted">No bookings.</p>
       )}
     </section>
+  );
+}
+
+// Book a slot with nothing to pay now (a founding offer, or another agreed arrangement). The whole
+// total becomes the balance, requested from the booking once the tour is ready.
+function BookWithoutDeposit({ quote, onBooked }) {
+  const [open, setOpen] = useState(false);
+  const [slots, setSlots] = useState(null);
+  const [slotId, setSlotId] = useState('');
+  const [notify, setNotify] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+
+  const start = async () => {
+    setOpen(true);
+    setError('');
+    const result = await api.openSlots();
+    if (result.ok) setSlots(result.slots);
+    else if (result.status !== 401) setError(result.message || 'Could not load the open slots.');
+  };
+
+  if (!open) {
+    return (
+      <p>
+        <button type="button" className="ad-button ad-button--quiet" onClick={start}>
+          Book without deposit…
+        </button>
+      </p>
+    );
+  }
+  const submit = async (event) => {
+    event.preventDefault();
+    const target = slots?.find((s) => String(s.id) === slotId);
+    if (!target) return;
+    const emailed = notify ? ' The customer is emailed a booking confirmation.' : ' Nothing is emailed.';
+    if (!window.confirm(`Book ${quote.reference} for ${target.label} with no deposit?${emailed}`)) return;
+    setBusy(true);
+    setError('');
+    const result = await api.bookWithoutDeposit(quote.reference, target.id, notify);
+    setBusy(false);
+    if (result.status === 401) return;
+    if (!result.ok) {
+      setError(result.message || 'Something went wrong.');
+      return;
+    }
+    setOpen(false);
+    onBooked();
+  };
+  return (
+    <form className="ad-panel" onSubmit={submit}>
+      <h3 className="ad-h3">Book without deposit</h3>
+      <p>
+        For a founding offer or another agreed arrangement. The slot is booked at once with nothing paid; the whole total is the balance, requested
+        from the booking once the tour is ready.
+      </p>
+      {error ? <p className="ad-error" role="alert">{error}</p> : null}
+      {slots && !slots.length ? <p className="ad-muted">No open slots. Open one in Availability first.</p> : null}
+      {slots?.length ? (
+        <>
+          <div className="ad-field">
+            <label className="ad-label" htmlFor="nodeposit-slot">
+              Open slot
+            </label>
+            <select id="nodeposit-slot" className="ad-input" value={slotId} onChange={(e) => setSlotId(e.target.value)}>
+              <option value="">Choose a slot</option>
+              {slots.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <label className="ad-check">
+            <input type="checkbox" checked={notify} onChange={(e) => setNotify(e.target.checked)} />
+            Email the customer a booking confirmation
+          </label>
+        </>
+      ) : null}
+      <div className="ad-actions">
+        <button type="submit" className="ad-button" disabled={busy || !slotId}>
+          Book slot
+        </button>
+        <button type="button" className="ad-button ad-button--quiet" onClick={() => setOpen(false)} disabled={busy}>
+          Cancel
+        </button>
+      </div>
+    </form>
   );
 }

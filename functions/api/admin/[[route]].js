@@ -39,6 +39,7 @@ import { QUOTE_FROM, QUOTE_BCC } from '../../../server/admin/quoteRender.js';
 import { createLink, customerLinkInfo, linkKeyReport, linksConfigured, revokeLink } from '../../../server/admin/quoteLinks.js';
 import { addSlot, closeSlot, listSlots, reopenSlot, setSlotNote, validateSlot } from '../../../server/admin/availability.js';
 import {
+  bookWithoutDeposit,
   bookingCounts,
   bookingDetail,
   cancelBooking,
@@ -47,6 +48,7 @@ import {
   moveTargets,
   paymentsAvailable,
   recordBalanceInPerson,
+  requestBalance,
   retryRefund,
   runScheduled,
 } from '../../../server/booking/bookings.js';
@@ -150,6 +152,17 @@ const BOOKING_OUTCOMES = {
   stripe_unreachable: [503, 'The customer has an online balance payment open and Stripe could not be reached to end it. Try again in a moment.'],
   past: [422, 'That date has passed.'],
   not_failed: [409, 'This refund is not marked as failed.'],
+  not_yet: [422, 'The balance can be requested from the day of the shoot.'],
+  no_link: [409, 'This quote has no working customer link, so the customer could not pay online. Create a new link on the quote first.'],
+  email_failed: [502, 'The balance is now due, but the email to the customer could not be sent. Try "Send balance request" again.'],
+};
+
+// How each outcome of booking a slot with no deposit is answered.
+const NO_DEPOSIT_OUTCOMES = {
+  not_sent: [409, 'Only a sent quote can be booked.'],
+  not_business: [409, 'Only a quote marked as for a business can be booked this way.'],
+  already_booked: [409, 'This quote already has a booking, or the customer is paying for one now.'],
+  slot_unavailable: [409, 'That slot is no longer available. Choose another.'],
 };
 
 async function bookingOutcome(env, outcome, id) {
@@ -324,6 +337,11 @@ async function handle(context) {
       if (method !== 'GET') return json({ ok: false, message: 'Method not allowed.' }, 405);
       return json({ ok: true, bookings: await listBookings(db) });
     }
+    if (segments.length === 2 && segments[1] === 'open-slots') {
+      // Open slots with no booking, today or later: for booking a slot with no deposit.
+      if (method !== 'GET') return json({ ok: false, message: 'Method not allowed.' }, 405);
+      return json({ ok: true, slots: await moveTargets(db) });
+    }
     if (!isId(segments[1])) return notFound();
     const id = Number(segments[1]);
     if (segments.length === 2) {
@@ -341,8 +359,13 @@ async function handle(context) {
       }
       return bookingOutcome(env, await cancelBooking(env, id, { reason: body.reason, retainPence: body.retainPence, actor, expect: body.expect }), id);
     }
+    if (segments.length === 3 && segments[2] === 'balance-request') {
+      // The tour is ready: email the customer that the balance is due, with a link to pay online.
+      if (body.confirm !== true || !isPence(body.expectPaidPence)) return json({ ok: false, message: 'Invalid request.' }, 400);
+      return bookingOutcome(env, await requestBalance(env, id, { actor, expectPaidPence: body.expectPaidPence }), id);
+    }
     if (segments.length === 3 && segments[2] === 'balance-in-person') {
-      // The balance was paid in person (on the day of the shoot, or by another agreed method).
+      // The balance was paid another way (bank transfer, card reader, cash).
       if (body.confirm !== true || !isPence(body.expectPaidPence)) return json({ ok: false, message: 'Invalid request.' }, 400);
       return bookingOutcome(env, await recordBalanceInPerson(env, id, { actor, expectPaidPence: body.expectPaidPence }), id);
     }
@@ -444,6 +467,21 @@ async function handle(context) {
       return json({ ok: false, message: 'Customer links are not set up (QUOTE_LINK_SECRET and QUOTE_LINK_KEY_ID).' }, 503);
     }
     return json({ ok: true, customer: await customerLinkInfo(env, reference) });
+  }
+
+  if (segments[0] === 'quotes' && segments.length === 3 && segments[2] === 'book-without-deposit') {
+    // ROSS 360 books a slot for a sent business quote with nothing to pay now (a founding offer).
+    const reference = decodeURIComponent(segments[1]);
+    if (!QUOTE_REFERENCE_RE.test(reference)) return notFound();
+    if (method !== 'POST') return json({ ok: false, message: 'Method not allowed.' }, 405);
+    if (body.confirm !== true || !Number.isSafeInteger(body.slotId) || body.slotId < 1 || typeof body.notify !== 'boolean') {
+      return json({ ok: false, message: 'Invalid request.' }, 400);
+    }
+    const outcome = await bookWithoutDeposit(env, reference, { slotId: body.slotId, actor, notify: body.notify });
+    if (outcome.result === 'not_found') return notFound();
+    const known = NO_DEPOSIT_OUTCOMES[outcome.result];
+    if (known) return json({ ok: false, message: known[1] }, known[0]);
+    return json({ ok: true, booking: await bookingDetail(env, outcome.booking.id) });
   }
 
   if (segments[0] === 'quotes' && (segments.length === 2 || segments.length === 3)) {

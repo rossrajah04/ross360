@@ -6,14 +6,9 @@ import { BookingTag } from './Bookings.jsx';
 import { formatMoney } from '../../src/lib/admin/model.js';
 import { longDate } from '../../src/lib/admin/quotes.js';
 import { periodLabel, weekdayDate } from '../../src/lib/admin/availability.js';
-import { CANCEL_REASONS, LATE_CANCELLATION_MAX_PERCENT, PAYMENT_KINDS, REMINDER_DAYS } from '../../src/lib/admin/booking.js';
+import { BALANCE_DUE_DAYS, CANCEL_REASONS, LATE_CANCELLATION_MAX_PERCENT, PAYMENT_KINDS } from '../../src/lib/admin/booking.js';
 
 const slotText = (date, period) => `${weekdayDate(date)}, ${periodLabel(period)}`;
-const reminderText = (on, sentAt) => {
-  if (!on) return 'Not applicable';
-  if (sentAt === 'skipped') return `Skipped (${longDate(on)}; the later reminder went instead)`;
-  return sentAt ? `Sent ${when(sentAt, true)}` : `Due ${longDate(on)}`;
-};
 
 /** Pounds typed by the administrator ("120", "120.50") to pence, or null. */
 function toPence(value) {
@@ -22,8 +17,8 @@ function toPence(value) {
   return Math.round(Number(text) * 100);
 }
 
-// One booking: slot, payments, balance, refunds; and the controls ROSS 360 needs — record a balance
-// paid in person, decide a cancellation request (keep up to 50%), cancel, move to another open slot,
+// One booking: slot, payments, balance, refunds; and the controls ROSS 360 needs — send the balance
+// request once the tour is ready, record a balance paid another way, decide a cancellation request (keep up to 50%), cancel, move to another open slot,
 // retry a refund.
 export default function Booking() {
   const { id } = useParams();
@@ -98,7 +93,13 @@ export default function Booking() {
           )
         </dd>
         <dt>Payment</dt>
-        <dd>{b.plan === 'deposit' ? `Deposit of ${formatMoney(b.depositPence)}, then the balance` : 'In full'}</dd>
+        <dd>
+          {b.plan !== 'deposit'
+            ? 'In full'
+            : b.depositPence === 0
+              ? 'No deposit (booked in the Admin), the whole total after the shoot'
+              : `Deposit of ${formatMoney(b.depositPence)}, then the balance after the shoot`}
+        </dd>
         <dt>Total</dt>
         <dd>{formatMoney(b.totalPence)}</dd>
         <dt>Paid</dt>
@@ -106,15 +107,13 @@ export default function Booking() {
         {b.status !== 'cancelled' && b.plan === 'deposit' ? (
           <>
             <dt>Balance</dt>
-            <dd>{b.balancePence ? `${formatMoney(b.balancePence)}, due on the day of the shoot (in person, or online before then)` : 'Paid'}</dd>
-            {b.balancePence ? (
-              <>
-                <dt>Reminder ({REMINDER_DAYS[0]} days before)</dt>
-                <dd>{reminderText(b.reminder14On, b.reminder14SentAt)}</dd>
-                <dt>Reminder ({REMINDER_DAYS[1]} days before)</dt>
-                <dd>{reminderText(b.reminder8On, b.reminder8SentAt)}</dd>
-              </>
-            ) : null}
+            <dd>
+              {!b.balancePence
+                ? 'Paid'
+                : b.balanceDueOn
+                  ? `${formatMoney(b.balancePence)}, requested, due ${longDate(b.balanceDueOn)}`
+                  : `${formatMoney(b.balancePence)}, not yet requested (send the request once the tour is ready)`}
+            </dd>
           </>
         ) : null}
         {b.status === 'holding' ? (
@@ -149,7 +148,8 @@ export default function Booking() {
         ) : null}
       </dl>
 
-      {b.status === 'confirmed' && b.plan === 'deposit' && b.balancePence ? <BalanceInPerson b={b} busy={busy} act={act} /> : null}
+      {b.status === 'confirmed' && b.balancePence ? <BalanceRequest b={b} busy={busy} act={act} /> : null}
+      {b.status === 'confirmed' && b.balancePence ? <BalanceInPerson b={b} busy={busy} act={act} /> : null}
       {b.status === 'cancel_requested' ? <Decide b={b} busy={busy} act={act} /> : null}
       {b.status === 'confirmed' ? <CancelByUs b={b} busy={busy} act={act} /> : null}
       {b.status === 'confirmed' ? <Move b={b} targets={data.moveTargets} busy={busy} act={act} /> : null}
@@ -230,27 +230,60 @@ export default function Booking() {
 
       {active ? (
         <p className="ad-note">
-          Refunds go back to the card the customer paid with. Stripe does not return its own fee on a refund. A balance paid in person is refunded by hand.
+          Refunds go back to the card the customer paid with. Stripe does not return its own fee on a refund. A balance recorded as paid another way is refunded by hand.
         </p>
       ) : null}
     </>
   );
 }
 
-// The customer paid the balance in person (on the day of the shoot, or by another agreed method). It
-// records the whole balance as paid and emails the customer a receipt.
-function BalanceInPerson({ b, busy, act }) {
+// The tour is ready: email the customer that the balance is due within BALANCE_DUE_DAYS, with a link
+// to pay it online. Available from the day of the shoot; it can be sent again.
+function BalanceRequest({ b, busy, act }) {
+  const again = Boolean(b.balanceDueOn);
   const submit = async (event) => {
     event.preventDefault();
-    if (!window.confirm(`Record the balance of ${formatMoney(b.balancePence)} as paid in person? The customer is emailed a receipt.`)) return;
-    await act(() => api.recordBalanceInPerson(b.id, b.paidPence), `Balance of ${formatMoney(b.balancePence)} recorded as paid in person.`);
+    if (
+      !window.confirm(
+        `Email ${b.customerEmail} that the balance of ${formatMoney(b.balancePence)} is due within ${BALANCE_DUE_DAYS} days, with a link to pay online?`,
+      )
+    )
+      return;
+    await act(() => api.requestBalance(b.id, b.paidPence), `Balance request emailed. The balance is due within ${BALANCE_DUE_DAYS} days.`);
   };
   return (
     <form className="ad-panel" onSubmit={submit}>
-      <h2 className="ad-h2">Balance paid in person</h2>
+      <h2 className="ad-h2">Balance request</h2>
+      {b.canRequestBalance ? (
+        <p>
+          When the tour is ready and the customer has seen it, send the balance request. They are emailed a link to pay {formatMoney(b.balancePence)}{' '}
+          online, due within {BALANCE_DUE_DAYS} days.
+          {again ? ` Sent before, due ${longDate(b.balanceDueOn)}; sending again sets a new due date.` : ''}
+        </p>
+      ) : (
+        <p>The balance request can be sent from the day of the shoot ({longDate(b.slotDate)}), once the tour is ready.</p>
+      )}
+      <button type="submit" className="ad-button" disabled={busy || !b.canRequestBalance}>
+        {again ? 'Send balance request again' : 'Send balance request'}
+      </button>
+    </form>
+  );
+}
+
+// The customer paid the balance another way (bank transfer, card reader or cash). It records the
+// whole balance as paid and emails the customer a receipt.
+function BalanceInPerson({ b, busy, act }) {
+  const submit = async (event) => {
+    event.preventDefault();
+    if (!window.confirm(`Record the balance of ${formatMoney(b.balancePence)} as paid? The customer is emailed a receipt.`)) return;
+    await act(() => api.recordBalanceInPerson(b.id, b.paidPence), `Balance of ${formatMoney(b.balancePence)} recorded as paid.`);
+  };
+  return (
+    <form className="ad-panel" onSubmit={submit}>
+      <h2 className="ad-h2">Balance paid another way</h2>
       <p>
-        When the customer pays the balance of {formatMoney(b.balancePence)} on the day (cash, card reader or bank transfer), record it here. The
-        booking is then paid in full and no more reminders are sent.
+        When the customer pays the balance of {formatMoney(b.balancePence)} by bank transfer, card reader or cash, record it here. The booking is
+        then paid in full.
       </p>
       <button type="submit" className="ad-button" disabled={busy}>
         Record balance paid

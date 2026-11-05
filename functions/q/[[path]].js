@@ -2,12 +2,12 @@
 //
 //   GET  /q/<token>                          the quotation as sent, with the booking
 //   GET  /q/<token>/book                     open slots
-//   GET  /q/<token>/pay?slot=<id>            payment summary for a slot (in full, or the deposit)
+//   GET  /q/<token>/pay?slot=<id>            payment summary for a slot (the deposit)
 //   POST /q/<token>/pay                      hold the slot and go to Stripe Checkout
 //   POST /q/<token>/release                  end a checkout in progress, to choose a different slot
 //   GET  /q/<token>/paid?session_id=…        back from Stripe (the payment is checked with Stripe)
 //   GET  /q/<token>/checkout-cancelled       back from Stripe without paying: the slot is released
-//   GET  /q/<token>/balance, POST            pay a deposit booking's balance on Stripe Checkout
+//   GET  /q/<token>/balance, POST            pay the balance on Stripe Checkout, once ROSS 360 has asked for it
 //   GET  /q/<token>/cancel, POST             cancel the booking (or ask to, within 48 hours)
 //
 // Every invalid, unknown, revoked or expired-past-window link gets the same answer. Pages are never
@@ -162,7 +162,7 @@ async function handle({ request, env, params }) {
 
   if (page === 'balance') {
     const booking = await activeBooking(db, ctx.quoteId);
-    if (!booking || booking.status !== 'confirmed' || booking.plan !== 'deposit') return redirect(urls.self);
+    if (!booking || booking.status !== 'confirmed') return redirect(urls.self);
     if (method === 'GET') return html(renderBalancePage({ snapshot: ctx.snapshot, booking, nonce: await nonce(), urls }));
     const outcome = await startBalanceCheckout(env, ctx, base);
     if (outcome.result === 'ok') return redirect(outcome.url);
@@ -212,20 +212,18 @@ async function handle({ request, env, params }) {
   if (!/^\d{1,10}$/.test(slotParam || '')) return slotsPage(B.chooseOne, 422);
   const slot = await bookableSlot(db, Number(slotParam), new Date(), ctx.quoteId);
   if (!slot) return slotsPage(B.slotGone, 409);
-  const options = paymentOptions({ totalPence: ctx.snapshot.totalPence, pkg: ctx.snapshot.package, slotDate: slot.slot_date, today: ukToday() });
+  const options = paymentOptions({ totalPence: ctx.snapshot.totalPence });
   const payPage = async (error, status, values = {}) =>
     html(renderPayPage({ snapshot: ctx.snapshot, slot, options, nonce: await nonce(), urls, termsUrl, error, values }), status);
 
   if (method === 'GET') return payPage('', 200);
 
-  const values = { plan: form.get('plan') || '', agree: form.get('agree') === 'yes' };
-  if (!['full', 'deposit'].includes(values.plan) || (values.plan === 'deposit' && !options.deposit)) return payPage(B.choosePlan, 422, values);
+  const values = { agree: form.get('agree') === 'yes' };
   if (!values.agree) return payPage(B.mustAgree, 422, values);
-  const outcome = await startCheckout(env, ctx, { slotId: slot.id, plan: values.plan }, base);
+  const outcome = await startCheckout(env, ctx, { slotId: slot.id }, base);
   if (outcome.result === 'ok') return redirect(outcome.url);
   if (outcome.result === 'slot_unavailable') return slotsPage(B.slotGone, 409);
   if (outcome.result === 'already_booked') return redirect(urls.self);
-  if (outcome.result === 'invalid_plan') return payPage(B.choosePlan, 422, values);
   if (outcome.result === 'in_progress') return redirect(urls.self);
   if (outcome.result === 'payments_off') return notice(B.paymentsOff, 503);
   if (outcome.result === 'not_allowed') return notice(B.notAllowed, 409);

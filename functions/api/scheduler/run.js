@@ -1,6 +1,6 @@
 // Cloudflare Pages Function: POST /api/scheduler/run (Phase C).
 //
-// Runs the scheduled booking tasks: releases expired checkout holds, emails balance reminders and
+// Runs the scheduled booking tasks: releases expired checkout holds and
 // retries refunds. Called hourly by the Cron Worker in workers/scheduler, with
 // "Authorization: Bearer <SCHEDULER_SECRET>". Safe to call at any time and any number of times.
 

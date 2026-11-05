@@ -8,7 +8,7 @@ import { booking as B } from '../../src/content/booking.js';
 import { formatMoney } from '../../src/lib/admin/model.js';
 import { addDays, longDate, ukToday } from '../../src/lib/admin/quotes.js';
 import { REQUEST_WINDOW, periodLabel, weekdayDate } from '../../src/lib/admin/availability.js';
-import { onlineBooking } from '../../src/lib/admin/booking.js';
+import { DEPOSIT_PERCENT, onlineBooking } from '../../src/lib/admin/booking.js';
 
 const escapeHtml = (value) =>
   String(value ?? '')
@@ -174,9 +174,9 @@ function bookingFacts(b) {
   const rows = [
     [B.labels.slot, slotText(b.slotDate, b.period)],
     [B.labels.total, money(b.totalPence)],
-    [B.labels.paid, money(b.paidPence)],
   ];
-  if (b.plan === 'deposit' && balance > 0) rows.push([B.labels.balance, money(balance)], [B.labels.balanceDue, B.balanceDueValue]);
+  if (b.paidPence > 0 || balance === 0) rows.push([B.labels.paid, money(b.paidPence)]);
+  if (balance > 0) rows.push([B.labels.balance, money(balance)], [B.labels.balanceDue, b.balanceDueOn ? longDate(b.balanceDueOn) : B.balanceDueValue]);
   return facts(rows);
 }
 
@@ -208,7 +208,8 @@ export function renderQuotePage({ snapshot, state, booking, latest, urls, notice
       `<h2>${escapeHtml(B.bookingHeading)}</h2>` +
         `<p>${escapeHtml(B.confirmed)}${balance === 0 ? ` ${escapeHtml(B.paidInFull)}` : ''}</p>` +
         bookingFacts(booking) +
-        (balance > 0 ? `<p><a class="button" href="${escapeHtml(urls.balance)}">${escapeHtml(B.payBalance)}</a></p>` : '') +
+        (balance > 0 && booking.balanceDueOn ? `<p><a class="button" href="${escapeHtml(urls.balance)}">${escapeHtml(B.payBalance)}</a></p>` : '') +
+        (balance > 0 && !booking.balanceDueOn ? `<p class="small muted">${escapeHtml(B.balanceNotYet)}</p>` : '') +
         `<p class="small"><a href="${escapeHtml(urls.cancel)}">${escapeHtml(B.cancelBooking)}</a></p>`,
     );
   } else if (booking && booking.status === 'cancel_requested') {
@@ -336,25 +337,17 @@ export function renderSlotsPage({ snapshot, slots, urls, error = '', today = ukT
 }
 
 /**
- * The payment summary for one slot: the total, the choice of payment in full or the deposit (when
- * allowed), what is due now and later, the cancellation terms, and the button to Stripe.
- * options: paymentOptions() from src/lib/admin/booking.js.
+ * The payment summary for one slot: the total, the deposit due now and the balance paid after the
+ * shoot (or, for a quote too small for a deposit, the total), the cancellation terms, and the button
+ * to Stripe. options: paymentOptions() from src/lib/admin/booking.js.
  */
 export function renderPayPage({ snapshot, slot, options, nonce, urls, termsUrl, error = '', values = {} }) {
-  const deposit = options.deposit;
-  const chosen = values.plan || (deposit ? '' : 'full');
-  const planChoice = deposit
-    ? `<fieldset><legend>${escapeHtml(B.payHeading)}</legend><ul class="slots">` +
-      `<li class="slot"><label><input type="radio" name="plan" value="full" required${chosen === 'full' ? ' checked' : ''}><span>${escapeHtml(
-        B.payFull,
-      )}<span class="sub">${escapeHtml(B.fullOption(money(options.totalPence)))}</span></span></label></li>` +
-      `<li class="slot"><label><input type="radio" name="plan" value="deposit" required${chosen === 'deposit' ? ' checked' : ''}><span>${escapeHtml(
-        B.payDeposit,
-      )}<span class="sub">${escapeHtml(B.depositOption(money(deposit.depositPence), money(deposit.balancePence)))}</span></span></label></li>` +
-      '</ul></fieldset>'
-    : `<input type="hidden" name="plan" value="full">` +
-      facts([[B.labels.dueNow, money(options.totalPence)]]) +
-      `<p class="small muted">${escapeHtml(B.fullOnly[options.noDeposit] || '')}</p>`;
+  const deposit = options.plan === 'deposit';
+  const planChoice =
+    facts([
+      [B.labels.dueNow, money(options.dueNowPence)],
+      ...(deposit ? [[B.labels.balance, money(options.balancePence)], [B.labels.balanceDue, B.balanceDueValue]] : []),
+    ]) + `<p class="small muted">${escapeHtml(deposit ? B.depositNote(DEPOSIT_PERCENT, money(options.balancePence)) : B.fullNote)}</p>`;
   const body =
     `<p class="muted small"><a href="${escapeHtml(urls.book)}">${escapeHtml(B.chooseDifferent)}</a></p>` +
     `<h1>${escapeHtml(B.payHeading)}</h1>` +
@@ -379,14 +372,15 @@ export function renderPayPage({ snapshot, slot, options, nonce, urls, termsUrl, 
   return shell(B.payHeading, body);
 }
 
-/** Pay the balance of a deposit booking. */
+/** Pay a booking's balance (once ROSS 360 has asked for it). */
 export function renderBalancePage({ snapshot, booking, nonce, urls, error = '' }) {
   const balance = Math.max(0, booking.totalPence - booking.paidPence);
   let action;
   if (balance === 0) action = noticeBox(escapeHtml(B.balanceNothingDue));
+  else if (!booking.balanceDueOn) action = `<p>${escapeHtml(B.balanceNotYet)}</p>`;
   else {
     action =
-      `<p>${escapeHtml(B.balanceIntro(money(balance)))}</p>` +
+      `<p>${escapeHtml(B.balanceIntro(money(balance), longDate(booking.balanceDueOn)))}</p>` +
       `<p class="small muted">${escapeHtml(B.stripeNote)}</p>` +
       postButton(urls.balance, nonce, B.toPayment);
   }

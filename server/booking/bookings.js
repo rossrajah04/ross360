@@ -1,10 +1,12 @@
 // Self-service booking and payment (Phase C).
 //
-// A customer with a valid quotation chooses an open slot and pays on Stripe Checkout, in full or by
-// the fixed deposit (src/lib/admin/booking.js has the rules). The slot is held while they pay and the
-// booking is confirmed only when Stripe confirms the payment. A deposit booking's balance is paid on
-// the day of the shoot, in person (recorded in the Admin) or online beforehand. Balance reminders and
-// refunds run on a schedule (runScheduled), triggered hourly by the Cron Worker.
+// A customer with a valid quotation chooses an open slot and pays the deposit on Stripe Checkout
+// (src/lib/admin/booking.js has the rules). The slot is held while they pay and the booking is
+// confirmed only when Stripe confirms the payment. The balance is paid after the shoot, once the tour
+// is ready: ROSS 360 sends a balance request from the Admin, and the customer pays it online from the
+// link, or ROSS 360 records it when paid another way. ROSS 360 can also book a slot with no deposit.
+// Expired holds and refund retries run on a schedule (runScheduled), triggered hourly by the Cron
+// Worker. No reminders are sent before the shoot.
 //
 // Double booking is impossible by construction: an active booking (a checkout in progress counts) is
 // one row, and the database allows one per slot and one per quote (bookings_one_per_slot / _per_quote)
@@ -21,15 +23,12 @@ import {
   CHECKOUT_MINUTES,
   CHECKOUT_SLACK_SECONDS,
   HOLD_MARGIN_SECONDS,
-  REMINDER_DAYS,
-  REMINDER_FROM_HOUR,
   balanceDueOn,
+  canRequestBalance,
   cancellationWindow,
   maxRetention,
   onlineBooking,
   paymentOptions,
-  reminderDates,
-  ukHour,
 } from '../../src/lib/admin/booking.js';
 import {
   StripeError,
@@ -42,13 +41,13 @@ import {
 import { sendEmail } from './mail.js';
 import {
   balancePaidEmail,
+  balanceRequestEmail,
   cancelRequestEmail,
   cancelledEmail,
   confirmedEmail,
   internalEmail,
   lateRefundEmail,
   movedEmail,
-  reminderEmail,
   slotText,
 } from './emails.js';
 
@@ -280,17 +279,17 @@ const constraintOf = (error) => {
  * Hold a slot and start Stripe Checkout for a valid quotation.
  *
  * ctx: the resolved quote link (server/customer/quotePage.js). pageUrl: the absolute URL of the
- * customer's quotation page (/q/<token>), for Stripe's return links. plan: 'full' | 'deposit'.
+ * customer's quotation page (/q/<token>), for Stripe's return links. The customer pays the deposit
+ * (or, for a quote too small for one, the total): paymentOptions() decides, not the form.
  *
  * Returns { result, url? } where result is 'ok' (url is Stripe's page), 'not_allowed',
  * 'payments_off', 'slot_unavailable', 'invalid_plan', 'already_booked', 'in_progress' or
  * 'payment_start_failed'.
  */
-export async function startCheckout(env, ctx, { slotId, plan }, pageUrl, now = new Date()) {
+export async function startCheckout(env, ctx, { slotId }, pageUrl, now = new Date()) {
   const db = env.DB;
   if (ctx.state !== 'valid' || !onlineBooking(ctx.snapshot)) return { result: 'not_allowed' };
   if (!paymentsAvailable(env)) return { result: 'payments_off' };
-  if (plan !== 'full' && plan !== 'deposit') return { result: 'invalid_plan' };
   if (!(await bookableSlot(db, slotId, now, ctx.quoteId))) return { result: 'slot_unavailable' };
 
   // A checkout already in progress for this quote (another tab, or the customer came back) is ended
@@ -304,9 +303,9 @@ export async function startCheckout(env, ctx, { slotId, plan }, pageUrl, now = n
   }
   const slot = await bookableSlot(db, slotId, now, ctx.quoteId);
   if (!slot) return { result: 'slot_unavailable' };
-  const options = paymentOptions({ totalPence: ctx.snapshot.totalPence, pkg: ctx.snapshot.package, slotDate: slot.slot_date, today: ukToday(now) });
-  if (plan === 'deposit' && !options.deposit) return { result: 'invalid_plan' };
-  const amount = plan === 'deposit' ? options.deposit.depositPence : options.totalPence;
+  const options = paymentOptions({ totalPence: ctx.snapshot.totalPence });
+  const { plan } = options;
+  const amount = options.dueNowPence;
   if (!Number.isSafeInteger(amount) || amount <= 0) return { result: 'not_allowed' };
 
   const at = iso(now);
@@ -488,9 +487,6 @@ export async function handleCheckoutCompleted(env, session, now = new Date()) {
   // Deposit or payment in full: confirm the booking. A hold that had run out is confirmed too if the
   // slot is still free; otherwise the database refuses and the payment is refunded below.
   const bookedOn = ukToday(now);
-  const deposit = booking.plan === 'deposit';
-  const due = deposit ? balanceDueOn(booking.slotDate) : null;
-  const reminders = deposit ? reminderDates(booking.slotDate, bookedOn) : { r14: null, r8: null };
   const unpaid = unpaidSql(payment.id);
   // Confirmed by this batch: the booking update above it ran (its confirmed_at is this call's time).
   const confirmedHere = `${unpaid} AND EXISTS (SELECT 1 FROM bookings WHERE id = ${Number(booking.id)} AND status = 'confirmed' AND confirmed_at = '${at}')`;
@@ -500,11 +496,11 @@ export async function handleCheckoutCompleted(env, session, now = new Date()) {
       db
         .prepare(
           `UPDATE bookings SET status = 'confirmed', paid_pence = paid_pence + ?, confirmed_at = ?, booked_on = ?, hold_expires_at = NULL,
-             balance_due_on = ?, reminder_14_on = ?, reminder_8_on = ?, updated_at = ?
+             balance_due_on = NULL, reminder_14_on = NULL, reminder_8_on = NULL, updated_at = ?
            WHERE id = ? AND status IN ('holding', 'expired') AND ${unpaid}
            RETURNING id`,
         )
-        .bind(payment.amount_pence, at, bookedOn, due, reminders.r14, reminders.r8, at, booking.id),
+        .bind(payment.amount_pence, at, bookedOn, at, booking.id),
       db
         .prepare(
           `INSERT INTO enquiry_events (enquiry_id, created_at, actor, type, detail)
@@ -720,15 +716,15 @@ export async function handleRefundUpdated(env, refund, now = new Date()) {
 // --- Balance ------------------------------------------------------------------------------------
 
 /**
- * Start Stripe Checkout for a deposit booking's balance. The balance can be paid online at any time
- * while the booking is confirmed (it is otherwise paid in person on the day of the shoot).
+ * Start Stripe Checkout for a booking's balance. It can be paid online once ROSS 360 has sent the
+ * balance request (the tour is ready), while the booking is confirmed.
  * Returns { result: 'ok' | 'nothing_due' | 'payments_off' | 'payment_start_failed', url? }.
  */
 export async function startBalanceCheckout(env, ctx, pageUrl, now = new Date()) {
   const db = env.DB;
   if (!paymentsAvailable(env)) return { result: 'payments_off' };
   const b = await activeBooking(db, ctx.quoteId);
-  if (!b || b.status !== 'confirmed' || b.plan !== 'deposit') return { result: 'nothing_due' };
+  if (!b || b.status !== 'confirmed' || !b.balanceDueOn) return { result: 'nothing_due' };
   const balance = b.totalPence - b.paidPence;
   if (balance <= 0) return { result: 'nothing_due' };
 
@@ -797,8 +793,7 @@ export async function startBalanceCheckout(env, ctx, pageUrl, now = new Date()) 
 }
 
 /**
- * The Admin records a deposit booking's balance as paid in person (on the day of the shoot, or by any
- * other agreed method). An online balance checkout still open is ended at Stripe first, so the balance
+ * The Admin records a booking's balance as paid another way (bank transfer, card reader, cash). An online balance checkout still open is ended at Stripe first, so the balance
  * cannot be paid twice; if it was paid meanwhile, that payment is recorded instead.
  * expectPaidPence: the amount paid that the Admin showed, so a stale screen cannot act.
  * Returns { result: 'ok' | 'not_found' | 'changed' | 'paid_online' | 'stripe_unreachable', booking? }.
@@ -809,7 +804,7 @@ export async function recordBalanceInPerson(env, bookingId, { actor, expectPaidP
   const b = await getBooking(db, bookingId);
   if (!b) return { result: 'not_found' };
   const balance = b.totalPence - b.paidPence;
-  if (b.status !== 'confirmed' || b.plan !== 'deposit' || balance <= 0 || b.paidPence !== expectPaidPence) return { result: 'changed', booking: b };
+  if (b.status !== 'confirmed' || balance <= 0 || b.paidPence !== expectPaidPence) return { result: 'changed', booking: b };
 
   const open = await openPayment(db, b.id);
   if (open) {
@@ -856,6 +851,115 @@ export async function recordBalanceInPerson(env, bookingId, { actor, expectPaidP
   const updated = await getBooking(db, b.id);
   await notifyCustomer(env, updated, balancePaidEmail(updated, balance, await customerPageUrl(env, updated.quoteId)), `balance-in-person-${b.id}`, 'balance received');
   return { result: 'ok', booking: updated };
+}
+
+/**
+ * The tour is ready: ROSS 360 asks the customer for the balance. The balance becomes due
+ * BALANCE_DUE_DAYS from today and the customer is emailed a link to pay it online. Sending it again
+ * resends the email with a new due date. Only once the shoot date has been reached.
+ * expectPaidPence: the amount paid that the Admin showed, so a stale screen cannot act.
+ * Returns { result: 'ok' | 'not_found' | 'changed' | 'not_yet' | 'no_link' | 'email_failed', booking? }.
+ */
+export async function requestBalance(env, bookingId, { actor, expectPaidPence }, now = new Date()) {
+  const db = env.DB;
+  await requireSchema(db);
+  const b = await getBooking(db, bookingId);
+  if (!b) return { result: 'not_found' };
+  const today = ukToday(now);
+  if (b.status === 'confirmed' && b.totalPence > b.paidPence && b.slotDate > today) return { result: 'not_yet', booking: b };
+  if (!canRequestBalance(b, today) || b.paidPence !== expectPaidPence) return { result: 'changed', booking: b };
+  const pageUrl = await customerPageUrl(env, b.quoteId);
+  if (!pageUrl) return { result: 'no_link', booking: b };
+
+  const due = balanceDueOn(today);
+  const balance = b.totalPence - b.paidPence;
+  const at = iso(now);
+  const results = await db.batch([
+    db
+      .prepare(`UPDATE bookings SET balance_due_on = ?, updated_at = ? WHERE id = ? AND status = 'confirmed' AND paid_pence = ? AND paid_pence < total_pence RETURNING id`)
+      .bind(due, at, b.id, b.paidPence),
+    db
+      .prepare(
+        `INSERT INTO enquiry_events (enquiry_id, created_at, actor, type, detail)
+         SELECT ?, ?, ?, 'balance_requested', ? WHERE EXISTS (SELECT 1 FROM bookings WHERE id = ? AND balance_due_on = ? AND updated_at = ?)`,
+      )
+      .bind(b.enquiryId, at, actor, JSON.stringify({ quote: b.quoteReference, balancePence: balance, dueOn: due, again: Boolean(b.balanceDueOn) }), b.id, due, at),
+  ]);
+  if (!results[0].results?.[0]) return { result: 'changed', booking: await getBooking(db, b.id) };
+  const updated = await getBooking(db, b.id);
+  const sent = await notifyCustomer(env, updated, balanceRequestEmail(updated, `${pageUrl}/balance`), `balance-request-${b.id}-${at}`, 'balance request');
+  if (!sent.ok && !sent.skipped) return { result: 'email_failed', booking: updated };
+  return { result: 'ok', booking: updated };
+}
+
+/**
+ * ROSS 360 books a slot for a sent business quote with no deposit (a founding offer, or another
+ * agreed arrangement). The booking is confirmed at once with nothing paid; the whole total is the
+ * balance, requested once the tour is ready like any other. notify: email the customer the usual
+ * booking confirmation.
+ * Returns { result: 'ok' | 'not_found' | 'not_sent' | 'not_business' | 'already_booked' |
+ *   'slot_unavailable', booking? }.
+ */
+export async function bookWithoutDeposit(env, reference, { slotId, actor, notify = true }, now = new Date()) {
+  const db = env.DB;
+  await requireSchema(db);
+  const quote = await db.prepare(`SELECT id, enquiry_id, reference, status, sent_snapshot FROM quotes WHERE reference = ?`).bind(reference).first();
+  if (!quote) return { result: 'not_found' };
+  if (quote.status !== 'sent') return { result: 'not_sent' };
+  let snapshot = null;
+  try {
+    snapshot = JSON.parse(quote.sent_snapshot);
+  } catch {
+    snapshot = null;
+  }
+  if (!onlineBooking(snapshot) || !Number.isSafeInteger(snapshot.totalPence) || snapshot.totalPence <= 0) return { result: 'not_business' };
+  await releaseHolds(db, now);
+  if (await activeBooking(db, quote.id)) return { result: 'already_booked' };
+  const slot = (await moveTargets(db, now)).find((s) => s.id === slotId);
+  if (!slot) return { result: 'slot_unavailable' };
+
+  const at = iso(now);
+  const stillSent = `EXISTS (SELECT 1 FROM quotes WHERE id = ${Number(quote.id)} AND status = 'sent')
+    AND NOT EXISTS (SELECT 1 FROM quotes r WHERE r.revision_of = ${Number(quote.id)} AND r.status IN ('sending', 'send_unknown', 'sent'))`;
+  const bookedHere = `EXISTS (SELECT 1 FROM bookings WHERE quote_id = ${Number(quote.id)} AND status = 'confirmed' AND confirmed_at = '${at}')`;
+  let results;
+  try {
+    results = await db.batch([
+      db
+        .prepare(
+          `INSERT INTO bookings (quote_id, slot_id, status, plan, total_pence, deposit_pence, booked_on, confirmed_at, created_at, updated_at)
+           SELECT ?, ?, 'confirmed', 'deposit', ?, 0, ?, ?, ?, ? WHERE ${stillSent}
+           RETURNING id`,
+        )
+        .bind(quote.id, slot.id, snapshot.totalPence, ukToday(now), at, at, at),
+      db
+        .prepare(`INSERT INTO enquiry_events (enquiry_id, created_at, actor, type, detail) SELECT ?, ?, ?, 'booking_confirmed', ? WHERE ${bookedHere}`)
+        .bind(quote.enquiry_id, at, actor, JSON.stringify({ quote: quote.reference, date: slot.date, period: slot.period, plan: 'deposit', paidPence: 0, noDeposit: true })),
+      db
+        .prepare(
+          `INSERT INTO enquiry_events (enquiry_id, created_at, actor, type, detail)
+           SELECT id, ?, 'system', 'status', json_object('from', status, 'to', 'booked')
+           FROM enquiries WHERE id = ? AND status IN ('new', 'reviewing', 'quoted', 'accepted', 'payment_pending') AND ${bookedHere}`,
+        )
+        .bind(at, quote.enquiry_id),
+      db
+        .prepare(
+          `UPDATE enquiries SET status = 'booked', status_changed_at = ?, updated_at = ?
+           WHERE id = ? AND status IN ('new', 'reviewing', 'quoted', 'accepted', 'payment_pending') AND ${bookedHere}`,
+        )
+        .bind(at, at, quote.enquiry_id),
+    ]);
+  } catch (error) {
+    const which = constraintOf(error);
+    if (which === 'slot') return { result: 'slot_unavailable' };
+    if (which === 'quote') return { result: 'already_booked' };
+    throw error;
+  }
+  const id = results[0].results?.[0]?.id;
+  if (!id) return { result: 'not_sent' };
+  const booked = await getBooking(db, id);
+  if (notify) await notifyCustomer(env, booked, confirmedEmail(booked, await customerPageUrl(env, booked.quoteId)), `booking-confirmed-nodeposit-${id}`, 'booking confirmed');
+  return { result: 'ok', booking: booked };
 }
 
 // --- Cancellations and refunds --------------------------------------------------------------------
@@ -1102,8 +1206,7 @@ export async function retryRefund(env, refundId, bookingId, now = new Date()) {
 // --- Moving a booking ---------------------------------------------------------------------------
 
 /**
- * Move a confirmed booking to another open slot, keeping its payments. A deposit booking's balance
- * due date and reminders follow the new date.
+ * Move a confirmed booking to another open slot, keeping its payments and any balance request.
  * Returns { result: 'ok' | 'not_found' | 'changed' | 'slot_unavailable' | 'past', booking? }.
  */
 export async function moveBooking(env, bookingId, slotId, actor, now = new Date()) {
@@ -1116,9 +1219,6 @@ export async function moveBooking(env, bookingId, slotId, actor, now = new Date(
   if (!slot || slot.id === b.slotId) return { result: 'slot_unavailable', booking: b };
   const today = ukToday(now);
   if (slot.slot_date < today) return { result: 'past', booking: b };
-  const unpaid = b.totalPence - b.paidPence > 0;
-  const due = b.plan === 'deposit' ? balanceDueOn(slot.slot_date) : null;
-  const reminders = unpaid && due ? reminderDates(slot.slot_date, today) : { r14: null, r8: null };
   const at = iso(now);
   await releaseHolds(db, now);
   let results;
@@ -1126,11 +1226,11 @@ export async function moveBooking(env, bookingId, slotId, actor, now = new Date(
     results = await db.batch([
       db
         .prepare(
-          `UPDATE bookings SET slot_id = ?, balance_due_on = ?, reminder_14_on = ?, reminder_14_sent_at = NULL, reminder_8_on = ?, reminder_8_sent_at = NULL, updated_at = ?
+          `UPDATE bookings SET slot_id = ?, updated_at = ?
            WHERE id = ? AND status = 'confirmed' AND slot_id = ?
            RETURNING id`,
         )
-        .bind(slot.id, due, reminders.r14, reminders.r8, at, b.id, b.slotId),
+        .bind(slot.id, at, b.id, b.slotId),
       db
         .prepare(
           `INSERT INTO enquiry_events (enquiry_id, created_at, actor, type, detail)
@@ -1162,84 +1262,18 @@ export async function moveBooking(env, bookingId, slotId, actor, now = new Date(
  * The hourly run (Cron Worker -> POST /api/scheduler/run, or "Run scheduled tasks" in the Admin).
  * Safe to run at any time and any number of times:
  * 1. releases checkout holds that have run out;
- * 2. emails balance reminders that are due (from 09:00 UK time), each once;
- * 3. retries refunds Stripe has not answered.
- * An unpaid balance never cancels a booking: it is paid on the day of the shoot.
+ * 2. retries refunds Stripe has not answered.
+ * No balance reminders are sent: the balance is requested by ROSS 360 once the tour is ready.
  * Returns a summary of what it did.
  */
 export async function runScheduled(env, now = new Date()) {
   const db = env.DB;
   await requireSchema(db);
-  const summary = { holdsReleased: 0, reminders: 0, refunds: null };
-  const today = ukToday(now);
-
+  const summary = { holdsReleased: 0, refunds: null };
   const released = await db.batch(releaseExpiredHolds(db, now));
   summary.holdsReleased = released[2].results?.length ?? 0;
-
-  if (ukHour(now) >= REMINDER_FROM_HOUR) {
-    const { results: due } = await db
-      .prepare(
-        `SELECT id FROM bookings
-         WHERE status = 'confirmed' AND plan = 'deposit' AND paid_pence < total_pence
-           AND ((reminder_14_on IS NOT NULL AND reminder_14_on <= ? AND reminder_14_sent_at IS NULL)
-             OR (reminder_8_on IS NOT NULL AND reminder_8_on <= ? AND reminder_8_sent_at IS NULL))`,
-      )
-      .bind(today, today)
-      .all();
-    for (const { id } of due) {
-      if (await sendReminder(env, id, now)) summary.reminders += 1;
-    }
-  }
-
   summary.refunds = await executeRefunds(env, { olderThanMs: 2 * 60_000, now });
   return summary;
-}
-
-/**
- * Send the reminder that is due for a booking. If the first reminder was missed and the second is now
- * due, only the second is sent. Nothing is sent once the day of the shoot has passed. The reminder is claimed before it is emailed, so two runs at
- * once send it once; a failed email is released to be tried again on the next run.
- */
-async function sendReminder(env, bookingId, now) {
-  const db = env.DB;
-  const b = await getBooking(db, bookingId);
-  const today = ukToday(now);
-  if (!b || b.slotDate < today) return false;
-  // 8 and 14 name the database columns (reminder_8_*, reminder_14_*): the second and first reminder.
-  const which = b.reminder8On && b.reminder8On <= today && !b.reminder8SentAt ? 8 : 14;
-  const days = which === 8 ? REMINDER_DAYS[1] : REMINDER_DAYS[0];
-  const at = iso(now);
-  const claimed = await db
-    .prepare(
-      which === 8
-        ? `UPDATE bookings SET reminder_8_sent_at = ?, reminder_14_sent_at = COALESCE(reminder_14_sent_at, CASE WHEN reminder_14_on IS NULL THEN NULL ELSE 'skipped' END), updated_at = ?
-           WHERE id = ? AND reminder_8_sent_at IS NULL AND status = 'confirmed' RETURNING id`
-        : `UPDATE bookings SET reminder_14_sent_at = ?, updated_at = ? WHERE id = ? AND reminder_14_sent_at IS NULL AND status = 'confirmed' RETURNING id`,
-    )
-    .bind(at, at, b.id)
-    .first();
-  if (!claimed) return false;
-  const pageUrl = await customerPageUrl(env, b.quoteId);
-  const sent = await sendEmail(env, reminderEmail(b, pageUrl ? `${pageUrl}/balance` : null), {
-    idempotencyKey: `balance-reminder-${which}-${b.id}-${b.slotDate}`,
-    customer: true,
-    label: `balance reminder ${which}`,
-  });
-  if (!sent.ok && !sent.skipped) {
-    await db
-      .prepare(`UPDATE bookings SET ${which === 8 ? 'reminder_8_sent_at' : 'reminder_14_sent_at'} = NULL WHERE id = ? AND ${which === 8 ? 'reminder_8_sent_at' : 'reminder_14_sent_at'} = ?`)
-      .bind(b.id, at)
-      .run();
-    await recordEmailFailure(env, b, `balance reminder ${which}`, sent.status);
-    return false;
-  }
-  await event(db, b.enquiryId, at, 'system', 'balance_reminder_sent', {
-    quote: b.quoteReference,
-    days,
-    balanceDueOn: b.slotDate,
-    skipped: Boolean(sent.skipped),
-  }).run();
-  return true;
 }
 
 // --- The Admin --------------------------------------------------------------------------------------
@@ -1252,6 +1286,7 @@ export async function bookingDetail(env, id, now = new Date()) {
     ...b,
     balancePence: Math.max(0, b.totalPence - b.paidPence),
     maxRetentionPence: maxRetention(b.totalPence, b.paidPence),
+    canRequestBalance: canRequestBalance(b, ukToday(now)),
     cancellationWindow: ['confirmed', 'cancel_requested'].includes(b.status) ? cancellationWindow(b.slotDate, b.period, now) : null,
     holdActive: b.status === 'holding' && Date.parse(b.holdExpiresAt) > now.getTime(),
     payments: (await paymentsOf(env.DB, id)).map(({ sessionUrl, ...p }) => p),
@@ -1291,7 +1326,7 @@ export async function bookingCounts(db, now = new Date()) {
     .prepare(
       `SELECT
          SUM(CASE WHEN status = 'cancel_requested' THEN 1 ELSE 0 END) AS cancel_requests,
-         SUM(CASE WHEN status = 'confirmed' AND plan = 'deposit' AND paid_pence < total_pence THEN 1 ELSE 0 END) AS balances_due
+         SUM(CASE WHEN status = 'confirmed' AND paid_pence < total_pence AND balance_due_on IS NOT NULL THEN 1 ELSE 0 END) AS balances_due
        FROM bookings`,
     )
     .first();

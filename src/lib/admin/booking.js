@@ -1,25 +1,26 @@
 // Booking and payment rules (Phase C), shared by the customer page, the Admin, the API and the
-// scheduled tasks. Agreed with ROSS 360 on 6 October 2026. Keep it dependency-free apart from the
-// date helpers.
+// scheduled tasks. Keep it dependency-free apart from the date helpers.
 //
-// - Deposits are fixed by package and count towards the quote total (which already includes travel).
-// - Any slot can be paid in full or by deposit (packages with a fixed deposit only).
-// - A deposit booking's balance is due on the day of the shoot (ROSS 360, 30 October 2026): the
-//   customer pays it in person on the day, or online at any time before then. Nothing is cancelled for
-//   an unpaid balance. Reminders go 7 and 2 days before the slot, where those dates are not already
-//   past when the booking is made.
+// Simplified by ROSS 360 on 5 November 2026:
+// - A booking is confirmed by a deposit: a percentage of the quote total (which already includes
+//   travel), rounded up to the whole pound. It counts towards the total.
+// - The balance is paid after the shoot, once the tour is ready and the customer is happy with it.
+//   Nothing about the balance is due at booking and no reminders are sent before the shoot. When the
+//   tour is ready, ROSS 360 sends a balance request from the Admin; the balance is then due within
+//   BALANCE_DUE_DAYS, online from the link, or recorded in the Admin when paid another way.
+// - ROSS 360 can also book a slot with no deposit (a founding offer or an agreed arrangement); the
+//   whole total is then the balance, requested the same way.
 // - Cancelling more than 48 hours before the slot refunds everything paid. Within 48 hours ROSS 360
 //   decides what to keep, up to 50% of the booking price; nothing is kept automatically.
 
 import { addDays, ukToday } from './quotes.js';
 import { site } from '../../content/site.js';
 
-// Fixed deposits, by package id (src/content/pricing.js): £100 / £150 / £200 for £249 / £349 / £499
-// (ROSS 360, 30 October 2026).
-export const DEPOSITS = { essential: 10000, professional: 15000, bespoke: 20000 };
+// The deposit, as a percentage of the quote total (ROSS 360, 5 November 2026).
+export const DEPOSIT_PERCENT = 25;
 
-export const REMINDER_DAYS = [7, 2]; // balance reminders, days before the slot (first, second)
-export const REMINDER_FROM_HOUR = 9; // reminders are not emailed before 09:00 UK time
+// Days the customer has to pay the balance after ROSS 360 sends the balance request.
+export const BALANCE_DUE_DAYS = 7;
 
 // The slot is held while the customer is on Stripe Checkout. Stripe's shortest Checkout expiry is 30
 // minutes, so the session is created to expire 30 minutes after it starts (plus a few seconds for the
@@ -61,42 +62,32 @@ export function daysBetween(from, to) {
   return Math.round((Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / 86_400_000);
 }
 
-/** The fixed deposit for a quote's package, or null when the package has none. */
-export const depositFor = (pkg) => (Object.hasOwn(DEPOSITS, pkg || '') ? DEPOSITS[pkg] : null);
-
-/**
- * The payment choices for a quote total and a slot date, booked on `today` (UK).
- * Returns { totalPence, full: { dueNowPence }, deposit: { depositPence, balancePence, balanceDueOn } | null,
- *   noDeposit: null | 'no_package' | 'total_too_low' }.
- */
-export function paymentOptions({ totalPence, pkg, slotDate, today = ukToday() }) {
-  const full = { dueNowPence: totalPence };
-  const depositPence = depositFor(pkg);
-  let noDeposit = null;
-  if (depositPence === null) noDeposit = 'no_package';
-  else if (totalPence <= depositPence) noDeposit = 'total_too_low';
-  return {
-    totalPence,
-    full,
-    deposit: noDeposit
-      ? null
-      : { depositPence, balancePence: totalPence - depositPence, balanceDueOn: balanceDueOn(slotDate) },
-    noDeposit,
-  };
+/** The deposit for a quote total: DEPOSIT_PERCENT of it, rounded up to the whole pound. */
+export function depositFor(totalPence) {
+  if (!Number.isSafeInteger(totalPence) || totalPence <= 0) return 0;
+  return Math.ceil((totalPence * DEPOSIT_PERCENT) / 10_000) * 100;
 }
 
-/** The UK date a deposit booking's balance is due: the day of the shoot. */
-export const balanceDueOn = (slotDate) => slotDate;
+/**
+ * What a customer pays to book a quote total: { totalPence, depositPence, balancePence }. When the
+ * deposit would be the whole total (a very small quote), the booking is paid in full: depositPence is
+ * null and plan is 'full'.
+ */
+export function paymentOptions({ totalPence }) {
+  const deposit = depositFor(totalPence);
+  if (deposit <= 0 || deposit >= totalPence) return { totalPence, plan: 'full', dueNowPence: totalPence, depositPence: null, balancePence: 0 };
+  return { totalPence, plan: 'deposit', dueNowPence: deposit, depositPence: deposit, balancePence: totalPence - deposit };
+}
+
+/** The UK date the balance is due when ROSS 360 sends the balance request on `requestedOn`. */
+export const balanceDueOn = (requestedOn) => addDays(requestedOn, BALANCE_DUE_DAYS);
 
 /**
- * The reminder dates that apply to a deposit booking made on `bookedOn`: each reminder whose date is
- * not already past. Returns { r14: date | null, r8: date | null } (the first and second reminder; the
- * names follow the database columns).
+ * Whether ROSS 360 can send the balance request for a booking today: confirmed, something left to
+ * pay, and the shoot date reached.
  */
-export function reminderDates(slotDate, bookedOn) {
-  const [first, second] = REMINDER_DAYS.map((days) => addDays(slotDate, -days));
-  return { r14: bookedOn <= first ? first : null, r8: bookedOn <= second ? second : null };
-}
+export const canRequestBalance = (b, today = ukToday()) =>
+  Boolean(b) && b.status === 'confirmed' && b.totalPence - b.paidPence > 0 && b.slotDate <= today;
 
 // --- UK clock times -------------------------------------------------------------------------------
 

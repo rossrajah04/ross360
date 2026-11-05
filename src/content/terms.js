@@ -28,6 +28,7 @@
 //     the Liability section must be professionally reviewed.
 //   - Fairness of the up-to-50% charge for consumers (Consumer Rights Act 2015, Part 2).
 
+import { BALANCE_DUE_DAYS, DEPOSIT_PERCENT } from '../lib/admin/booking.js';
 import { site } from './site.js';
 import { previewLegalWording } from './legalPreview.js';
 import { lowestPrice } from './pricing.js';
@@ -117,16 +118,16 @@ export const terms = {
           // Preview builds only: the online-booking wording approved for Preview testing (6 October 2026).
           ul: previewLegalWording
             ? [
-                'A booking is confirmed only when payment has been received. Until then, no date is reserved for you.',
-                'When you book online, you can pay in full or, for the Essential, Professional and Bespoke packages, pay a deposit of £100, £150 or £200 respectively. Quotations that do not use one of those packages are paid in full when booking.',
-                'A deposit counts toward the total price shown on your quotation. The balance is the total price less the deposit, and is due on the day of the shoot. You can pay it in person on the day, or online at any time before then using the link in your booking email.',
+                'A booking is confirmed only when the deposit has been received, or when we have confirmed in writing that no deposit is needed. Until then, no date is reserved for you.',
+                `When you book online, you pay a deposit of ${DEPOSIT_PERCENT}% of the total price shown on your quotation, rounded up to the nearest pound.`,
+                `The deposit counts toward the total price. The balance is the total price less the deposit, and is due after the shoot, once your tour is ready. We will email you a link to pay it, and it is due within ${BALANCE_DUE_DAYS} days of that email.`,
                 'Online card payments are processed by Stripe. We do not see or store your full card details.',
                 'You can also pay using any other payment method we agree with you, such as bank transfer.',
                 'We do not begin work until the booking has been confirmed.',
               ]
             : [
-                'Paid projects require a deposit, or payment in full, before the booking is confirmed.',
-                'Where you pay a deposit, the balance is due on the day of the shoot. You can pay it in person on the day, or online before then.',
+                'Paid projects require a deposit before the booking is confirmed, unless we agree otherwise in writing.',
+                `The balance is due after the shoot, once your tour is ready. We will email you when it is due, and it is payable within ${BALANCE_DUE_DAYS} days of that email.`,
                 'You can pay using the payment methods we offer at the time, which may include online card payment and bank transfer.',
                 'Online card payments may be processed by a third-party payment provider, such as Stripe. Where a payment provider processes your payment, we do not see or store your full card details.',
                 'We do not begin work until the booking has been confirmed.',
@@ -139,7 +140,7 @@ export const terms = {
       title: 'Booking',
       blocks: [
         {
-          p: 'A booking is confirmed only when you have accepted the quotation, paid the deposit or paid in full, and received our booking confirmation. Until then, no date is reserved. After booking, we may ask for further details to plan the visit, such as access arrangements and the order in which the space should be captured.',
+          p: 'A booking is confirmed only when you have accepted the quotation, paid the deposit (unless we have agreed that none is needed), and received our booking confirmation. Until then, no date is reserved. After booking, we may ask for further details to plan the visit, such as access arrangements and the order in which the space should be captured.',
         },
       ],
     },
