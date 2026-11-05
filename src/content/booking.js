@@ -135,7 +135,7 @@ export const bookingEmails = {
     subject: (reference) => `ROSS 360 balance due: quotation ${reference}`,
     lead: 'Your virtual tour is ready.',
     balance: (amount, date) => `Once you are happy with it, please pay the balance of ${amount} by ${date}. You can pay online using the link below.`,
-    other: `Would you rather pay by bank transfer? Message us on WhatsApp at ${site.phone.display} and we will arrange it.`,
+    other: 'Would you rather pay by bank transfer? Please reply to this email and we will send the details.',
   },
   balancePaid: {
     subject: 'ROSS 360 balance received',
