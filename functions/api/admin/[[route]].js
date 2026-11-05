@@ -470,14 +470,14 @@ async function handle(context) {
   }
 
   if (segments[0] === 'quotes' && segments.length === 3 && segments[2] === 'book-without-deposit') {
-    // ROSS 360 books a slot for a sent business quote with nothing to pay now (a founding offer).
+    // ROSS 360 books a slot by hand: deposit received by bank transfer, or no deposit (a founding offer).
     const reference = decodeURIComponent(segments[1]);
     if (!QUOTE_REFERENCE_RE.test(reference)) return notFound();
     if (method !== 'POST') return json({ ok: false, message: 'Method not allowed.' }, 405);
-    if (body.confirm !== true || !Number.isSafeInteger(body.slotId) || body.slotId < 1 || typeof body.notify !== 'boolean') {
+    if (body.confirm !== true || !Number.isSafeInteger(body.slotId) || body.slotId < 1 || typeof body.notify !== 'boolean' || !['transfer', 'none'].includes(body.deposit)) {
       return json({ ok: false, message: 'Invalid request.' }, 400);
     }
-    const outcome = await bookWithoutDeposit(env, reference, { slotId: body.slotId, actor, notify: body.notify });
+    const outcome = await bookWithoutDeposit(env, reference, { slotId: body.slotId, actor, notify: body.notify, deposit: body.deposit });
     if (outcome.result === 'not_found') return notFound();
     const known = NO_DEPOSIT_OUTCOMES[outcome.result];
     if (known) return json({ ok: false, message: known[1] }, known[0]);

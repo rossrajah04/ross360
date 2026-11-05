@@ -368,7 +368,8 @@ export function renderPayPage({ snapshot, slot, options, nonce, urls, termsUrl, 
     )}" rel="noreferrer" target="_blank">${escapeHtml(B.agreeLink)}</a>.</span></label>` +
     `<p class="small muted">${escapeHtml(B.holdNote)} ${escapeHtml(B.stripeNote)}</p>` +
     `<p><button class="button" type="submit">${escapeHtml(B.toPayment)}</button></p>` +
-    '</form>';
+    '</form>' +
+    `<p class="small muted">${escapeHtml(B.bankTransfer)}</p>`;
   return shell(B.payHeading, body);
 }
 
@@ -382,7 +383,8 @@ export function renderBalancePage({ snapshot, booking, nonce, urls, error = '' }
     action =
       `<p>${escapeHtml(B.balanceIntro(money(balance), longDate(booking.balanceDueOn)))}</p>` +
       `<p class="small muted">${escapeHtml(B.stripeNote)}</p>` +
-      postButton(urls.balance, nonce, B.toPayment);
+      postButton(urls.balance, nonce, B.toPayment) +
+      `<p class="small muted">${escapeHtml(B.bankTransfer)}</p>`;
   }
   const body =
     `<p class="muted small"><a href="${escapeHtml(urls.self)}">${escapeHtml(B.back)}</a></p>` +

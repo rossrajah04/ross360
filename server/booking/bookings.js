@@ -893,14 +893,15 @@ export async function requestBalance(env, bookingId, { actor, expectPaidPence },
 }
 
 /**
- * ROSS 360 books a slot for a sent business quote with no deposit (a founding offer, or another
- * agreed arrangement). The booking is confirmed at once with nothing paid; the whole total is the
- * balance, requested once the tour is ready like any other. notify: email the customer the usual
- * booking confirmation.
+ * ROSS 360 books a slot by hand for a sent business quote: with the deposit received by bank transfer
+ * (deposit: 'transfer'; recorded as paid, with no Stripe ids), or with no deposit (deposit: 'none'; a
+ * founding offer or another agreed arrangement). The booking is confirmed at once; the balance is
+ * requested once the tour is ready like any other. notify: email the customer the usual booking
+ * confirmation.
  * Returns { result: 'ok' | 'not_found' | 'not_sent' | 'not_business' | 'already_booked' |
  *   'slot_unavailable', booking? }.
  */
-export async function bookWithoutDeposit(env, reference, { slotId, actor, notify = true }, now = new Date()) {
+export async function bookWithoutDeposit(env, reference, { slotId, actor, notify = true, deposit = 'none' }, now = new Date()) {
   const db = env.DB;
   await requireSchema(db);
   const quote = await db.prepare(`SELECT id, enquiry_id, reference, status, sent_snapshot FROM quotes WHERE reference = ?`).bind(reference).first();
@@ -919,6 +920,10 @@ export async function bookWithoutDeposit(env, reference, { slotId, actor, notify
   if (!slot) return { result: 'slot_unavailable' };
 
   const at = iso(now);
+  const options = paymentOptions({ totalPence: snapshot.totalPence });
+  const transfer = deposit === 'transfer';
+  const paid = transfer ? options.dueNowPence : 0;
+  const plan = transfer ? options.plan : 'deposit';
   const stillSent = `EXISTS (SELECT 1 FROM quotes WHERE id = ${Number(quote.id)} AND status = 'sent')
     AND NOT EXISTS (SELECT 1 FROM quotes r WHERE r.revision_of = ${Number(quote.id)} AND r.status IN ('sending', 'send_unknown', 'sent'))`;
   const bookedHere = `EXISTS (SELECT 1 FROM bookings WHERE quote_id = ${Number(quote.id)} AND status = 'confirmed' AND confirmed_at = '${at}')`;
@@ -927,14 +932,24 @@ export async function bookWithoutDeposit(env, reference, { slotId, actor, notify
     results = await db.batch([
       db
         .prepare(
-          `INSERT INTO bookings (quote_id, slot_id, status, plan, total_pence, deposit_pence, booked_on, confirmed_at, created_at, updated_at)
-           SELECT ?, ?, 'confirmed', 'deposit', ?, 0, ?, ?, ?, ? WHERE ${stillSent}
+          `INSERT INTO bookings (quote_id, slot_id, status, plan, total_pence, deposit_pence, paid_pence, booked_on, confirmed_at, created_at, updated_at)
+           SELECT ?, ?, 'confirmed', ?, ?, ?, ?, ?, ?, ?, ? WHERE ${stillSent}
            RETURNING id`,
         )
-        .bind(quote.id, slot.id, snapshot.totalPence, ukToday(now), at, at, at),
+        .bind(quote.id, slot.id, plan, snapshot.totalPence, plan === 'deposit' ? paid : null, paid, ukToday(now), at, at, at),
+      ...(paid > 0
+        ? [
+            db
+              .prepare(
+                `INSERT INTO booking_payments (booking_id, kind, amount_pence, status, created_at, paid_at, updated_at)
+                 SELECT id, ?, ?, 'paid', ?, ?, ? FROM bookings WHERE quote_id = ? AND status = 'confirmed' AND confirmed_at = ?`,
+              )
+              .bind(plan, paid, at, at, at, quote.id, at),
+          ]
+        : []),
       db
         .prepare(`INSERT INTO enquiry_events (enquiry_id, created_at, actor, type, detail) SELECT ?, ?, ?, 'booking_confirmed', ? WHERE ${bookedHere}`)
-        .bind(quote.enquiry_id, at, actor, JSON.stringify({ quote: quote.reference, date: slot.date, period: slot.period, plan: 'deposit', paidPence: 0, noDeposit: true })),
+        .bind(quote.enquiry_id, at, actor, JSON.stringify({ quote: quote.reference, date: slot.date, period: slot.period, plan, paidPence: paid, ...(transfer ? { byTransfer: true } : { noDeposit: true }) })),
       db
         .prepare(
           `INSERT INTO enquiry_events (enquiry_id, created_at, actor, type, detail)
@@ -958,7 +973,7 @@ export async function bookWithoutDeposit(env, reference, { slotId, actor, notify
   const id = results[0].results?.[0]?.id;
   if (!id) return { result: 'not_sent' };
   const booked = await getBooking(db, id);
-  if (notify) await notifyCustomer(env, booked, confirmedEmail(booked, await customerPageUrl(env, booked.quoteId)), `booking-confirmed-nodeposit-${id}`, 'booking confirmed');
+  if (notify) await notifyCustomer(env, booked, confirmedEmail(booked, await customerPageUrl(env, booked.quoteId)), `booking-confirmed-manual-${id}`, 'booking confirmed');
   return { result: 'ok', booking: booked };
 }
 

@@ -369,6 +369,7 @@ function describe(event) {
   if (type === 'checkout_expired') return `Quote ${detail.quote}: payment not completed for ${slotText(detail)}; slot released`;
   if (type === 'checkout_released') return `Quote ${detail.quote}: customer left the payment for ${slotText(detail)}; slot released`;
   if (type === 'booking_confirmed') {
+    if (detail.byTransfer) return `Quote ${detail.quote}: booked ${slotText(detail)}, ${formatMoney(detail.paidPence)} deposit received by bank transfer`;
     if (detail.noDeposit) return `Quote ${detail.quote}: booked ${slotText(detail)} with no deposit (booked in the Admin)`;
     return `Quote ${detail.quote}: booked ${slotText(detail)}, ${formatMoney(detail.paidPence)} paid (${detail.plan === 'deposit' ? 'deposit' : 'in full'})`;
   }

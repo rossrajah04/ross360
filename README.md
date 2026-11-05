@@ -269,10 +269,11 @@ slot and pay on Stripe Checkout** (hosted by Stripe; no card details reach this 
   way, use **Record balance paid**: the booking is marked paid in full, any open online balance
   checkout is ended first, and the customer is emailed a receipt. An unpaid balance never cancels a
   booking. A balance recorded by hand is refunded by hand if the booking is later cancelled.
-- **Booking with no deposit.** For a founding offer or another agreed arrangement, **Book without
-  deposit** on a sent Business quote (Customer link section) books an open slot at once with nothing
-  paid, optionally emailing the usual confirmation. The whole total is then the balance, requested the
-  same way.
+- **Booking by hand.** On a sent Business quote (Customer link section), **Book by bank transfer or
+  without deposit** books an open slot at once, optionally emailing the usual confirmation: either
+  with the deposit received by bank transfer (recorded as paid, so the 48-hour rule applies), or with
+  no deposit for a founding offer (the whole total is then the balance). The pay and balance pages say
+  that customers who would rather pay by bank transfer can get in touch.
 - **Cancellation.** The customer can cancel online. More than 48 hours before the slot: full refund
   and the slot reopens at once. Within 48 hours: the request comes to you (Admin -> Bookings) and
   nothing is refunded until you decide how much to keep, from nothing up to 50% of the booking total

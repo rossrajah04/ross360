@@ -175,7 +175,7 @@ export default function Booking() {
                     <td>{formatMoney(p.amountPence)}</td>
                     <td>{{ open: 'Checkout open', paid: 'Paid', expired: 'Not completed', failed: 'Could not start' }[p.status] || p.status}</td>
                     <td>{when(p.paidAt || p.createdAt, true)}</td>
-                    <td className="ad-muted">{p.paymentIntent || p.sessionId || (p.status === 'paid' ? 'Paid in person' : '')}</td>
+                    <td className="ad-muted">{p.paymentIntent || p.sessionId || (p.status === 'paid' ? 'Recorded in the Admin' : '')}</td>
                   </tr>
                 ))}
               </tbody>

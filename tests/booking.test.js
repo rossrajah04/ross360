@@ -1021,7 +1021,7 @@ test('ROSS 360 books a slot with no deposit: confirmed at once, nothing paid, th
     assert.ok(slots.data.slots.some((s) => s.id === slot.id));
     const bad = await t.call(`/quotes/${reference}/book-without-deposit`, { method: 'POST', body: { confirm: true, slotId: slot.id } });
     assert.equal(bad.status, 400, 'notify must be chosen');
-    const res = await t.call(`/quotes/${reference}/book-without-deposit`, { method: 'POST', body: { confirm: true, slotId: slot.id, notify: true } });
+    const res = await t.call(`/quotes/${reference}/book-without-deposit`, { method: 'POST', body: { confirm: true, slotId: slot.id, notify: true, deposit: 'none' } });
     assert.equal(res.status, 200, JSON.stringify(res.data));
     assert.equal(stripe.calls.length, 0, 'no payment taken');
     const b = one(t, `SELECT * FROM bookings`);
@@ -1038,7 +1038,7 @@ test('ROSS 360 books a slot with no deposit: confirmed at once, nothing paid, th
 
     // The slot is taken and the quote cannot be booked twice.
     assert.ok(!formOf((await callPage(t.env, `/q/${token}/book`)).html).slots.includes(slot.id));
-    const twice = await t.call(`/quotes/${reference}/book-without-deposit`, { method: 'POST', body: { confirm: true, slotId: slot.id, notify: false } });
+    const twice = await t.call(`/quotes/${reference}/book-without-deposit`, { method: 'POST', body: { confirm: true, slotId: slot.id, notify: false, deposit: 'none' } });
     assert.equal(twice.status, 409);
     const page = await callPage(t.env, `/q/${token}`);
     assert.match(page.html, /Your booking is confirmed\./);
@@ -1055,18 +1055,52 @@ test('ROSS 360 books a slot with no deposit: confirmed at once, nothing paid, th
   });
 });
 
+test('ROSS 360 books a slot with the deposit received by bank transfer: recorded as paid, the 48-hour rule applies', async () => {
+  const { t, slot, token, reference } = await ready(20);
+  await withServices(async ({ stripe, emails }) => {
+    const pay = await callPage(t.env, `/q/${token}/pay?slot=${slot.id}`);
+    assert.match(pay.html, /Would you rather pay by bank transfer\? Please get in touch at contact@ross360\.co\.uk or on \+44 7925 213557/);
+    const res = await t.call(`/quotes/${reference}/book-without-deposit`, {
+      method: 'POST',
+      body: { confirm: true, slotId: slot.id, notify: true, deposit: 'transfer' },
+    });
+    assert.equal(res.status, 200, JSON.stringify(res.data));
+    assert.equal(stripe.calls.length, 0);
+    const b = one(t, `SELECT * FROM bookings`);
+    assert.equal(b.status, 'confirmed');
+    assert.equal(b.plan, 'deposit');
+    assert.equal(b.deposit_pence, DEPOSIT);
+    assert.equal(b.paid_pence, DEPOSIT);
+    assert.deepEqual(
+      plain(rows(t, `SELECT kind, status, amount_pence, stripe_session_id, stripe_payment_intent FROM booking_payments`)),
+      [{ kind: 'deposit', status: 'paid', amount_pence: DEPOSIT, stripe_session_id: null, stripe_payment_intent: null }],
+    );
+    assert.equal((await events(t, 'booking_confirmed'))[0].detail.byTransfer, true);
+    assert.match(emails.find((e) => e.subject.startsWith('ROSS 360 booking confirmed')).text, /Paid: £110\.00/);
+    assert.equal(res.data.booking.maxRetentionPence, DEPOSIT);
+    // After the shoot, the balance is requested as usual.
+    await askForBalance(t, b.id, slot.date);
+    const email = emails.at(-1);
+    assert.match(email.text, /please pay the balance of £329\.00/);
+    assert.match(email.text, /Would you rather pay by bank transfer\? Please reply to this email/);
+    assert.match((await callPage(t.env, `/q/${token}/balance`)).html, /Would you rather pay by bank transfer/);
+    const bad = await t.call(`/quotes/${reference}/book-without-deposit`, { method: 'POST', body: { confirm: true, slotId: slot.id, notify: false, deposit: 'cash' } });
+    assert.equal(bad.status, 400);
+  });
+});
+
 test('booking with no deposit: only sent business quotes, and only open slots', async () => {
   const { t, slot, reference } = await ready(20, 'am', { customerType: 'consumer' });
   const closed = await addSlot(t, 25, 'am');
   await t.call(`/availability/${closed.id}/close`, { method: 'POST', body: {} });
   await withServices(async () => {
-    const consumer = await t.call(`/quotes/${reference}/book-without-deposit`, { method: 'POST', body: { confirm: true, slotId: slot.id, notify: false } });
+    const consumer = await t.call(`/quotes/${reference}/book-without-deposit`, { method: 'POST', body: { confirm: true, slotId: slot.id, notify: false, deposit: 'none' } });
     assert.equal(consumer.status, 409);
     assert.match(consumer.data.message, /business/);
   });
   const b = await ready(20);
   await withServices(async () => {
-    const res = await b.t.call(`/quotes/${b.reference}/book-without-deposit`, { method: 'POST', body: { confirm: true, slotId: 999999, notify: false } });
+    const res = await b.t.call(`/quotes/${b.reference}/book-without-deposit`, { method: 'POST', body: { confirm: true, slotId: 999999, notify: false, deposit: 'none' } });
     assert.equal(res.status, 409);
     assert.equal(one(b.t, `SELECT COUNT(*) AS n FROM bookings`).n, 0);
   });

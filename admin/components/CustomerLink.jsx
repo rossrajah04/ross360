@@ -4,6 +4,7 @@ import { api } from '../api.js';
 import { when } from './Bits.jsx';
 import { periodLabel, weekdayDate } from '../../src/lib/admin/availability.js';
 import { formatMoney } from '../../src/lib/admin/model.js';
+import { DEPOSIT_PERCENT, paymentOptions } from '../../src/lib/admin/booking.js';
 import { BookingTag } from '../pages/Bookings.jsx';
 
 // The customer's link to a sent quote (Phase C), its views and the customer's bookings.
@@ -151,10 +152,12 @@ export default function CustomerLink({ quote }) {
   );
 }
 
-// Book a slot with nothing to pay now (a founding offer, or another agreed arrangement). The whole
-// total becomes the balance, requested from the booking once the tour is ready.
+// Book a slot by hand: the deposit was paid by bank transfer, or there is no deposit (a founding offer
+// or another agreed arrangement). The balance is requested from the booking once the tour is ready.
 function BookWithoutDeposit({ quote, onBooked }) {
   const [open, setOpen] = useState(false);
+  const [deposit, setDeposit] = useState('transfer');
+  const options = paymentOptions({ totalPence: quote.totalPence });
   const [slots, setSlots] = useState(null);
   const [slotId, setSlotId] = useState('');
   const [notify, setNotify] = useState(true);
@@ -173,7 +176,7 @@ function BookWithoutDeposit({ quote, onBooked }) {
     return (
       <p>
         <button type="button" className="ad-button ad-button--quiet" onClick={start}>
-          Book without deposit…
+          Book by bank transfer or without deposit…
         </button>
       </p>
     );
@@ -183,10 +186,11 @@ function BookWithoutDeposit({ quote, onBooked }) {
     const target = slots?.find((s) => String(s.id) === slotId);
     if (!target) return;
     const emailed = notify ? ' The customer is emailed a booking confirmation.' : ' Nothing is emailed.';
-    if (!window.confirm(`Book ${quote.reference} for ${target.label} with no deposit?${emailed}`)) return;
+    const how = deposit === 'transfer' ? `with the deposit of ${formatMoney(options.dueNowPence)} received by bank transfer` : 'with no deposit';
+    if (!window.confirm(`Book ${quote.reference} for ${target.label} ${how}?${emailed}`)) return;
     setBusy(true);
     setError('');
-    const result = await api.bookWithoutDeposit(quote.reference, target.id, notify);
+    const result = await api.bookWithoutDeposit(quote.reference, target.id, notify, deposit);
     setBusy(false);
     if (result.status === 401) return;
     if (!result.ok) {
@@ -198,11 +202,18 @@ function BookWithoutDeposit({ quote, onBooked }) {
   };
   return (
     <form className="ad-panel" onSubmit={submit}>
-      <h3 className="ad-h3">Book without deposit</h3>
-      <p>
-        For a founding offer or another agreed arrangement. The slot is booked at once with nothing paid; the whole total is the balance, requested
-        from the booking once the tour is ready.
-      </p>
+      <h3 className="ad-h3">Book a slot by hand</h3>
+      <p>For a customer who paid the deposit by bank transfer, or a founding offer with no deposit. The slot is booked at once.</p>
+      <div className="ad-choice">
+        <label className="ad-choice__option">
+          <input type="radio" name="nodeposit-kind" checked={deposit === 'transfer'} onChange={() => setDeposit('transfer')} />
+          Deposit received by bank transfer ({formatMoney(options.dueNowPence)}, {options.plan === 'deposit' ? `${DEPOSIT_PERCENT}%` : 'the full total'})
+        </label>
+        <label className="ad-choice__option">
+          <input type="radio" name="nodeposit-kind" checked={deposit === 'none'} onChange={() => setDeposit('none')} />
+          No deposit (founding offer or agreed arrangement): the whole total is the balance
+        </label>
+      </div>
       {error ? <p className="ad-error" role="alert">{error}</p> : null}
       {slots && !slots.length ? <p className="ad-muted">No open slots. Open one in Availability first.</p> : null}
       {slots?.length ? (
