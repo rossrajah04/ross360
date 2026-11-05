@@ -180,7 +180,7 @@ async function handle({ request, env, params }) {
           snapshot: ctx.snapshot,
           booking,
           window: cancellationWindow(booking.slotDate, booking.period),
-          maxRetentionPence: maxRetention(booking.totalPence, booking.paidPence),
+          maxRetentionPence: maxRetention(booking.totalPence, booking.paidPence, booking.depositPence),
           nonce: await nonce(),
           urls,
         }),

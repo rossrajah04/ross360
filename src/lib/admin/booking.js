@@ -11,7 +11,8 @@
 // - ROSS 360 can also book a slot with no deposit (a founding offer or an agreed arrangement); the
 //   whole total is then the balance, requested the same way.
 // - Cancelling more than 48 hours before the slot refunds everything paid. Within 48 hours ROSS 360
-//   decides what to keep, up to 50% of the booking price; nothing is kept automatically.
+//   decides what to keep, up to the whole deposit (ROSS 360, 5 November 2026); nothing is kept
+//   automatically.
 
 import { addDays, ukToday } from './quotes.js';
 import { site } from '../../content/site.js';
@@ -31,7 +32,6 @@ export const CHECKOUT_SLACK_SECONDS = 20;
 export const HOLD_MARGIN_SECONDS = 60;
 
 export const FREE_CANCELLATION_HOURS = site.policy.freeCancellationHours; // 48
-export const LATE_CANCELLATION_MAX_PERCENT = site.policy.lateCancellationMaxPercent; // 50
 
 // When each period starts, for the 48-hour cancellation rule (UK local time), as set by ROSS 360
 // (6 October 2026).
@@ -136,9 +136,13 @@ export function cancellationWindow(date, period, at = new Date()) {
   return start - at.getTime() > FREE_CANCELLATION_HOURS * 3_600_000 ? 'free' : 'late';
 }
 
-/** The most ROSS 360 may keep on a late cancellation: 50% of the booking price, and never more than was paid. */
-export const maxRetention = (totalPence, paidPence) =>
-  Math.max(0, Math.min(paidPence, Math.floor((totalPence * LATE_CANCELLATION_MAX_PERCENT) / 100)));
+/**
+ * The most ROSS 360 may keep on a late cancellation: the deposit, and never more than was paid. A
+ * booking made with no deposit keeps nothing; one paid in full before 5 November 2026 (no deposit
+ * recorded) is treated as if it had paid the deposit for its total.
+ */
+export const maxRetention = (totalPence, paidPence, depositPence = null) =>
+  Math.max(0, Math.min(paidPence, depositPence ?? depositFor(totalPence)));
 
 /**
  * Whether a sent quotation can be booked and paid online: only quotes the administrator explicitly

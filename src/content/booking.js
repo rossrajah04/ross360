@@ -10,7 +10,6 @@
 import { site } from './site.js';
 
 const hours = site.policy.freeCancellationHours;
-const percent = site.policy.lateCancellationMaxPercent;
 
 export const booking = {
   // Supplied by ROSS 360.
@@ -59,7 +58,7 @@ export const booking = {
   cancellationTerms: [
     'You can cancel online before your slot.',
     `If you cancel more than ${hours} hours before the slot, the amount you have paid is refunded in full.`,
-    `If you cancel within ${hours} hours of the slot, ROSS 360 may keep up to ${percent}% of the booking price and will refund the rest.`,
+    `If you cancel within ${hours} hours of the slot, ROSS 360 may keep up to the whole deposit and will refund anything else paid.`,
   ],
   agree: 'I have read the cancellation terms and the',
   agreeLink: 'Terms and Conditions',
@@ -104,7 +103,7 @@ export const booking = {
     `Your slot is more than ${hours} hours away. If you cancel, the booking ends and ${amount} is refunded in full to the card used for payment.`,
   cancelFreeNothingPaid: `Your slot is more than ${hours} hours away. If you cancel, the booking ends.`,
   cancelLate: (max) =>
-    `Your slot is within ${hours} hours. Your request will be sent to ROSS 360, who may keep up to ${percent}% of the booking price (at most ${max}) and will refund the rest. You will receive the outcome by email.`,
+    `Your slot is within ${hours} hours. Your request will be sent to ROSS 360, who may keep up to the whole deposit (${max}) and will refund anything else paid. You will receive the outcome by email.`,
   cancelStarted: 'This slot has started, so the booking cannot be cancelled online. Please contact ROSS 360.',
   confirmCancel: 'Cancel booking',
   confirmCancelRequest: 'Send cancellation request',

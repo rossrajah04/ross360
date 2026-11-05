@@ -25,7 +25,7 @@ import {
 } from '../server/booking/bookings.js';
 import { resolveQuoteLink } from '../server/customer/quotePage.js';
 import { addDays, packageItem, ukToday } from '../src/lib/admin/quotes.js';
-import { BALANCE_DUE_DAYS, DEPOSIT_PERCENT, balanceDueOn, depositFor, paymentOptions, ukInstant } from '../src/lib/admin/booking.js';
+import { BALANCE_DUE_DAYS, DEPOSIT_PERCENT, balanceDueOn, depositFor, maxRetention, paymentOptions, ukInstant } from '../src/lib/admin/booking.js';
 
 const TOTAL = 43900; // the test quote: Professional £349 + £100 extra + £20 travel − £30 discount
 const DEPOSIT = 11000; // 25% of £439, rounded up to the pound
@@ -87,6 +87,11 @@ test('deposit: 25% of the full total including travel, rounded up to the pound; 
   // The balance request makes the balance due 7 days later.
   assert.equal(BALANCE_DUE_DAYS, 7);
   assert.equal(balanceDueOn('2026-11-26'), '2026-12-03');
+  // Within 48 hours ROSS 360 may keep up to the deposit, never more than was paid.
+  assert.equal(maxRetention(TOTAL, DEPOSIT, DEPOSIT), DEPOSIT);
+  assert.equal(maxRetention(TOTAL, TOTAL, DEPOSIT), DEPOSIT, 'not the balance, once paid');
+  assert.equal(maxRetention(TOTAL, 0, 0), 0, 'booked with no deposit');
+  assert.equal(maxRetention(TOTAL, TOTAL, null), DEPOSIT, 'an older booking paid in full');
 });
 
 test('UK clock times', () => {
@@ -107,7 +112,7 @@ test('deposit: Stripe Checkout for 25%, slot held, then confirmed with emails; n
     assert.match(pay.html, /£439\.00/);
     assert.match(pay.html, /£110\.00/);
     assert.match(pay.html, /A deposit of 25% confirms the booking\. The balance of £329\.00 is paid after the shoot, once your tour is ready and you are happy with it\./);
-    assert.match(pay.html, /within 48 hours of the slot, ROSS 360 may keep up to 50%/);
+    assert.match(pay.html, /within 48 hours of the slot, ROSS 360 may keep up to the whole deposit/);
 
     const res = await checkout(t.env, token, slot.id);
     assert.equal(res.status, 303);
@@ -694,10 +699,10 @@ test('customer cancels within 48 hours: a request; ROSS 360 decides the amount k
     assert.ok(emails.find((e) => e.subject === 'ROSS 360 cancellation request received'));
     assert.ok(emails.find((e) => /^Cancellation request, decision needed/.test(e.subject)));
 
-    // The Admin: more than 50% is refused.
+    // The Admin: more than the deposit is refused.
     const tooMuch = await t.call(`/bookings/${booked.id}/cancel`, {
       method: 'POST',
-      body: { confirm: true, reason: 'customer_late', retainPence: 21951, expect: 'cancel_requested' },
+      body: { confirm: true, reason: 'customer_late', retainPence: DEPOSIT + 1, expect: 'cancel_requested' },
     });
     assert.equal(tooMuch.status, 422);
     const decided = await t.call(`/bookings/${booked.id}/cancel`, {

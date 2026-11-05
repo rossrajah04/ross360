@@ -1019,7 +1019,7 @@ function allocateRefund(payments, total) {
  * Cancel a booking and refund what is due.
  *
  * reason: 'customer' (outside 48 hours: full refund), 'customer_late' (ROSS 360 decides retainPence,
- * at most 50% of the booking price and never more than was paid) or 'ross360' (full refund). Only
+ * at most the deposit and never more than was paid) or 'ross360' (full refund). Only
  * 'customer_late' may keep anything.
  * expect: the status the caller saw ('confirmed' or 'cancel_requested'), so a stale screen cannot act.
  *
@@ -1038,8 +1038,8 @@ export async function cancelBooking(env, bookingId, { reason, retainPence = 0, a
   // Only a customer's cancellation within 48 hours of the slot (or after it started) may keep anything.
   const lateAllowed = b.status === 'cancel_requested' || cancellationWindow(b.slotDate, b.period, now) !== 'free';
   if (reason === 'customer_late' && !lateAllowed) return { result: 'invalid_retention', booking: b, max: 0 };
-  if (retain > 0 && (reason !== 'customer_late' || retain > maxRetention(b.totalPence, b.paidPence))) {
-    return { result: 'invalid_retention', booking: b, max: reason === 'customer_late' ? maxRetention(b.totalPence, b.paidPence) : 0 };
+  if (retain > 0 && (reason !== 'customer_late' || retain > maxRetention(b.totalPence, b.paidPence, b.depositPence))) {
+    return { result: 'invalid_retention', booking: b, max: reason === 'customer_late' ? maxRetention(b.totalPence, b.paidPence, b.depositPence) : 0 };
   }
   const payments = await paymentsOf(db, b.id);
   const refundTotal = b.paidPence - b.refundedPence - retain;
@@ -1285,7 +1285,7 @@ export async function bookingDetail(env, id, now = new Date()) {
   return {
     ...b,
     balancePence: Math.max(0, b.totalPence - b.paidPence),
-    maxRetentionPence: maxRetention(b.totalPence, b.paidPence),
+    maxRetentionPence: maxRetention(b.totalPence, b.paidPence, b.depositPence),
     canRequestBalance: canRequestBalance(b, ukToday(now)),
     cancellationWindow: ['confirmed', 'cancel_requested'].includes(b.status) ? cancellationWindow(b.slotDate, b.period, now) : null,
     holdActive: b.status === 'holding' && Date.parse(b.holdExpiresAt) > now.getTime(),

@@ -1,6 +1,7 @@
 // Terms & Conditions wording. Written for ROSS 360 (4 October 2026) from the business decisions in force:
 // published "from" prices, property individually quoted, 100% payment before booking, no recurring
-// hosting charge, Google Street View never guaranteed, 48-hour cancellation with a charge of up to 50%.
+// hosting charge, Google Street View never guaranteed, 48-hour cancellation keeping up to the deposit
+// (5 November 2026; previously up to 50%).
 // A working draft for ROSS 360 to approve with professional advice. It is not legal advice.
 //
 // Not yet in place, so described only as possible or future: Stripe (no website integration yet),
@@ -188,12 +189,12 @@ export const terms = {
               ? [
                   'You can cancel a confirmed booking online, from your quotation page, or by emailing us.',
                   `If you cancel more than ${hours} hours before the booked time, we refund everything you have paid in full.`,
-                  `If you cancel within ${hours} hours of the booked time, we may keep up to ${percent}% of the total price of the booking, and never more than you have paid. We refund the rest.`,
+                  `If you cancel within ${hours} hours of the booked time, we may keep up to the whole deposit. We refund anything else you have paid.`,
                   `To move your booking to another date, please email us. With more than ${hours} hours’ notice there is no charge.`,
                 ]
               : [
                   `You can cancel or reschedule free of charge with at least ${hours} hours’ notice before the appointment.`,
-                  `If you cancel or reschedule with less than ${hours} hours’ notice, we may make a charge of up to ${percent}% of the project price.`,
+                  `If you cancel or reschedule with less than ${hours} hours’ notice, we may keep up to the whole deposit.`,
                 ]),
             `If no one is available at the appointment, we are denied access, or we cannot carry out the booked work because the premises are not ready or not safe, we may make a charge of up to ${percent}% of the project price.`,
             'These charges are not automatic. Whether we make a charge, and how much, is at our discretion and will be reasonable and proportionate to the circumstances and to the time and costs we have incurred, particularly where consumer law applies.',

@@ -245,7 +245,7 @@ const INTERNAL_SUBJECTS = {
 
 const INTERNAL_NOTES = {
   cancel_requested:
-    'The customer asked to cancel within 48 hours of the slot. Decide in the Admin how much to keep (up to 50% of the booking price); the rest is refunded. Nothing is kept automatically.',
+    'The customer asked to cancel within 48 hours of the slot. Decide in the Admin how much to keep (up to the whole deposit); the rest is refunded. Nothing is kept automatically.',
   refund_failed: 'Stripe did not complete a refund. Retry it from the booking in the Admin, or settle it in Stripe.',
   late_payment: 'A payment completed after its booking had ended (slot taken or booking cancelled). It has been refunded in full.',
 };

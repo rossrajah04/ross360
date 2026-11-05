@@ -6,7 +6,7 @@ import { BookingTag } from './Bookings.jsx';
 import { formatMoney } from '../../src/lib/admin/model.js';
 import { longDate } from '../../src/lib/admin/quotes.js';
 import { periodLabel, weekdayDate } from '../../src/lib/admin/availability.js';
-import { BALANCE_DUE_DAYS, CANCEL_REASONS, LATE_CANCELLATION_MAX_PERCENT, PAYMENT_KINDS } from '../../src/lib/admin/booking.js';
+import { BALANCE_DUE_DAYS, CANCEL_REASONS, PAYMENT_KINDS } from '../../src/lib/admin/booking.js';
 
 const slotText = (date, period) => `${weekdayDate(date)}, ${periodLabel(period)}`;
 
@@ -18,7 +18,7 @@ function toPence(value) {
 }
 
 // One booking: slot, payments, balance, refunds; and the controls ROSS 360 needs — send the balance
-// request once the tour is ready, record a balance paid another way, decide a cancellation request (keep up to 50%), cancel, move to another open slot,
+// request once the tour is ready, record a balance paid another way, decide a cancellation request (keep up to the deposit), cancel, move to another open slot,
 // retry a refund.
 export default function Booking() {
   const { id } = useParams();
@@ -319,7 +319,7 @@ function Decide({ b, busy, act }) {
     <form className="ad-panel" onSubmit={submit} noValidate>
       <h2 className="ad-h2">Cancellation request</h2>
       <p>
-        The customer asked to cancel within 48 hours of the slot. You may keep up to {LATE_CANCELLATION_MAX_PERCENT}% of the booking price (
+        The customer asked to cancel within 48 hours of the slot. You may keep up to the whole deposit (
         {formatMoney(b.maxRetentionPence)}); the rest of what they paid is refunded. Nothing is kept unless you enter an amount.
       </p>
       <p className="ad-note">
