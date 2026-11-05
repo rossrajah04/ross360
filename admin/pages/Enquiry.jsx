@@ -16,6 +16,7 @@ import { PROJECT_TYPES, SPACE_TYPES, SOURCES } from '../../src/lib/quoteSchema.j
 import { QuoteTag, StatusTag, when } from '../components/Bits.jsx';
 import { periodLabel, weekdayDate } from '../../src/lib/admin/availability.js';
 import { CANCEL_REASONS } from '../../src/lib/admin/booking.js';
+import { longDate } from '../../src/lib/admin/quotes.js';
 
 const CUSTOMER_FIELDS = ['name', 'business', 'email', 'phone'];
 const PROJECT_FIELDS = ['projectType', 'projectOther', 'spaceType', 'location', 'size', 'areas', 'message', 'source'];
@@ -368,9 +369,14 @@ function describe(event) {
   if (type === 'checkout_expired') return `Quote ${detail.quote}: payment not completed for ${slotText(detail)}; slot released`;
   if (type === 'checkout_released') return `Quote ${detail.quote}: customer left the payment for ${slotText(detail)}; slot released`;
   if (type === 'booking_confirmed') {
+    if (detail.byTransfer) return `Quote ${detail.quote}: booked ${slotText(detail)}, ${formatMoney(detail.paidPence)} deposit received by bank transfer`;
+    if (detail.noDeposit) return `Quote ${detail.quote}: booked ${slotText(detail)} with no deposit (booked in the Admin)`;
     return `Quote ${detail.quote}: booked ${slotText(detail)}, ${formatMoney(detail.paidPence)} paid (${detail.plan === 'deposit' ? 'deposit' : 'in full'})`;
   }
-  if (type === 'balance_paid') return `Quote ${detail.quote}: balance of ${formatMoney(detail.paidPence)} paid${detail.inPerson ? ' in person' : ''}`;
+  if (type === 'balance_paid') return `Quote ${detail.quote}: balance of ${formatMoney(detail.paidPence)} paid${detail.inPerson ? ' (recorded in the Admin)' : ''}`;
+  if (type === 'balance_requested') {
+    return `Quote ${detail.quote}: balance of ${formatMoney(detail.balancePence)} requested${detail.again ? ' again' : ''}, due ${longDate(detail.dueOn)}`;
+  }
   if (type === 'balance_reminder_sent') {
     return `Quote ${detail.quote}: ${detail.days}-day balance reminder ${detail.skipped ? 'skipped (test address guard)' : 'emailed'}`;
   }

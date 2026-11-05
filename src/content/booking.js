@@ -3,14 +3,13 @@
 //
 // "Book a slot" was supplied by ROSS 360 (6 October 2026) and the closing line is ROSS 360's own (from
 // quoteEmail.js). EVERYTHING ELSE HERE IS A DRAFT for ROSS 360 to approve before release; it is listed
-// in the Phase C pull request. The cancellation lines restate the existing 48-hour term. The balance
-// lines follow ROSS 360's decision of 30 October 2026: a deposit booking's balance is paid on the day
-// of the shoot, in person, or online before then.
+// in the Phase C pull request. The cancellation lines restate the existing 48-hour term. The deposit
+// and balance lines follow ROSS 360's decision of 5 November 2026: a percentage deposit to book, and
+// the balance paid after the shoot, once the tour is ready and the customer is happy with it.
 
 import { site } from './site.js';
 
 const hours = site.policy.freeCancellationHours;
-const percent = site.policy.lateCancellationMaxPercent;
 
 export const booking = {
   // Supplied by ROSS 360.
@@ -18,7 +17,7 @@ export const booking = {
 
   // --- Choosing a slot (draft) ---
   slotsHeading: 'Choose a slot',
-  slotsIntro: 'Choose a date for the capture. Your booking is confirmed once payment is received.',
+  slotsIntro: 'Choose a date for the capture. Your booking is confirmed once the deposit is received.',
   continue: 'Continue',
   calendar: {
     weekdays: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
@@ -51,22 +50,15 @@ export const booking = {
     refunded: 'Refunded',
     retained: 'Retained',
   },
-  payFull: 'Pay in full',
-  payDeposit: 'Pay a deposit',
-  depositOption: (deposit, balance) =>
-    `${deposit} now. The balance of ${balance} is paid on the day of the shoot, in person, or online before then if you prefer.`,
-  balanceDueValue: 'On the day of the shoot',
-  fullOption: (total) => `${total} now`,
-  fullOnly: {
-    no_package: 'This quotation is paid in full when booking.',
-    total_too_low: 'This quotation is paid in full when booking.',
-  },
-  choosePlan: 'Please choose how to pay.',
+  depositNote: (percent, balance) =>
+    `A deposit of ${percent}% confirms the booking. The balance of ${balance} is paid after the shoot, once your tour is ready and you are happy with it.`,
+  fullNote: 'This quotation is paid in full when booking.',
+  balanceDueValue: 'After the shoot, once your tour is ready',
   cancellationHeading: 'Cancellation',
   cancellationTerms: [
     'You can cancel online before your slot.',
     `If you cancel more than ${hours} hours before the slot, the amount you have paid is refunded in full.`,
-    `If you cancel within ${hours} hours of the slot, ROSS 360 may keep up to ${percent}% of the booking price and will refund the rest.`,
+    `If you cancel within ${hours} hours of the slot, ROSS 360 may keep up to the whole deposit and will refund anything else paid.`,
   ],
   agree: 'I have read the cancellation terms and the',
   agreeLink: 'Terms and Conditions',
@@ -74,6 +66,8 @@ export const booking = {
   toPayment: 'Continue to payment',
   holdNote: 'The slot is held for you for 30 minutes while you pay.',
   stripeNote: 'Payment is taken securely by Stripe. ROSS 360 does not see or store card details.',
+  // The number is linked to WhatsApp on the page.
+  bankTransfer: { before: 'Would you rather pay by bank transfer? Message us on WhatsApp at', number: site.phone.display, after: 'and we will arrange it.' },
   // Quotes not marked business (consumer and property): booked by email for now.
   byEmail: "To go ahead, please reply to the quotation email and we'll arrange the next steps with you.",
   paymentsOff: 'Online booking is not available at the moment. Please reply to the quotation email to arrange a date.',
@@ -101,7 +95,8 @@ export const booking = {
 
   // --- Balance (draft) ---
   balanceHeading: 'Pay balance',
-  balanceIntro: (amount) => `The balance of ${amount} is due on the day of the shoot. You can pay it online now, or in person on the day.`,
+  balanceIntro: (amount, date) => `Your tour is ready. The balance of ${amount} is due by ${date}.`,
+  balanceNotYet: 'The balance is paid after the shoot, once your tour is ready and you are happy with it. We will email you a link to pay it.',
   balanceNothingDue: 'There is no balance to pay.',
 
   // --- Cancelling (draft) ---
@@ -110,7 +105,7 @@ export const booking = {
     `Your slot is more than ${hours} hours away. If you cancel, the booking ends and ${amount} is refunded in full to the card used for payment.`,
   cancelFreeNothingPaid: `Your slot is more than ${hours} hours away. If you cancel, the booking ends.`,
   cancelLate: (max) =>
-    `Your slot is within ${hours} hours. Your request will be sent to ROSS 360, who may keep up to ${percent}% of the booking price (at most ${max}) and will refund the rest. You will receive the outcome by email.`,
+    `Your slot is within ${hours} hours. Your request will be sent to ROSS 360, who may keep up to the whole deposit (${max}) and will refund anything else paid. You will receive the outcome by email.`,
   cancelStarted: 'This slot has started, so the booking cannot be cancelled online. Please contact ROSS 360.',
   confirmCancel: 'Cancel booking',
   confirmCancelRequest: 'Send cancellation request',
@@ -133,13 +128,14 @@ export const bookingEmails = {
     subject: (slot) => `ROSS 360 booking confirmed: ${slot}`,
     lead: 'Thank you. Your booking is confirmed.',
     balance: (amount) =>
-      `The balance of ${amount} is due on the day of the shoot. You can pay it in person on the day, or online before then from your booking page.`,
+      `The balance of ${amount} is paid after the shoot, once your tour is ready and you are happy with it. We will email you a link to pay it.`,
     paidInFull: 'Your booking is paid in full.',
   },
-  reminder: {
-    subject: (slot) => `ROSS 360 booking reminder: ${slot}`,
-    lead: (slot) => `This is a reminder of your booking on ${slot}.`,
-    balance: (amount) => `The balance of ${amount} is due on the day. You can pay it in person on the day, or online now using the link below.`,
+  balanceRequest: {
+    subject: (reference) => `ROSS 360 balance due: quotation ${reference}`,
+    lead: 'Your virtual tour is ready.',
+    balance: (amount, date) => `Once you are happy with it, please pay the balance of ${amount} by ${date}. You can pay online using the link below.`,
+    other: 'Would you rather pay by bank transfer? Please reply to this email and we will send the details.',
   },
   balancePaid: {
     subject: 'ROSS 360 balance received',

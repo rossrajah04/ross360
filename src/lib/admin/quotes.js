@@ -24,7 +24,6 @@ export const QUOTE_REFERENCE_RE = /^Q-\d{4,}$/;
 
 // The published packages (src/content/pricing.js) are the starting prices. Choosing one adds a line at
 // that price, which can then be changed for the quote in hand.
-// Google Street View only has no fixed deposit, so it is paid in full when booked online.
 export const PACKAGES = [
   ...plans.map((plan) => ({
     id: plan.id,

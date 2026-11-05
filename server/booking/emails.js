@@ -6,6 +6,7 @@ import { site } from '../../src/content/site.js';
 import { quoteEmail } from '../../src/content/quoteEmail.js';
 import { booking as B, bookingEmails as E } from '../../src/content/booking.js';
 import { formatMoney } from '../../src/lib/admin/model.js';
+import { longDate } from '../../src/lib/admin/quotes.js';
 import { periodLabel, weekdayDate } from '../../src/lib/admin/availability.js';
 import { CANCEL_REASONS, PAYMENT_KINDS } from '../../src/lib/admin/booking.js';
 import { QUOTE_FROM } from '../admin/quoteRender.js';
@@ -118,10 +119,10 @@ function bookingRows(b, { paidLabel = B.labels.paid } = {}) {
     [B.labels.slot, slotText(b.slotDate, b.period)],
     [B.labels.quotation, b.quoteReference],
     [B.labels.total, money(b.totalPence)],
-    [paidLabel, money(b.paidPence)],
   ];
-  if (b.plan === 'deposit' && balanceOf(b) > 0) {
-    rows.push([B.labels.balance, money(balanceOf(b))], [B.labels.balanceDue, B.balanceDueValue]);
+  if (b.paidPence > 0 || balanceOf(b) === 0) rows.push([paidLabel, money(b.paidPence)]);
+  if (balanceOf(b) > 0) {
+    rows.push([B.labels.balance, money(balanceOf(b))], [B.labels.balanceDue, b.balanceDueOn ? longDate(b.balanceDueOn) : B.balanceDueValue]);
   }
   return rows;
 }
@@ -144,14 +145,15 @@ export function confirmedEmail(b, pageUrl) {
   });
 }
 
-export function reminderEmail(b, balanceUrl) {
-  const slot = slotText(b.slotDate, b.period);
+/** The tour is ready: the balance is now due (sent from the Admin). */
+export function balanceRequestEmail(b, balanceUrl) {
   return customerMessage({
     to: b.customerEmail,
-    subject: E.reminder.subject(slot),
-    intro: [E.reminder.lead(slot), E.reminder.balance(money(balanceOf(b)))],
+    subject: E.balanceRequest.subject(b.quoteReference),
+    intro: [E.balanceRequest.lead, E.balanceRequest.balance(money(balanceOf(b)), longDate(b.balanceDueOn))],
     rows: bookingRows(b),
     button: balanceUrl ? { label: E.payBalance, url: balanceUrl } : null,
+    after: [E.balanceRequest.other],
   });
 }
 
@@ -243,7 +245,7 @@ const INTERNAL_SUBJECTS = {
 
 const INTERNAL_NOTES = {
   cancel_requested:
-    'The customer asked to cancel within 48 hours of the slot. Decide in the Admin how much to keep (up to 50% of the booking price); the rest is refunded. Nothing is kept automatically.',
+    'The customer asked to cancel within 48 hours of the slot. Decide in the Admin how much to keep (up to the whole deposit); the rest is refunded. Nothing is kept automatically.',
   refund_failed: 'Stripe did not complete a refund. Retry it from the booking in the Admin, or settle it in Stripe.',
   late_payment: 'A payment completed after its booking had ended (slot taken or booking cancelled). It has been refunded in full.',
 };
@@ -254,12 +256,12 @@ export function internalEmail(env, kind, b, { adminUrl, refunds = [] } = {}) {
     ['Enquiry', b.enquiryReference],
     ['Customer', [b.customerName, b.customerBusiness].filter(Boolean).join(', ')],
     ['Slot', slotText(b.slotDate, b.period)],
-    ['Payment', b.plan === 'deposit' ? 'Deposit' : 'Paid in full'],
+    ['Payment', b.plan !== 'deposit' ? 'Paid in full' : b.depositPence === 0 ? 'No deposit (booked in the Admin)' : 'Deposit'],
     ['Total', money(b.totalPence)],
     ['Paid', money(b.paidPence)],
   ];
-  if (b.plan === 'deposit' && b.paidPence < b.totalPence && b.status !== 'cancelled') {
-    rows.push(['Balance', money(b.totalPence - b.paidPence)], ['Balance due', 'On the day of the shoot (in person, or online before then)']);
+  if (b.paidPence < b.totalPence && b.status !== 'cancelled') {
+    rows.push(['Balance', money(b.totalPence - b.paidPence)], ['Balance due', b.balanceDueOn ? longDate(b.balanceDueOn) : 'After the shoot: send the balance request from the Admin when the tour is ready']);
   }
   if (b.status === 'cancelled') {
     rows.push(['Reason', CANCEL_REASONS[b.cancelReason] || b.cancelReason], ['Retained', money(b.retainedPence)]);
