@@ -66,7 +66,8 @@ export const booking = {
   toPayment: 'Continue to payment',
   holdNote: 'The slot is held for you for 30 minutes while you pay.',
   stripeNote: 'Payment is taken securely by Stripe. ROSS 360 does not see or store card details.',
-  bankTransfer: `Would you rather pay by bank transfer? Please get in touch at ${site.email} or on ${site.phone.display} and we will arrange it.`,
+  // The number is linked to WhatsApp on the page.
+  bankTransfer: { before: 'Would you rather pay by bank transfer? Message us on WhatsApp at', number: site.phone.display, after: 'and we will arrange it.' },
   // Quotes not marked business (consumer and property): booked by email for now.
   byEmail: "To go ahead, please reply to the quotation email and we'll arrange the next steps with you.",
   paymentsOff: 'Online booking is not available at the moment. Please reply to the quotation email to arrange a date.',
@@ -134,7 +135,7 @@ export const bookingEmails = {
     subject: (reference) => `ROSS 360 balance due: quotation ${reference}`,
     lead: 'Your virtual tour is ready.',
     balance: (amount, date) => `Once you are happy with it, please pay the balance of ${amount} by ${date}. You can pay online using the link below.`,
-    other: 'Would you rather pay by bank transfer? Please reply to this email and we will send the details.',
+    other: `Would you rather pay by bank transfer? Message us on WhatsApp at ${site.phone.display} and we will arrange it.`,
   },
   balancePaid: {
     subject: 'ROSS 360 balance received',

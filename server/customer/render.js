@@ -162,6 +162,11 @@ const ukTime = (isoString) =>
 const facts = (rows) =>
   `<dl class="facts">${rows.map(([dt, dd]) => `<div><dt>${escapeHtml(dt)}</dt><dd>${escapeHtml(dd)}</dd></div>`).join('')}</dl>`;
 
+// Customers who would rather pay by bank transfer message ROSS 360 on WhatsApp.
+const bankTransferLine = () =>
+  `<p class="small muted">${escapeHtml(B.bankTransfer.before)} <a href="${escapeHtml(site.phone.whatsapp)}" rel="noreferrer">${escapeHtml(
+    B.bankTransfer.number,
+  )}</a> ${escapeHtml(B.bankTransfer.after)}</p>`;
 const errorBox = (error) => (error ? `<div class="notice notice--error" role="alert"><p>${escapeHtml(error)}</p></div>` : '');
 const noticeBox = (...lines) =>
   `<div class="notice" role="status">${lines.filter(Boolean).map((l) => `<p>${l}</p>`).join('')}</div>`;
@@ -369,7 +374,7 @@ export function renderPayPage({ snapshot, slot, options, nonce, urls, termsUrl, 
     `<p class="small muted">${escapeHtml(B.holdNote)} ${escapeHtml(B.stripeNote)}</p>` +
     `<p><button class="button" type="submit">${escapeHtml(B.toPayment)}</button></p>` +
     '</form>' +
-    `<p class="small muted">${escapeHtml(B.bankTransfer)}</p>`;
+    bankTransferLine();
   return shell(B.payHeading, body);
 }
 
@@ -384,7 +389,7 @@ export function renderBalancePage({ snapshot, booking, nonce, urls, error = '' }
       `<p>${escapeHtml(B.balanceIntro(money(balance), longDate(booking.balanceDueOn)))}</p>` +
       `<p class="small muted">${escapeHtml(B.stripeNote)}</p>` +
       postButton(urls.balance, nonce, B.toPayment) +
-      `<p class="small muted">${escapeHtml(B.bankTransfer)}</p>`;
+      bankTransferLine();
   }
   const body =
     `<p class="muted small"><a href="${escapeHtml(urls.self)}">${escapeHtml(B.back)}</a></p>` +

@@ -273,7 +273,7 @@ slot and pay on Stripe Checkout** (hosted by Stripe; no card details reach this 
   without deposit** books an open slot at once, optionally emailing the usual confirmation: either
   with the deposit received by bank transfer (recorded as paid, so the 48-hour rule applies), or with
   no deposit for a founding offer (the whole total is then the balance). The pay and balance pages say
-  that customers who would rather pay by bank transfer can get in touch.
+  that customers who would rather pay by bank transfer can message on WhatsApp.
 - **Cancellation.** The customer can cancel online. More than 48 hours before the slot: full refund
   and the slot reopens at once. Within 48 hours: the request comes to you (Admin -> Bookings) and
   nothing is refunded until you decide how much to keep, from nothing up to 50% of the booking total

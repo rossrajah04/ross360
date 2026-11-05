@@ -1059,7 +1059,7 @@ test('ROSS 360 books a slot with the deposit received by bank transfer: recorded
   const { t, slot, token, reference } = await ready(20);
   await withServices(async ({ stripe, emails }) => {
     const pay = await callPage(t.env, `/q/${token}/pay?slot=${slot.id}`);
-    assert.match(pay.html, /Would you rather pay by bank transfer\? Please get in touch at contact@ross360\.co\.uk or on \+44 7925 213557/);
+    assert.match(pay.html, /Would you rather pay by bank transfer\? Message us on WhatsApp at <a href="https:\/\/wa\.me\/447925213557" rel="noreferrer">\+44 7925 213557<\/a> and we will arrange it\./);
     const res = await t.call(`/quotes/${reference}/book-without-deposit`, {
       method: 'POST',
       body: { confirm: true, slotId: slot.id, notify: true, deposit: 'transfer' },
@@ -1082,7 +1082,7 @@ test('ROSS 360 books a slot with the deposit received by bank transfer: recorded
     await askForBalance(t, b.id, slot.date);
     const email = emails.at(-1);
     assert.match(email.text, /please pay the balance of £329\.00/);
-    assert.match(email.text, /Would you rather pay by bank transfer\? Please reply to this email/);
+    assert.match(email.text, /Would you rather pay by bank transfer\? Message us on WhatsApp at \+44 7925 213557 and we will arrange it\./);
     assert.match((await callPage(t.env, `/q/${token}/balance`)).html, /Would you rather pay by bank transfer/);
     const bad = await t.call(`/quotes/${reference}/book-without-deposit`, { method: 'POST', body: { confirm: true, slotId: slot.id, notify: false, deposit: 'cash' } });
     assert.equal(bad.status, 400);
